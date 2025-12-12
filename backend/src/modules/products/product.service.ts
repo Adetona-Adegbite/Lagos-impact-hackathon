@@ -1,7 +1,8 @@
-import prisma from '../../config/db.js';
-import { Prisma } from '@prisma/client';
+import prisma from "../../config/db.js";
+import { Prisma } from "@prisma/client";
 
 export const createProduct = async (data: {
+  id?: string;
   name: string;
   barcode: string;
   category: string;
@@ -13,13 +14,17 @@ export const createProduct = async (data: {
   });
 
   if (existingProduct) {
-    throw { statusCode: 400, message: 'Product with this barcode already exists' };
+    throw {
+      statusCode: 400,
+      message: "Product with this barcode already exists",
+    };
   }
 
   // Create product and initialize inventory with 0
   const product = await prisma.$transaction(async (tx) => {
     const newProduct = await tx.product.create({
       data: {
+        id: data.id,
         name: data.name,
         barcode: data.barcode,
         category: data.category,
@@ -44,16 +49,16 @@ export const createProduct = async (data: {
 export const getProducts = async (
   page: number = 1,
   limit: number = 20,
-  search?: string
+  search?: string,
 ) => {
   const skip = (page - 1) * limit;
 
   const where: Prisma.ProductWhereInput = search
     ? {
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: "insensitive" } },
           { barcode: { contains: search } },
-          { category: { contains: search, mode: 'insensitive' } },
+          { category: { contains: search, mode: "insensitive" } },
         ],
       }
     : {};
@@ -63,7 +68,7 @@ export const getProducts = async (
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         inventory: {
           select: { quantity: true },
@@ -95,7 +100,7 @@ export const getProductById = async (id: string) => {
   });
 
   if (!product) {
-    throw { statusCode: 404, message: 'Product not found' };
+    throw { statusCode: 404, message: "Product not found" };
   }
 
   return product;
@@ -108,10 +113,10 @@ export const updateProduct = async (
     category?: string;
     sellingPrice?: number;
     purchasePrice?: number;
-  }
+  },
 ) => {
   const exists = await prisma.product.findUnique({ where: { id } });
-  if (!exists) throw { statusCode: 404, message: 'Product not found' };
+  if (!exists) throw { statusCode: 404, message: "Product not found" };
 
   const product = await prisma.product.update({
     where: { id },
@@ -128,14 +133,14 @@ export const updateProduct = async (
 
 export const deleteProduct = async (id: string) => {
   const exists = await prisma.product.findUnique({ where: { id } });
-  if (!exists) throw { statusCode: 404, message: 'Product not found' };
+  if (!exists) throw { statusCode: 404, message: "Product not found" };
 
   // Use transaction to delete inventory first.
   // Note: If SaleItems exist, this transaction will likely fail on product deletion due to FK constraints.
   await prisma.$transaction(async (tx) => {
     // Try to delete inventory if it exists
     await tx.inventory.deleteMany({
-        where: { productId: id }
+      where: { productId: id },
     });
 
     await tx.product.delete({
@@ -143,5 +148,5 @@ export const deleteProduct = async (id: string) => {
     });
   });
 
-  return { message: 'Product deleted successfully' };
+  return { message: "Product deleted successfully" };
 };

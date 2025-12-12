@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 // Use localhost for iOS Simulator
 // Replace with your machine's local IP address if testing on physical device
 const DEV_API_URL = Platform.select({
-  android: "http://10.0.2.2:3000",
+  android: "http://172.20.10.3:3000",
   ios: "http://localhost:3000",
   default: "http://localhost:3000",
 });
@@ -52,6 +52,32 @@ export const authApi = {
     return request<{ user: any; token: string }>("/api/v1/auth/verify-otp", {
       method: "POST",
       data: { phoneNumber, code, shopName },
+    });
+  },
+};
+
+export const productsApi = {
+  create: (data: any, token: string) => {
+    return request<any>("/api/v1/products", {
+      method: "POST",
+      data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  getAll: (token: string, page = 1, limit = 1000) => {
+    return request<any>(`/api/v1/products?page=${page}&limit=${limit}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const salesApi = {
+  sync: (sales: any[], token: string) => {
+    return request<any>("/api/v1/sales/sync", {
+      method: "POST",
+      data: { sales },
+      headers: { Authorization: `Bearer ${token}` },
     });
   },
 };

@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { authApi } from "../../services/api";
+import { authStorage } from "../../services/authStorage";
+import { SyncService } from "../../services/sync";
 
 const MAIN_GREEN = "#36e27b";
 const RESEND_COOLDOWN = 30; // seconds
@@ -174,7 +176,12 @@ export default function VerifyOtpScreen({
         const ok = await verifyCode(code);
         if (!ok) throw new Error("Invalid code");
       } else {
-        await authApi.verifyOtp(phone, code, shopName);
+        const response = await authApi.verifyOtp(phone, code, shopName);
+        await authStorage.saveAuthData(response.token, response.user);
+        // Trigger initial sync (fire and forget)
+        SyncService.syncAll().catch((e) =>
+          console.log("Initial sync warning:", e),
+        );
       }
 
       setError(null);

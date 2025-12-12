@@ -15,6 +15,7 @@ const router = Router();
 
 const createProductSchema = z.object({
   body: z.object({
+    id: z.string().optional(),
     name: z.string().min(1, "Name is required"),
     barcode: z.string().min(1, "Barcode is required"),
     category: z.string().min(1, "Category is required"),
@@ -59,6 +60,8 @@ router.use(authenticate);
  *               - sellingPrice
  *               - purchasePrice
  *             properties:
+ *               id:
+ *                 type: string
  *               name:
  *                 type: string
  *               barcode:
