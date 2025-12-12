@@ -1,4 +1,5 @@
 import { executeSql } from "./database";
+import { SyncService } from "./sync";
 
 export interface User {
   id: string;
@@ -80,6 +81,12 @@ export const authStorage = {
    */
   clearAuthData: async (): Promise<void> => {
     try {
+      try {
+        // Try to sync any pending data before logging out
+        await SyncService.syncAll();
+      } catch (syncError) {
+        console.warn("Sync failed on logout, proceeding anyway:", syncError);
+      }
       await executeSql("DELETE FROM settings WHERE key IN ('token', 'user')");
     } catch (error) {
       console.error("Failed to clear auth data:", error);
