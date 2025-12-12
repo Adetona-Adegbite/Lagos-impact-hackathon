@@ -110,9 +110,20 @@ export const SyncService = {
           "UPDATE products SET syncStatus = 'synced' WHERE id = ?",
           [product.id],
         );
-      } catch (e) {
-        console.error("Failed to sync product", product.id, e);
-        // Continue to next product
+      } catch (e: any) {
+        if (e.status === 409) {
+          // Product already exists on server, mark as synced
+          console.warn(
+            `Product ${product.id} already exists on server. Marking as synced.`,
+          );
+          await executeSql(
+            "UPDATE products SET syncStatus = 'synced' WHERE id = ?",
+            [product.id],
+          );
+        } else {
+          console.error("Failed to sync product", product.id, e);
+          // Continue to next product
+        }
       }
     }
   },

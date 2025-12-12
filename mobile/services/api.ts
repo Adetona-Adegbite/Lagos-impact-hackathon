@@ -34,7 +34,11 @@ async function request<T>(
   const responseData = await response.json();
 
   if (!response.ok) {
-    throw new Error(responseData.message || "Something went wrong");
+    const error: any = new Error(
+      responseData.message || "Something went wrong",
+    );
+    error.status = response.status;
+    throw error;
   }
 
   return responseData.data || responseData;
