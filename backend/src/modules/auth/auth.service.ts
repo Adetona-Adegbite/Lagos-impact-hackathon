@@ -1,16 +1,34 @@
 import jwt from "jsonwebtoken";
 import prisma from "../../config/db.js";
 import { env } from "../../config/env.js";
-import { UniClient } from "uni-sdk";
 
-const client = new UniClient({
-  accessKeyId: env.UNIMTX_ACCESS_KEY_ID,
-});
+// Helper to generate a 6-digit OTP
+const generateOtp = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 export const requestOtp = async (phoneNumber: string) => {
-  await client.otp.send({
-    to: phoneNumber,
+  // Generate OTP
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+  // Save OTP to database
+  // We can delete existing OTPs for this phone number to avoid clutter
+  await prisma.otp.deleteMany({
+    where: { phoneNumber },
   });
+
+  await prisma.otp.create({
+    data: {
+      phoneNumber,
+      code,
+      expiresAt,
+    },
+  });
+
+  // In a real application, you would integrate with an SMS provider (e.g., Twilio) here.
+  // For this implementation, we will log the OTP to the console.
+  console.log(`[OTP-Mock] OTP for ${phoneNumber} is: ${code}`);
 
   return { message: "OTP sent successfully" };
 };
@@ -20,12 +38,18 @@ export const verifyOtp = async (
   code: string,
   shopName?: string,
 ) => {
-  const verification = await client.otp.verify({
-    to: phoneNumber,
-    code,
+  // Find valid OTP
+  const otpRecord = await prisma.otp.findFirst({
+    where: {
+      phoneNumber,
+      code,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
   });
 
-  if (!verification.valid) {
+  if (!otpRecord) {
     throw { statusCode: 400, message: "Invalid or expired OTP" };
   }
 
@@ -49,6 +73,11 @@ export const verifyOtp = async (
       data: { shopName },
     });
   }
+
+  // Delete the used OTP
+  await prisma.otp.delete({
+    where: { id: otpRecord.id },
+  });
 
   // Generate Token
   const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
