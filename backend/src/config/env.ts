@@ -13,7 +13,7 @@ const envSchema = z.object({
     .default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
-  UNIMTX_ACCESS_KEY_ID: z.string().min(1, "UNIMTX_ACCESS_KEY_ID is required"),
+  // UNIMTX_ACCESS_KEY_ID: z.string().min(1, "UNIMTX_ACCESS_KEY_ID is required"),
 });
 
 const envParsed = envSchema.safeParse(process.env);
@@ -21,7 +21,7 @@ const envParsed = envSchema.safeParse(process.env);
 if (!envParsed.success) {
   console.error(
     "❌ Invalid environment variables:",
-    JSON.stringify(envParsed.error.format(), null, 4),
+    JSON.stringify(envParsed.error.format(), null, 4)
   );
   process.exit(1);
 }

@@ -17,6 +17,9 @@ import TopSellersScreen from "./screens/Post-Auth/TopMovers";
 import SlowMovingProducts from "./screens/Post-Auth/RestockAlert";
 import SettingsScreen from "./screens/Post-Auth/Settings";
 import { MaterialIcons } from "@expo/vector-icons";
+import SalesScreen from "./screens/Post-Auth/AllSalesScreen";
+import CreditProfileScreen from "./screens/Post-Auth/CreditProfileScreen";
+import TaxExportScreen from "./screens/Post-Auth/TaxExportScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,6 +34,12 @@ const HomeScreens = () => {
       <Stack.Screen name="TopSellers" component={TopSellersScreen} />
       <Stack.Screen name="SlowMovingProducts" component={SlowMovingProducts} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+      <Stack.Screen name="AllSalesScreen" component={SalesScreen} />
+      <Stack.Screen
+        name="CreditProfileScreen"
+        component={CreditProfileScreen}
+      />
+      <Stack.Screen name="TaxInsightsScreen" component={TaxExportScreen} />
     </Stack.Navigator>
   );
 };
@@ -58,8 +67,8 @@ const Tabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreens} />
-      <Tab.Screen name="Report" component={RetailHomeScreen} />
-      <Tab.Screen name="Profile" component={RetailHomeScreen} />
+      <Tab.Screen name="Report" component={AIInsightsScreen} />
+      <Tab.Screen name="Profile" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };
