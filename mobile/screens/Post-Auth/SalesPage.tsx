@@ -25,6 +25,7 @@ import {
   BarcodeScanningResult,
 } from "expo-camera";
 import { productService } from "../../services/productService";
+import RNPickerSelect from "react-native-picker-select";
 
 const { width, height } = Dimensions.get("window");
 const MAIN_GREEN = "#19e680";
@@ -110,6 +111,8 @@ export default function ScanSellScreen({
   const [editCostPrice, setEditCostPrice] = useState("");
   const [editCategory, setEditCategory] = useState("General");
   const [editQty, setEditQty] = useState(0);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isRecommendingCategory, setIsRecommendingCategory] = useState(false);
 
   /* bottom sheet height (keeps camera visible) */
   const BOTTOM_SHEET_MAX_HEIGHT = Math.min(height * 0.3, 520);
@@ -153,6 +156,39 @@ export default function ScanSellScreen({
     () => cart.reduce((s, it) => s + it.qty * it.unitPrice, 0),
     [cart],
   );
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await productService.getCategories();
+        setCategories(fetchedCategories);
+        if (fetchedCategories.length > 0 && editCategory === "General") {
+          setEditCategory(fetchedCategories[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+        // Provide a fallback list
+        setCategories(["General", "Snacks", "Beverages"]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleRecommendCategory = async () => {
+    if (!editTitle.trim()) return;
+    setIsRecommendingCategory(true);
+    try {
+      const { category: recommendedCategory } =
+        await productService.recommendCategory(editTitle.trim());
+      if (recommendedCategory && categories.includes(recommendedCategory)) {
+        setEditCategory(recommendedCategory);
+      }
+    } catch (error) {
+      console.error("Failed to recommend category", error);
+    } finally {
+      setIsRecommendingCategory(false);
+    }
+  };
 
   /* ----- Actions ----- */
   const changeCartQty = (id: string, delta: number) =>
@@ -717,6 +753,7 @@ export default function ScanSellScreen({
                   style={productModalStyles.input}
                   value={editTitle}
                   onChangeText={setEditTitle}
+                  onBlur={handleRecommendCategory}
                   placeholder="e.g. Indomie Chicken"
                   placeholderTextColor="#6b7280"
                 />
@@ -763,18 +800,37 @@ export default function ScanSellScreen({
             </View>
 
             {/* Category */}
-            <View style={productModalStyles.field}>
-              <Text style={productModalStyles.label}>Category</Text>
-              <View style={productModalStyles.inputWrap}>
-                <TextInput
-                  style={productModalStyles.input}
-                  value={editCategory}
-                  onChangeText={setEditCategory}
-                  placeholder="e.g. Snacks"
-                  placeholderTextColor="#6b7280"
-                />
+            {isRecommendingCategory ? (
+              <View
+                style={[
+                  productModalStyles.input,
+                  { justifyContent: "center", alignItems: "center" },
+                ]}
+              >
+                <ActivityIndicator color={MAIN_GREEN} />
               </View>
-            </View>
+            ) : (
+              <RNPickerSelect
+                onValueChange={(value) => value && setEditCategory(value)}
+                items={categories.map((cat) => ({
+                  label: cat,
+                  value: cat,
+                }))}
+                style={{
+                  inputIOS: productModalStyles.input,
+                  inputAndroid: productModalStyles.input,
+                  placeholder: {
+                    color: "#6b7280",
+                  },
+                }}
+                value={editCategory}
+                placeholder={{
+                  label: "Select a category...",
+                  value: null,
+                  color: "#6b7280",
+                }}
+              />
+            )}
 
             {/* Quantity */}
             <View style={productModalStyles.field}>
