@@ -14,12 +14,13 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { authApi } from "../../services/api";
 
 const MAIN_GREEN = "#36e27b";
 const RESEND_COOLDOWN = 30; // seconds
 
 type Props = {
-  route?: { params?: { phone?: string } };
+  route?: { params?: { phone?: string; shopName?: string } };
   navigation?: any;
   // optional: provide real handlers from parent / context
   verifyCode?: (code: string) => Promise<boolean>;
@@ -33,9 +34,10 @@ export default function VerifyOtpScreen({
   resendCode,
 }: Props) {
   const phone = route?.params?.phone ?? "Unknown";
+  const shopName = route?.params?.shopName;
 
-  // OTP state as array of 4 digits (strings)
-  const [digits, setDigits] = useState<string[]>(["", "", "", ""]);
+  // OTP state as array of 6 digits (strings)
+  const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const inputsRef = useRef<Array<TextInput | null>>([]);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,14 +92,14 @@ export default function VerifyOtpScreen({
       return;
     }
 
-    // if user pasted full 4-digit code
+    // if user pasted full code
     if (sanitized.length > 1) {
-      const arr = sanitized.split("").slice(0, 4);
+      const arr = sanitized.split("").slice(0, 6);
       const merged = [...digits];
       for (let i = 0; i < arr.length; i++) merged[i] = arr[i];
       setDigits(merged);
       // focus next empty or last
-      const next = arr.length >= 4 ? 3 : arr.length;
+      const next = arr.length >= 6 ? 5 : arr.length;
       focusInput(next);
       return;
     }
@@ -107,7 +109,7 @@ export default function VerifyOtpScreen({
     copy[idx] = sanitized;
     setDigits(copy);
 
-    if (sanitized && idx < 3) {
+    if (sanitized && idx < 5) {
       // move focus to next
       focusInput(idx + 1);
     }
@@ -159,8 +161,8 @@ export default function VerifyOtpScreen({
   const handleVerify = async () => {
     setError(null);
     const code = getCode();
-    if (code.length < 4) {
-      setError("Enter the 4-digit code sent to your phone.");
+    if (code.length < 6) {
+      setError("Enter the 6-digit code sent to your phone.");
       runShake();
       return;
     }
@@ -168,26 +170,19 @@ export default function VerifyOtpScreen({
     setIsVerifying(true);
     try {
       // if verifyCode prop provided, use it; otherwise use dummy logic
-      let ok = false;
       if (verifyCode) {
-        ok = await verifyCode(code);
+        const ok = await verifyCode(code);
+        if (!ok) throw new Error("Invalid code");
       } else {
-        // fake verification: accept 1234 for demo
-        await new Promise((r) => setTimeout(r, 700));
-        ok = code === "1234";
+        await authApi.verifyOtp(phone, code, shopName);
       }
 
-      if (ok) {
-        setError(null);
-        // navigate to next screen (replace with your route)
-        navigation?.navigate?.("HomeScreen") ??
-          Alert.alert("Verified", "OTP verified — continue.");
-      } else {
-        setError("Wrong code. Please try again.");
-        runShake();
-      }
-    } catch (e) {
-      setError("Verification failed. Try again.");
+      setError(null);
+      // navigate to next screen (replace with your route)
+      navigation?.navigate?.("HomeScreen") ??
+        Alert.alert("Verified", "OTP verified — continue.");
+    } catch (e: any) {
+      setError(e.message || "Verification failed. Try again.");
       runShake();
     } finally {
       setIsVerifying(false);
@@ -201,8 +196,7 @@ export default function VerifyOtpScreen({
       if (resendCode) {
         await resendCode();
       } else {
-        // fake resend delay
-        await new Promise((r) => setTimeout(r, 700));
+        await authApi.requestOtp(phone);
       }
       startCooldown();
     } catch (e) {
@@ -211,7 +205,7 @@ export default function VerifyOtpScreen({
   };
 
   const clearAll = () => {
-    setDigits(["", "", "", ""]);
+    setDigits(["", "", "", "", "", ""]);
     focusInput(0);
     setError(null);
   };
@@ -242,7 +236,7 @@ export default function VerifyOtpScreen({
 
           {/* Info */}
           <Text style={styles.info}>
-            Enter the 4-digit code sent to{" "}
+            Enter the 6-digit code sent to{" "}
             <Text style={{ fontWeight: "800" }}>{phone}</Text>
           </Text>
 
@@ -255,7 +249,7 @@ export default function VerifyOtpScreen({
               },
             ]}
           >
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <TextInput
                 key={`otp-${i}`}
                 // @ts-ignore
@@ -264,7 +258,7 @@ export default function VerifyOtpScreen({
                 onChangeText={(t) => onChangeDigit(t, i)}
                 onKeyPress={(e) => onKeyPress(e, i)}
                 keyboardType="number-pad"
-                maxLength={4} // we handle paste separately; allow longer for paste
+                maxLength={6} // we handle paste separately; allow longer for paste
                 returnKeyType="done"
                 textContentType="oneTimeCode"
                 style={[styles.otpInput, error ? styles.otpInputError : null]}
@@ -338,7 +332,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 18,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 20) : 18,
   },
   header: {
     flexDirection: "row",
@@ -365,14 +360,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   otpInput: {
-    width: 62,
-    height: 62,
-    borderRadius: 12,
+    width: 42,
+    height: 52,
+    borderRadius: 8,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#E6E9E8",
     textAlign: "center",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "800",
     color: "#111",
     alignItems: "center",
