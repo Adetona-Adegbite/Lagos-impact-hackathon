@@ -85,7 +85,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
       // A simple way to trigger a re-render of the screen with new translations
       // This is a common pattern for localization changes in React Native
       // without doing a full app reload.
-      navigation.replace(
+      navigation.navigate(
         navigation.getState().routes[navigation.getState().index].name,
       );
     } catch (error) {
