@@ -17,6 +17,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { authApi } from "../../services/api";
 import { authStorage } from "../../services/authStorage";
 import { SyncService } from "../../services/sync";
+import { t } from "../../utils/localization";
 
 const MAIN_GREEN = "#36e27b";
 const RESEND_COOLDOWN = 30; // seconds
@@ -164,7 +165,7 @@ export default function VerifyOtpScreen({
     setError(null);
     const code = getCode();
     if (code.length < 6) {
-      setError("Enter the 6-digit code sent to your phone.");
+      setError(t("otpEnter6DigitError"));
       runShake();
       return;
     }
@@ -187,9 +188,9 @@ export default function VerifyOtpScreen({
       setError(null);
       // navigate to next screen (replace with your route)
       navigation?.navigate?.("HomeScreen") ??
-        Alert.alert("Verified", "OTP verified — continue.");
+        Alert.alert(t("otpVerifiedTitle"), t("otpVerifiedSubtitle"));
     } catch (e: any) {
-      setError(e.message || "Verification failed. Try again.");
+      setError(e.message || t("otpVerificationFailedError"));
       runShake();
     } finally {
       setIsVerifying(false);
@@ -207,7 +208,7 @@ export default function VerifyOtpScreen({
       }
       startCooldown();
     } catch (e) {
-      setError("Could not resend. Try again later.");
+      setError(t("otpResendFailedError"));
     }
   };
 
@@ -237,13 +238,13 @@ export default function VerifyOtpScreen({
             >
               <MaterialIcons name="arrow-back" size={20} color="#111" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Verify Code</Text>
+            <Text style={styles.headerTitle}>{t("verifyCodeTitle")}</Text>
             <View style={{ width: 42 }} />
           </View>
 
           {/* Info */}
           <Text style={styles.info}>
-            Enter the 6-digit code sent to{" "}
+            {t("otpSubtitle")}{" "}
             <Text style={{ fontWeight: "800" }}>{phone}</Text>
           </Text>
 
@@ -292,7 +293,7 @@ export default function VerifyOtpScreen({
               disabled={isVerifying}
             >
               <Text style={styles.verifyBtnText}>
-                {isVerifying ? "Verifying..." : "Verify"}
+                {isVerifying ? t("verifying") : t("verify")}
               </Text>
             </TouchableOpacity>
 
@@ -301,7 +302,7 @@ export default function VerifyOtpScreen({
                 onPress={clearAll}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.linkText}>Clear</Text>
+                <Text style={styles.linkText}>{t("clear")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -315,17 +316,16 @@ export default function VerifyOtpScreen({
                     cooldown > 0 ? { color: "#9AA0A6" } : null,
                   ]}
                 >
-                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                  {cooldown > 0
+                    ? t("resendIn").replace("{cooldown}", `${cooldown}`)
+                    : t("resendCode")}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* small helper text */}
-          <Text style={styles.small}>
-            Didn't receive the code? Check your messages or tap "Resend code".
-            For security, codes expire quickly.
-          </Text>
+          <Text style={styles.small}>{t("otpHelperText")}</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

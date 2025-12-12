@@ -8,8 +8,11 @@ import {
   StyleSheet,
   Switch,
   Alert,
+  Modal, // Add Modal import
+  FlatList, // Add FlatList import
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { t, localizationService } from "../../utils/localization"; // Import localizationService
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authStorage } from "../../services/authStorage";
 import { clearDatabase, initDatabase } from "../../services/database";
@@ -17,15 +20,19 @@ import { clearDatabase, initDatabase } from "../../services/database";
 export default function SettingsScreen({ navigation }: { navigation: any }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [shopName, setShopName] = useState("My Shop");
+  const [showLanguageModal, setShowLanguageModal] = useState(false); // New state for modal visibility
+  const [currentLanguageCode, setCurrentLanguageCode] = useState(
+    localizationService.getCurrentLanguage(), // Initialize with current language
+  );
 
   const handleLogout = () => {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
+    Alert.alert(t("logOut"), t("logOutConfirmation"), [
       {
-        text: "Cancel",
+        text: t("cancel"),
         style: "cancel",
       },
       {
-        text: "Log Out",
+        text: t("logOut"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -44,7 +51,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
             }
           } catch (error) {
             console.error("Logout failed:", error);
-            Alert.alert("Error", "Could not log out");
+            Alert.alert(t("errorTitle"), t("couldNotLogOut"));
           }
         },
       },
@@ -57,9 +64,35 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
       if (authData?.user?.shopName) {
         setShopName(authData.user.shopName);
       }
+      setCurrentLanguageCode(localizationService.getCurrentLanguage()); // Update current language on load
     };
     loadSettings();
-  }, []);
+  }, []); // Depend on [] so it runs once on mount
+
+  const languageOptions = [
+    { code: "en", name: t("english") },
+    { code: "pcm", name: t("pidgin") },
+    { code: "hausa", name: t("hausa") },
+    { code: "yoruba", name: t("yoruba") },
+    { code: "igbo", name: t("igbo") },
+  ];
+
+  const handleLanguageChange = async (newLangCode: string) => {
+    try {
+      await localizationService.setLanguage(newLangCode);
+      setCurrentLanguageCode(newLangCode);
+      setShowLanguageModal(false);
+      // A simple way to trigger a re-render of the screen with new translations
+      // This is a common pattern for localization changes in React Native
+      // without doing a full app reload.
+      navigation.replace(
+        navigation.getState().routes[navigation.getState().index].name,
+      );
+    } catch (error) {
+      console.error("Failed to change language:", error);
+      Alert.alert(t("errorTitle"), "Failed to change language.");
+    }
+  };
 
   return (
     <SafeAreaView
@@ -93,7 +126,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
               { color: isDarkMode ? "#fff" : "#111827" },
             ]}
           >
-            Settings
+            {t("settings")}
           </Text>
         </View>
       </View>
@@ -126,11 +159,11 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                 { color: isDarkMode ? "#9ca3af" : "#6b7280" },
               ]}
             >
-              Standard Plan
+              {t("standardPlan")}
             </Text>
             <TouchableOpacity>
               <Text style={[styles.editProfile, { color: "#36e27b" }]}>
-                Edit Profile
+                {t("editProfile")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -138,19 +171,19 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
 
         {/* General Section */}
         <SettingsSection
-          title="General"
+          title={t("general")}
           items={[
             {
               icon: "storefront",
               iconBg: "#DBEAFE",
-              label: "Shop Profile",
-              subtitle: "Address, contact, & details",
+              label: t("shopProfile"),
+              subtitle: t("shopProfileSubtitle"),
             },
             {
               icon: "group",
               iconBg: "#F5F3FF",
-              label: "Manage Staff",
-              subtitle: "Add or remove shop assistants",
+              label: t("manageStaff"),
+              subtitle: t("manageStaffSubtitle"),
             },
           ]}
           isDarkMode={isDarkMode}
@@ -158,17 +191,40 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
 
         {/* App Preferences */}
         <SettingsSection
-          title="App Preferences"
+          title={t("appPreferences")}
           items={[
             {
               icon: "palette",
               iconBg: "#FFF7ED",
-              label: "App Theme",
-              subtitle: "Light / Dark mode",
+              label: t("appTheme"),
+              subtitle: t("appThemeSubtitle"),
               rightContent: (
                 <View style={styles.themeTag}>
                   <Text style={styles.themeTagText}>
-                    {isDarkMode ? "Dark" : "Light"}
+                    {isDarkMode ? t("dark") : t("light")}
+                  </Text>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#9ca3af"
+                  />
+                </View>
+              ),
+            },
+            {
+              icon: "language", // Material icon for language
+              iconBg: "#E0F2F7", // A light blue color, similar to other iconBgs
+              label: t("language"),
+              subtitle: t("languageSubtitle"),
+              onPress: () => setShowLanguageModal(true), // Open language modal
+              rightContent: (
+                <View style={styles.themeTag}>
+                  <Text style={styles.themeTagText}>
+                    {
+                      languageOptions.find(
+                        (lang) => lang.code === currentLanguageCode,
+                      )?.name
+                    }
                   </Text>
                   <MaterialIcons
                     name="chevron-right"
@@ -181,8 +237,8 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
             {
               icon: "notifications",
               iconBg: "#FCE7F3",
-              label: "Notifications",
-              subtitle: "Sales alerts & updates",
+              label: t("notifications"),
+              subtitle: t("notificationsSubtitle"),
               rightContent: (
                 <Switch
                   value={true}
@@ -198,13 +254,13 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
 
         {/* Data Management */}
         <SettingsSection
-          title="Data Management"
+          title={t("dataManagement")}
           items={[
             {
               icon: "download",
               iconBg: "#ECFEFF",
-              label: "Export Sales Data",
-              subtitle: "Download Excel / PDF report",
+              label: t("exportSalesData"),
+              subtitle: t("exportSalesDataSubtitle"),
               rightContent: (
                 <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
               ),
@@ -233,14 +289,81 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                 { color: isDarkMode ? "#fca5a5" : "#b91c1c" },
               ]}
             >
-              Log Out
+              {t("logOut")}
             </Text>
           </TouchableOpacity>
           <Text style={[styles.versionText, { color: "#9ca3af" }]}>
-            App Version 2.4.1 (Build 204)
+            {t("appVersion")
+              .replace("{version}", "2.4.1")
+              .replace("{build}", "204")}
           </Text>
         </View>
       </ScrollView>
+
+      {/* Language Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showLanguageModal}
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: isDarkMode ? "#1c2e24" : "#fff" },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text
+                style={[
+                  styles.modalTitle,
+                  { color: isDarkMode ? "#fff" : "#111827" },
+                ]}
+              >
+                {t("selectLanguage")}
+              </Text>
+              <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                <MaterialIcons
+                  name="close"
+                  size={24}
+                  color={isDarkMode ? "#9ca3af" : "#4b5563"}
+                />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={languageOptions}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.languageOption}
+                  onPress={() => handleLanguageChange(item.code)}
+                >
+                  <Text
+                    style={[
+                      styles.languageOptionText,
+                      { color: isDarkMode ? "#fff" : "#111827" },
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  {currentLanguageCode === item.code && (
+                    <MaterialIcons name="check" size={24} color="#36e27b" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => (
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: isDarkMode ? "#253b30" : "#e5e7eb" },
+                  ]}
+                />
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -251,6 +374,7 @@ type SettingsItem = {
   label: string;
   subtitle: string;
   rightContent?: React.ReactNode;
+  onPress?: () => void; // Add optional onPress handler
 };
 
 function SettingsSection({
@@ -280,7 +404,10 @@ function SettingsSection({
       >
         {items.map((item, index) => (
           <React.Fragment key={index}>
-            <TouchableOpacity style={styles.settingsButton}>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={item.onPress}
+            >
               <View
                 style={[styles.iconWrapper, { backgroundColor: item.iconBg }]}
               >
@@ -404,4 +531,35 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontWeight: "600", marginLeft: 6 },
   versionText: { fontSize: 10, textAlign: "center", marginTop: 8 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end", // Align to bottom
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "70%", // Limit modal height
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  languageOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+  },
+  languageOptionText: {
+    fontSize: 16,
+    marginRight: 10,
+  },
 });

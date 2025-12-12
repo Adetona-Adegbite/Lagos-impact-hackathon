@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
+import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
 const MAIN_GREEN = "#36e27b";
@@ -31,43 +32,6 @@ type StatCard = {
   hint?: string;
 };
 
-const ACTIONS = [
-  {
-    id: "a1",
-    title: "New Sale",
-    subtitle: "Record transaction",
-    icon: "point-of-sale",
-    primary: true,
-  },
-  { id: "a2", title: "Inventory", subtitle: "Manage stock", icon: "inventory" },
-
-  {
-    id: "a3",
-    title: "AI Insights",
-    subtitle: "Smart predictions",
-    icon: "auto-awesome",
-  },
-
-  {
-    id: "a4",
-    title: "All Sales",
-    subtitle: "View sales history",
-    icon: "history",
-  },
-  {
-    id: "a5",
-    title: "AI Credit Score",
-    subtitle: "Loan ready insights",
-    icon: "insights",
-  },
-  {
-    id: "a6",
-    title: "Tax Insights",
-    subtitle: "Quick tax reports",
-    icon: "account-balance",
-  },
-];
-
 export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
   const [shopName, setShopName] = useState("My Shop");
   const [stats, setStats] = useState({
@@ -76,6 +40,47 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
     totalItems: 0,
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
+  const ACTIONS = [
+    {
+      id: "a1",
+      title: t("newSale"),
+      subtitle: t("recordTransaction"),
+      icon: "point-of-sale",
+      primary: true,
+    },
+    {
+      id: "a2",
+      title: t("inventory"),
+      subtitle: t("manageStock"),
+      icon: "inventory",
+    },
+
+    {
+      id: "a3",
+      title: t("aiInsights"),
+      subtitle: t("smartPredictions"),
+      icon: "auto-awesome",
+    },
+
+    {
+      id: "a4",
+      title: t("allSales"),
+      subtitle: t("viewSalesHistory"),
+      icon: "history",
+    },
+    {
+      id: "a5",
+      title: t("aiCreditScore"),
+      subtitle: t("loanReadyInsights"),
+      icon: "insights",
+    },
+    {
+      id: "a6",
+      title: t("taxInsights"),
+      subtitle: t("quickTaxReports"),
+      icon: "account-balance",
+    },
+  ];
 
   const fetchData = useCallback(async () => {
     try {
@@ -101,27 +106,27 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const statCards: StatCard[] = [
     {
       id: "s1",
-      title: "Today's Sales",
+      title: t("todaysSales"),
       value: `₦${stats.todaySales.toLocaleString()}`,
       icon: "payments",
       accent: MAIN_GREEN,
     },
     {
       id: "s2",
-      title: "Low Stock",
-      value: `${stats.lowStock} Items`,
+      title: t("lowStock"),
+      value: `${stats.lowStock} ${t("items")}`,
       icon: "warning",
       accent: "#F97316",
     },
     {
       id: "s3",
-      title: "Total Items",
+      title: t("totalItems"),
       value: `${stats.totalItems}`,
       icon: "inventory",
       accent: "#60A5FA",
@@ -210,7 +215,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
               <View style={styles.avatarDot} />
             </View>
             <View>
-              <Text style={styles.small}>Good Morning,</Text>
+              <Text style={styles.small}>{t("goodMorning")}</Text>
               <Text style={styles.shopName}>{shopName}</Text>
             </View>
           </View>
@@ -230,9 +235,9 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
         >
           {/* Stats scroller */}
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionSmall}>Overview</Text>
+            <Text style={styles.sectionSmall}>{t("overview")}</Text>
             <TouchableOpacity onPress={() => console.log("view reports")}>
-              <Text style={styles.viewReports}>View Reports</Text>
+              <Text style={styles.viewReports}>{t("viewReports")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -248,7 +253,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
 
           {/* Quick actions grid */}
           <View style={styles.actionsHeader}>
-            <Text style={styles.bigTitle}>Quick Actions</Text>
+            <Text style={styles.bigTitle}>{t("quickActions")}</Text>
           </View>
 
           <View style={styles.actionsGrid}>
@@ -299,7 +304,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
 
           {/* Recent Activity */}
           <View style={styles.recentSection}>
-            <Text style={styles.recentTitle}>Recent Sales</Text>
+            <Text style={styles.recentTitle}>{t("recentSales")}</Text>
             <View style={{ height: 10 }} />
             {recentSales.map((r) => (
               <View key={r.id} style={styles.recentItem}>
@@ -313,8 +318,10 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
                   </View>
                   <View>
                     <Text style={styles.recentName}>
-                      {r.title || "Sale"}
-                      {r.itemCount > 1 ? ` + ${r.itemCount - 1} items` : ""}
+                      {r.title || t("sale")}
+                      {r.itemCount > 1
+                        ? t("plusItems").replace("{count}", r.itemCount - 1)
+                        : ""}
                     </Text>
                     <Text style={styles.recentTime}>
                       {new Date(r.createdAt).toLocaleTimeString([], {

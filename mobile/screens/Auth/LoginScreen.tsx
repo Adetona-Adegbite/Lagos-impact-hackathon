@@ -15,46 +15,44 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApi } from "../../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
+import { t, localizationService } from "../../utils/localization";
 
 const MAIN_GREEN = "#36e27b";
 
 const LANGUAGES = [
-  { label: "English", code: "en" },
-  { label: "Hausa", code: "ha" },
-  { label: "Yoruba", code: "yo" },
-  { label: "Igbo", code: "ig" },
-  { label: "Pidgin", code: "pcm" },
+  { label: t("english"), code: "en" },
+  { label: t("hausa"), code: "ha" },
+  { label: t("yoruba"), code: "yo" },
+  { label: t("igbo"), code: "ig" },
+  { label: t("pidgin"), code: "pcm" },
 ];
 
 export default function LoginScreen({ navigation }: { navigation?: any }) {
   const [phone, setPhone] = useState("");
   const [shopName, setShopName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(
+    localizationService.getCurrentLanguage(),
+  );
 
-  useEffect(() => {
-    const loadLang = async () => {
-      const lang = await AsyncStorage.getItem("selectedLanguage");
-      if (lang) setLanguage(lang);
-    };
-    loadLang();
-  }, []);
+  const handleSetLanguage = async (lang: string) => {
+    await localizationService.setLanguage(lang);
+    setLanguage(lang);
+  };
 
   const handleGetCode = async () => {
     if (!phone) {
-      Alert.alert("Required", "Please enter your phone number.");
+      Alert.alert(t("requiredTitle"), t("phoneNumberRequired"));
       return;
     }
     setIsLoading(true);
     try {
       await authApi.requestOtp(phone);
       navigation?.navigate("VerifyOtp", { phone, shopName });
-      await AsyncStorage.setItem("selectedLanguage", language);
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      Alert.alert(t("errorTitle"), error.message);
     } finally {
       setIsLoading(false);
     }
@@ -99,18 +97,13 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
             <View style={styles.brandCircle}>
               <MaterialIcons name="storefront" size={28} color="#122117" />
             </View>
-            <Text style={styles.h1}>
-              Welcome, Oga! <Text style={{ fontSize: 20 }}>👋</Text>
-            </Text>
-            <Text style={styles.h2}>
-              Let's get your shop running. Enter your details to start tracking
-              sales.
-            </Text>
+            <Text style={styles.h1}>{t("welcomeOga")}</Text>
+            <Text style={styles.h2}>{t("loginSubtitle")}</Text>
           </View>
 
           {/* Language Selector */}
           <View style={{ marginBottom: 16 }}>
-            <Text style={styles.label}>Select Language</Text>
+            <Text style={styles.label}>{t("selectLanguage")}</Text>
             <View style={styles.languageRow}>
               {LANGUAGES.map((lang) => (
                 <TouchableOpacity
@@ -119,7 +112,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
                     styles.languageBtn,
                     language === lang.code && { backgroundColor: MAIN_GREEN },
                   ]}
-                  onPress={() => setLanguage(lang.code)}
+                  onPress={() => handleSetLanguage(lang.code)}
                 >
                   <Text
                     style={[
@@ -141,7 +134,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
           <View style={styles.form}>
             {/* Phone */}
             <View style={styles.field}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>{t("phoneNumber")}</Text>
               <View style={styles.inputRow}>
                 <View style={styles.country}>
                   <Text style={styles.flag}>🇳🇬</Text>
@@ -164,9 +157,9 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
             {/* Shop Name */}
             <View style={styles.field}>
               <View style={styles.labelRow}>
-                <Text style={styles.label}>Shop Name</Text>
+                <Text style={styles.label}>{t("shopName")}</Text>
                 <View style={styles.newShopTag}>
-                  <Text style={styles.newShopText}>New Shop?</Text>
+                  <Text style={styles.newShopText}>{t("newShopQuestion")}</Text>
                 </View>
               </View>
               <View style={styles.inputRow}>
@@ -194,7 +187,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
                 <ActivityIndicator color="#062" />
               ) : (
                 <>
-                  <Text style={styles.primaryBtnText}>Get Code</Text>
+                  <Text style={styles.primaryBtnText}>{t("getCode")}</Text>
                   <MaterialIcons name="arrow-forward" size={18} color="#072" />
                 </>
               )}
@@ -204,19 +197,19 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.smallText}>
-              By tapping "Get Code", you agree to our{" "}
+              {t("termsAgreement")}
               <Text
                 style={styles.link}
                 onPress={() => openLink("https://example.com/terms")}
               >
-                Terms
+                {t("terms")}
               </Text>{" "}
               and{" "}
               <Text
                 style={styles.link}
                 onPress={() => openLink("https://example.com/privacy")}
               >
-                Privacy Policy
+                {t("privacyPolicy")}
               </Text>
               .
             </Text>
@@ -235,7 +228,8 @@ const styles = StyleSheet.create({
   ka: { flex: 1 },
   container: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 18,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 20) : 18,
     paddingBottom: 10,
   },
   topBar: {

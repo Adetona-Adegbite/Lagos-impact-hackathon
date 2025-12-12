@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
 const MAIN_GREEN = "#36e27b";
@@ -85,28 +86,28 @@ const SAMPLE_SALES_YESTERDAY: Sale[] = [
 
 export default function SalesScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("Today");
-  const [selectedRange, setSelectedRange] = useState("Today");
+  const [activeFilter, setActiveFilter] = useState(t("today"));
+  const [selectedRange, setSelectedRange] = useState(t("today"));
 
-  const filters = ["Today", "Payment Method", "Status"];
+  const filters = [t("today"), t("paymentMethod"), t("status")];
 
   const todaySales = useMemo(() => {
     const q = query.trim().toLowerCase();
     return SAMPLE_SALES_TODAY.filter(
-      (s) => !q || s.title.toLowerCase().includes(q)
+      (s) => !q || s.title.toLowerCase().includes(q),
     );
   }, [query]);
 
   const yesterdaySales = useMemo(() => {
     const q = query.trim().toLowerCase();
     return SAMPLE_SALES_YESTERDAY.filter(
-      (s) => !q || s.title.toLowerCase().includes(q)
+      (s) => !q || s.title.toLowerCase().includes(q),
     );
   }, [query]);
 
   const totalToday = useMemo(
     () => SAMPLE_SALES_TODAY.reduce((sum, s) => sum + s.amount, 0),
-    []
+    [],
   );
 
   const renderSaleItem = ({ item }: { item: Sale }) => (
@@ -128,8 +129,8 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
                 item.method === "Cash"
                   ? "payments"
                   : item.method === "POS"
-                  ? "point-of-sale"
-                  : "account-balance"
+                    ? "point-of-sale"
+                    : "account-balance"
               }
               size={20}
               color="#fff"
@@ -149,13 +150,19 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
                     item.method === "Cash"
                       ? "payments"
                       : item.method === "POS"
-                      ? "point-of-sale"
-                      : "account-balance"
+                        ? "point-of-sale"
+                        : "account-balance"
                   }
                   size={14}
                   color="#9CA3AF"
                 />
-                <Text style={styles.metaTextSmall}>{item.method}</Text>
+                <Text style={styles.metaTextSmall}>
+                  {
+                    { Cash: t("cash"), POS: t("pos"), Transfer: t("transfer") }[
+                      item.method
+                    ]
+                  }
+                </Text>
               </View>
             </View>
           </View>
@@ -177,7 +184,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
                 item.status === "Paid" ? styles.paidText : styles.pendingText,
               ]}
             >
-              {item.status}
+              {{ Paid: t("paid"), Pending: t("pending") }[item.status]}
             </Text>
           </View>
         </View>
@@ -201,7 +208,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
             >
               <MaterialIcons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Daily Sales</Text>
+            <Text style={styles.headerTitle}>{t("dailySales")}</Text>
             <TouchableOpacity
               style={styles.profileBtn}
               onPress={() => console.log("profile")}
@@ -214,13 +221,11 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
           <TouchableOpacity activeOpacity={0.9} style={styles.assistantCard}>
             <View style={styles.assistantTop}>
               <MaterialIcons name="auto-awesome" size={18} color="#8b5cf6" />
-              <Text style={styles.assistantLabel}>Business Assistant</Text>
+              <Text style={styles.assistantLabel}>
+                {t("businessAssistant")}
+              </Text>
             </View>
-            <Text style={styles.assistantText}>
-              Sales are up 12% today. You're approaching the VAT
-              threshold—current monthly revenue suggests a liability of ₦45k
-              soon.
-            </Text>
+            <Text style={styles.assistantText}>{t("assistantMessage")}</Text>
 
             <ScrollView
               horizontal
@@ -228,34 +233,36 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
               style={styles.assistantChipsRow}
             >
               <View style={styles.chip}>
-                <Text style={styles.chipTitle}>Tax Risk</Text>
+                <Text style={styles.chipTitle}>{t("taxRisk")}</Text>
                 <View style={styles.chipRow}>
                   <View
                     style={[styles.statusDot, { backgroundColor: "#F97316" }]}
                   />
-                  <Text style={styles.chipValue}>Medium</Text>
+                  <Text style={styles.chipValue}>{t("medium")}</Text>
                 </View>
               </View>
 
               <View style={styles.chip}>
-                <Text style={styles.chipTitle}>Est. Taxable Rev</Text>
+                <Text style={styles.chipTitle}>
+                  {t("estimatedTaxableRevenue")}
+                </Text>
                 <Text style={styles.chipValue}>₦ 850k</Text>
               </View>
 
               <View style={styles.chip}>
-                <Text style={styles.chipTitle}>VAT Collected</Text>
+                <Text style={styles.chipTitle}>{t("vatCollected")}</Text>
                 <Text style={styles.chipValue}>₦ 12,500</Text>
               </View>
 
               <View style={styles.chip}>
-                <Text style={styles.chipTitleDanger}>Potential Loss</Text>
+                <Text style={styles.chipTitleDanger}>{t("potentialLoss")}</Text>
                 <View style={styles.chipRow}>
                   <MaterialIcons
                     name="trending-down"
                     size={14}
                     color="#ef4444"
                   />
-                  <Text style={styles.chipValue}>Low Stock</Text>
+                  <Text style={styles.chipValue}>{t("lowStock")}</Text>
                 </View>
               </View>
             </ScrollView>
@@ -263,7 +270,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
 
           {/* Revenue and search */}
           <View style={styles.revenueRow}>
-            <Text style={styles.revenueLabel}>Total Revenue (Today)</Text>
+            <Text style={styles.revenueLabel}>{t("totalRevenueToday")}</Text>
             <Text style={styles.revenueValue}>
               ₦ {totalToday.toLocaleString()}
             </Text>
@@ -277,7 +284,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
               style={{ marginLeft: 12 }}
             />
             <TextInput
-              placeholder="Search receipt or item..."
+              placeholder={t("searchReceiptPlaceholder")}
               placeholderTextColor="#9CA3AF"
               style={styles.searchInput}
               value={query}
@@ -326,7 +333,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
           />
 
           <View style={{ marginTop: 16, marginBottom: 8 }}>
-            <Text style={styles.sectionHeader}>Yesterday</Text>
+            <Text style={styles.sectionHeader}>{t("yesterday")}</Text>
           </View>
 
           <FlatList

@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { productService } from "../../services/productService";
+import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
 const PRIMARY = "#19e680";
@@ -74,7 +75,13 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
   );
 
   const filters = useMemo(
-    () => ["All Items", "Low Stock", "Beverages", "Pantry", "Snacks"],
+    () => [
+      { key: "All Items", label: t("allItems") },
+      { key: "Low Stock", label: t("lowStock") },
+      { key: "Beverages", label: t("beverages") },
+      { key: "Pantry", label: t("pantry") },
+      { key: "Snacks", label: t("snacks") },
+    ],
     [],
   );
 
@@ -163,7 +170,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
               item.lowStock ? styles.qtyTextLow : styles.qtyTextGood,
             ]}
           >
-            {item.qty} Qty
+            {item.qty} {t("quantity")}
           </Text>
         </View>
       </View>
@@ -186,7 +193,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
           >
             <MaterialIcons name="arrow-back" size={26} color="#111" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Inventory</Text>
+          <Text style={styles.headerTitle}>{t("inventory")}</Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -202,7 +209,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
         <View style={styles.searchBox}>
           <MaterialIcons name="search" size={20} color="#9ca3af" />
           <TextInput
-            placeholder="Search products (e.g., Indomie)..."
+            placeholder={t("searchPlaceholder")}
             placeholderTextColor="#9ca3af"
             style={styles.searchInput}
             value={query}
@@ -220,14 +227,14 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
         <FlatList
           horizontal
           data={filters}
-          keyExtractor={(i) => i}
+          keyExtractor={(i) => i.key}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 12 }}
           renderItem={({ item }) => {
-            const active = item === activeFilter;
+            const active = item.key === activeFilter;
             return (
               <TouchableOpacity
-                onPress={() => setActiveFilter(item)}
+                onPress={() => setActiveFilter(item.key)}
                 style={[
                   styles.filterChip,
                   active ? styles.filterChipActive : null,
@@ -240,9 +247,9 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
                     active ? styles.filterTextActive : null,
                   ]}
                 >
-                  {item}
+                  {item.label}
                 </Text>
-                {item === "Low Stock" && (
+                {item.key === "Low Stock" && (
                   <View style={styles.lowCount}>
                     <Text style={styles.lowCountText}>{lowStockCount}</Text>
                   </View>
@@ -267,7 +274,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No products found</Text>
+              <Text style={styles.emptyText}>{t("noProductsFound")}</Text>
             </View>
           }
         />
