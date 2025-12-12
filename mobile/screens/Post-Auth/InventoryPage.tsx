@@ -191,10 +191,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
             <MaterialIcons name="notifications" size={22} color="#111" />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.scanBtn}>
-            <MaterialIcons name="qr-code-scanner" size={22} color="#000" />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -474,7 +470,7 @@ const styles = StyleSheet.create({
 
   fabWrap: {
     position: "absolute",
-    bottom: 96,
+    bottom: 30,
     left: 16,
     right: 16,
     alignItems: "center",
