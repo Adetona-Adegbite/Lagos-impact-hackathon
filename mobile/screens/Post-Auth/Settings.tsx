@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { authStorage } from "../../services/authStorage";
 import { clearDatabase, initDatabase } from "../../services/database";
 
@@ -60,7 +61,8 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
   }, []);
 
   return (
-    <View
+    <SafeAreaView
+      edges={["top"]}
       style={[
         styles.container,
         { backgroundColor: isDarkMode ? "#112117" : "#f6f8f7" },
@@ -74,7 +76,10 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
         ]}
       >
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <MaterialIcons
               name="arrow-back"
               size={24}
@@ -235,7 +240,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -323,7 +328,7 @@ function SettingsSection({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 48, paddingHorizontal: 16, paddingBottom: 16 },
+  header: { paddingHorizontal: 16, paddingVertical: 16 },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   backButton: {
     width: 40,
