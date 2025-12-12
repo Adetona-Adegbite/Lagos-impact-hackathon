@@ -1,0 +1,418 @@
+// src/screens/VerifyOtpScreen.tsx
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  Animated,
+  Alert,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+
+const MAIN_GREEN = "#36e27b";
+const RESEND_COOLDOWN = 30; // seconds
+
+type Props = {
+  route?: { params?: { phone?: string } };
+  navigation?: any;
+  // optional: provide real handlers from parent / context
+  verifyCode?: (code: string) => Promise<boolean>;
+  resendCode?: () => Promise<void>;
+};
+
+export default function VerifyOtpScreen({
+  route,
+  navigation,
+  verifyCode,
+  resendCode,
+}: Props) {
+  const phone = route?.params?.phone ?? "Unknown";
+
+  // OTP state as array of 4 digits (strings)
+  const [digits, setDigits] = useState<string[]>(["", "", "", ""]);
+  const inputsRef = useRef<Array<TextInput | null>>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // resend cooldown
+  const [cooldown, setCooldown] = useState<number>(RESEND_COOLDOWN);
+  const cooldownRef = useRef<number | null>(null);
+
+  // subtle shake animation for errors
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // start cooldown when screen mounts (assume code just sent)
+    startCooldown();
+
+    return () => {
+      if (cooldownRef.current) {
+        clearInterval(cooldownRef.current);
+      }
+    };
+  }, []);
+
+  const startCooldown = () => {
+    setCooldown(RESEND_COOLDOWN);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setCooldown((c) => {
+        if (c <= 1) {
+          if (cooldownRef.current) {
+            clearInterval(cooldownRef.current);
+            cooldownRef.current = null;
+          }
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000) as unknown as number;
+  };
+
+  const focusInput = (idx: number) => {
+    inputsRef.current[idx]?.focus();
+  };
+
+  const onChangeDigit = (text: string, idx: number) => {
+    // accept only digits, allow paste of full code
+    const sanitized = text.replace(/\D/g, "");
+    if (sanitized.length === 0) {
+      // user cleared
+      const copy = [...digits];
+      copy[idx] = "";
+      setDigits(copy);
+      return;
+    }
+
+    // if user pasted full 4-digit code
+    if (sanitized.length > 1) {
+      const arr = sanitized.split("").slice(0, 4);
+      const merged = [...digits];
+      for (let i = 0; i < arr.length; i++) merged[i] = arr[i];
+      setDigits(merged);
+      // focus next empty or last
+      const next = arr.length >= 4 ? 3 : arr.length;
+      focusInput(next);
+      return;
+    }
+
+    // normal single digit entry
+    const copy = [...digits];
+    copy[idx] = sanitized;
+    setDigits(copy);
+
+    if (sanitized && idx < 3) {
+      // move focus to next
+      focusInput(idx + 1);
+    }
+  };
+
+  const onKeyPress = (e: any, idx: number) => {
+    if (e.nativeEvent.key === "Backspace") {
+      if (digits[idx] === "" && idx > 0) {
+        focusInput(idx - 1);
+        const copy = [...digits];
+        copy[idx - 1] = "";
+        setDigits(copy);
+      }
+    }
+  };
+
+  const runShake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, {
+        toValue: 8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const getCode = () => digits.join("");
+
+  const handleVerify = async () => {
+    setError(null);
+    const code = getCode();
+    if (code.length < 4) {
+      setError("Enter the 4-digit code sent to your phone.");
+      runShake();
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      // if verifyCode prop provided, use it; otherwise use dummy logic
+      let ok = false;
+      if (verifyCode) {
+        ok = await verifyCode(code);
+      } else {
+        // fake verification: accept 1234 for demo
+        await new Promise((r) => setTimeout(r, 700));
+        ok = code === "1234";
+      }
+
+      if (ok) {
+        setError(null);
+        // navigate to next screen (replace with your route)
+        navigation?.navigate?.("HomeScreen") ??
+          Alert.alert("Verified", "OTP verified — continue.");
+      } else {
+        setError("Wrong code. Please try again.");
+        runShake();
+      }
+    } catch (e) {
+      setError("Verification failed. Try again.");
+      runShake();
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (cooldown > 0) return;
+    setError(null);
+    try {
+      if (resendCode) {
+        await resendCode();
+      } else {
+        // fake resend delay
+        await new Promise((r) => setTimeout(r, 700));
+      }
+      startCooldown();
+    } catch (e) {
+      setError("Could not resend. Try again later.");
+    }
+  };
+
+  const clearAll = () => {
+    setDigits(["", "", "", ""]);
+    focusInput(0);
+    setError(null);
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.wrap}
+      >
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.back}
+              onPress={() => navigation?.goBack?.()}
+            >
+              <MaterialIcons name="arrow-back" size={20} color="#111" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Verify Code</Text>
+            <View style={{ width: 42 }} />
+          </View>
+
+          {/* Info */}
+          <Text style={styles.info}>
+            Enter the 4-digit code sent to{" "}
+            <Text style={{ fontWeight: "800" }}>{phone}</Text>
+          </Text>
+
+          {/* OTP inputs */}
+          <Animated.View
+            style={[
+              styles.otpRow,
+              {
+                transform: [{ translateX: shakeAnim }],
+              },
+            ]}
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <TextInput
+                key={`otp-${i}`}
+                // @ts-ignore
+                ref={(r) => (inputsRef.current[i] = r)}
+                value={digits[i]}
+                onChangeText={(t) => onChangeDigit(t, i)}
+                onKeyPress={(e) => onKeyPress(e, i)}
+                keyboardType="number-pad"
+                maxLength={4} // we handle paste separately; allow longer for paste
+                returnKeyType="done"
+                textContentType="oneTimeCode"
+                style={[styles.otpInput, error ? styles.otpInputError : null]}
+                accessible
+                accessibilityLabel={`OTP digit ${i + 1}`}
+                selectionColor={MAIN_GREEN}
+                onFocus={() => {
+                  // clear selection if there is a single char so typing replaces it
+                  /* no-op */
+                }}
+              />
+            ))}
+          </Animated.View>
+
+          {/* helper and error */}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          {/* actions */}
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.verifyBtn, isVerifying && { opacity: 0.7 }]}
+              onPress={handleVerify}
+              activeOpacity={0.85}
+              disabled={isVerifying}
+            >
+              <Text style={styles.verifyBtnText}>
+                {isVerifying ? "Verifying..." : "Verify"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.rowBetween}>
+              <TouchableOpacity
+                onPress={clearAll}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.linkText}>Clear</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleResend}
+                disabled={cooldown > 0}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text
+                  style={[
+                    styles.linkText,
+                    cooldown > 0 ? { color: "#9AA0A6" } : null,
+                  ]}
+                >
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* small helper text */}
+          <Text style={styles.small}>
+            Didn't receive the code? Check your messages or tap "Resend code".
+            For security, codes expire quickly.
+          </Text>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+/* Styles */
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#122117" },
+  wrap: { flex: 1 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 18,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  },
+  back: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: "#29372e",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
+
+  info: { fontSize: 14, color: "#6B7280", marginBottom: 24 },
+
+  otpRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    marginHorizontal: 10,
+  },
+  otpInput: {
+    width: 62,
+    height: 62,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#E6E9E8",
+    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  otpInputError: {
+    borderColor: "#F87171",
+    shadowColor: "#F87171",
+    shadowOpacity: 0.12,
+  },
+
+  errorText: {
+    color: "#B91C1C",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 6,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+
+  actions: { paddingTop: 12, paddingHorizontal: 6 },
+  verifyBtn: {
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: MAIN_GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    shadowColor: MAIN_GREEN,
+    shadowOpacity: 0.18,
+    elevation: 4,
+  },
+  verifyBtnText: { color: "#062", fontWeight: "800", fontSize: 16 },
+
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  linkText: { color: MAIN_GREEN, fontWeight: "700" },
+
+  small: { marginTop: 18, color: "#6B7280", fontSize: 13, textAlign: "center" },
+});
