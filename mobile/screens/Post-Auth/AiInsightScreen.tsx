@@ -240,7 +240,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
         </View>
 
         {/* Profit / Deductions grid */}
-        <View style={styles.metricsGrid}>
+        {/* <View style={styles.metricsGrid}>
           <View style={styles.largeCard}>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
@@ -309,11 +309,11 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
               <View style={{ flex: 1, justifyContent: "center" }}>
                 {/* <Text style={styles.smallNoteMuted}>
                  */}
-                <Text>Valid business expense.</Text>
+        {/* <Text>Valid business expense.</Text>
               </View>
             </View>
           </View>
-        </View>
+        </View> */}
 
         {/* Sales Overview */}
         <View style={styles.salesOverview}>
@@ -321,7 +321,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
-              <MaterialIcons name="bar-chart" size={18} color="#111" />
+              <MaterialIcons name="bar-chart" size={18} color="#fff" />
               <Text style={styles.cardTitleSmall}>Sales Overview</Text>
             </View>
             <Text style={styles.largeStat}>₦ 154,200</Text>
@@ -361,7 +361,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f6f8f7" },
+  safe: { flex: 1, backgroundColor: "#122117" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   welcomeText: { fontSize: 12, color: "#9eb7a8" },
-  userName: { fontSize: 16, fontWeight: "800", color: "#111" },
+  userName: { fontSize: 16, fontWeight: "800", color: "#fff" },
   scanButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -393,13 +393,13 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
 
   titleContainer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
-  pageTitle: { fontSize: 22, fontWeight: "900", color: "#111" },
-  pageSubtitle: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  pageTitle: { fontSize: 22, fontWeight: "900", color: "#fff" },
+  pageSubtitle: { fontSize: 13, color: "#fff", marginTop: 4 },
 
   rangeWrap: { paddingHorizontal: 16, marginBottom: 12 },
   rangePills: {
     flexDirection: "row",
-    backgroundColor: "#e9eef0",
+    backgroundColor: "#1a2c23",
     borderRadius: 12,
     padding: 4,
     width: "48%",
@@ -411,34 +411,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rangePillActive: {
-    backgroundColor: "#fff",
-    shadowColor: "#000",
+    backgroundColor: "#122117",
+    shadowColor: "#fff",
     elevation: 2,
   },
-  rangeText: { color: "#6b7280", fontWeight: "700" },
-  rangeTextActive: { color: "#111" },
+  rangeText: { color: "#fff", fontWeight: "700" },
+  rangeTextActive: { color: "#fff" },
 
   searchRow: {
     marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     borderRadius: 999,
     height: 44,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#eef2f4",
+    // borderWidth: 1,
   },
-  searchInput: { flex: 1, marginLeft: 8, color: "#111" },
+  searchInput: { flex: 1, marginLeft: 8, color: "#fff" },
 
   taxCard: {
     margin: 16,
     borderRadius: 14,
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     padding: 14,
     borderWidth: 1,
     borderColor: "#eef2f4",
-    shadowColor: "#000",
+    shadowColor: "#fff",
     shadowOpacity: 0.03,
     elevation: 2,
   },
@@ -456,7 +455,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  taxLabel: { fontWeight: "800", fontSize: 15, color: "#111" },
+  taxLabel: { fontWeight: "800", fontSize: 15, color: "#fff" },
   tagHealthy: {
     backgroundColor: "#ecfdf5",
     paddingHorizontal: 8,
@@ -467,7 +466,7 @@ const styles = StyleSheet.create({
 
   taxBody: { marginTop: 12 },
   taxScoreRow: { flexDirection: "row", alignItems: "baseline" },
-  taxScore: { fontSize: 36, fontWeight: "900", color: "#111" },
+  taxScore: { fontSize: 36, fontWeight: "900", color: "#fff" },
   taxMax: { marginLeft: 8, color: "#6b7280", fontWeight: "700" },
   progressTrack: {
     height: 10,
@@ -490,14 +489,14 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 12,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     padding: 12,
     borderWidth: 1,
     borderColor: "#eef2f4",
   },
   metricRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   metricTitle: { fontWeight: "700", fontSize: 13 },
-  metricValue: { fontSize: 16, fontWeight: "900", marginTop: 8, color: "#111" },
+  metricValue: { fontSize: 16, fontWeight: "900", marginTop: 8, color: "#fff" },
   metricFooter: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   metricFooterText: { color: WARNING, fontSize: 12, marginLeft: 6 },
   metricFooterRight: { flexDirection: "row", justifyContent: "space-between" },
@@ -552,7 +551,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 10, fontWeight: "900", color: "#111" },
+  avatarText: { fontSize: 10, fontWeight: "900", color: "#fff" },
 
   reviewBtn: {
     marginTop: 12,
@@ -567,7 +566,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 12,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     padding: 12,
     borderWidth: 1,
     borderColor: "#eef2f4",
@@ -580,8 +579,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitleSmall: { fontWeight: "800", color: "#111" },
-  largeStat: { fontSize: 18, fontWeight: "900", color: "#111" },
+  cardTitleSmall: { fontWeight: "800", color: "#fff" },
+  largeStat: { fontSize: 18, fontWeight: "900", color: "#fff" },
   smallStat: { fontSize: 12, color: "#059669", fontWeight: "700" },
 
   sparkBars: {
@@ -613,7 +612,7 @@ const styles = StyleSheet.create({
   salesOverview: {
     margin: 16,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     padding: 12,
     borderWidth: 1,
     borderColor: "#eef2f4",
