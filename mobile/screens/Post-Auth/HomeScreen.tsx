@@ -62,13 +62,15 @@ const ACTIONS = [
     primary: true,
   },
   { id: "a2", title: "Inventory", subtitle: "Manage stock", icon: "inventory" },
-  { id: "a3", title: "History", subtitle: "View past sales", icon: "history" },
+
   {
-    id: "a4",
+    id: "a3",
     title: "AI Insights",
     subtitle: "Smart predictions",
     icon: "auto-awesome",
   },
+
+    { id: "a4", title: "App Settings", subtitle: "View app settings", icon: "history" },
 ];
 
 const RECENT = [
@@ -82,7 +84,15 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
     if (id == "a1") {
       navigation?.navigate("SalesScreen");
     }
-
+    else if (id == "a2") {
+      navigation?.navigate("InventoryScreen");
+    }
+    else if (id == "a3") {
+      navigation?.navigate("AIInsightsScreen");
+    }
+        else if (id == "a4") {
+      navigation?.navigate("SettingsScreen");
+    }
     // navigation?.navigate(...) etc.
   };
 
