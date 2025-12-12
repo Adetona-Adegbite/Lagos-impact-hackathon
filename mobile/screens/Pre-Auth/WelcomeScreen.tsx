@@ -1,5 +1,5 @@
 // src/screens/OnboardingScreen.tsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,10 +15,12 @@ import {
   Pressable,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { localizationService, t } from "../../utils/localization";
 
 const { width, height } = Dimensions.get("window");
 const MAIN_GREEN = "#36e27b"; // matches your tailwind primary
-const SAFE_TOP = Platform.OS === "android" ? StatusBar.currentHeight ?? 24 : 44;
+const SAFE_TOP =
+  Platform.OS === "android" ? (StatusBar.currentHeight ?? 24) : 44;
 const IMAGE_MAX = Math.min(width * 0.86, 420);
 
 type Slide = {
@@ -66,7 +68,29 @@ const slides: Slide[] = [
 ];
 
 export default function OnboardingScreen({ navigation }: { navigation?: any }) {
+  const [language, setLanguage] = useState(
+    localizationService.getCurrentLanguage(),
+  );
+  const [languageSelected, setLanguageSelected] = useState(false);
   const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const init = async () => {
+      await localizationService.initialize();
+      const savedLanguage = await localizationService.getLanguage();
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+        setLanguageSelected(true);
+      }
+    };
+    init();
+  }, []);
+
+  const handleSetLanguage = async (lang: string) => {
+    await localizationService.setLanguage(lang);
+    setLanguage(lang);
+    setLanguageSelected(true);
+  };
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatRef = useRef<FlatList<any> | null>(null);
 
@@ -74,7 +98,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
     {
       useNativeDriver: false,
-    }
+    },
   );
 
   const onMomentum = (e: any) => {
@@ -109,6 +133,38 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
       outputRange: ["#CFCFCF", MAIN_GREEN, "#CFCFCF"],
       extrapolate: "clamp",
     });
+    if (!languageSelected) {
+      return (
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <StatusBar
+            barStyle="dark-content"
+            translucent
+            backgroundColor="transparent"
+          />
+          <View style={{ paddingHorizontal: 20 }}>
+            <Text style={styles.titleText}>{t("welcome")}</Text>
+            <Text style={[styles.subtitleText, { marginBottom: 30 }]}>
+              {t("selectLanguage")}
+            </Text>
+            <TouchableOpacity
+              style={[styles.primaryFullBtn, { marginBottom: 15 }]}
+              onPress={() => handleSetLanguage("en")}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.primaryFullBtnText}>{t("english")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.primaryFullBtn}
+              onPress={() => handleSetLanguage("pcm")}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.primaryFullBtnText}>{t("pidgin")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <Animated.View
         key={`dot-${i}`}
@@ -324,7 +380,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
               onPress={goNext}
               activeOpacity={0.85}
             >
-              <Text style={styles.fullBtnText}>Next</Text>
+              <Text style={styles.fullBtnText}>{t("continue")}</Text>
               <MaterialIcons
                 name="arrow-forward"
                 size={18}
@@ -357,9 +413,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
               onPress={goNext}
               activeOpacity={0.9}
             >
-              <Text style={styles.primaryFullBtnText}>
-                {slides[index].buttonLabel ?? "Get Started"}
-              </Text>
+              <Text style={styles.primaryFullBtnText}>{t("continue")}</Text>
             </TouchableOpacity>
           </View>
         )}

@@ -7,7 +7,6 @@ import Constants from "expo-constants";
 const hostUri = Constants.expoConfig?.hostUri;
 const ipAddress = hostUri?.split(":")[0];
 
-console.log({ ipAddress });
 const DEV_API_URL = ipAddress
   ? `http://${ipAddress}:3000`
   : Platform.select({
