@@ -48,3 +48,21 @@ export const getLowStock = async (
     next(error);
   }
 };
+
+export const setQuantity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId, quantity } = req.body;
+    // Note: We'll need to create `setInventoryQuantity` in the service
+    const result = await inventoryService.setInventoryQuantity(
+      productId,
+      quantity,
+    );
+    sendSuccess(res, result, "Inventory quantity set successfully");
+  } catch (error) {
+    next(error);
+  }
+};

@@ -116,3 +116,48 @@ export const getLowStock = async (userId: string, threshold: number = 10) => {
 
   return lowStockItems;
 };
+
+export const setInventoryQuantity = async (
+  productId: string,
+  quantity: number,
+) => {
+  const inventory = await prisma.inventory.findUnique({
+    where: { productId },
+  });
+
+  if (!inventory) {
+    // If for some reason inventory record doesn't exist, create it
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) {
+      throw { statusCode: 404, message: "Product not found" };
+    }
+
+    return prisma.inventory.create({
+      data: {
+        productId,
+        quantity,
+      },
+      include: { product: true },
+    });
+  }
+
+  const updatedInventory = await prisma.inventory.update({
+    where: { productId },
+    data: {
+      quantity: quantity,
+    },
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          barcode: true,
+        },
+      },
+    },
+  });
+
+  return updatedInventory;
+};

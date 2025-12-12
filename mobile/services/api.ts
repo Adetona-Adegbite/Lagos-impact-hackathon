@@ -81,3 +81,14 @@ export const salesApi = {
     });
   },
 };
+
+export const inventoryApi = {
+  update: (data: { productId: string; quantity: number }, token: string) => {
+    // This endpoint should set the quantity for a product, not increment it.
+    return request<any>("/api/v1/inventory/set-quantity", {
+      method: "POST",
+      data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};

@@ -179,7 +179,7 @@ export default function VerifyOtpScreen({
         const response = await authApi.verifyOtp(phone, code, shopName);
         await authStorage.saveAuthData(response.token, response.user);
         // Trigger initial sync (fire and forget)
-        SyncService.syncAll().catch((e) =>
+        SyncService.syncProductsDown().catch((e) =>
           console.log("Initial sync warning:", e),
         );
       }

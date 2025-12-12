@@ -26,6 +26,16 @@ const lowStockSchema = z.object({
   }),
 });
 
+const setQuantitySchema = z.object({
+  body: z.object({
+    productId: z.string().cuid("Invalid Product ID"),
+    quantity: z
+      .number()
+      .int()
+      .nonnegative("Quantity must be a non-negative integer"),
+  }),
+});
+
 router.use(authenticate);
 
 /**
@@ -57,6 +67,40 @@ router.use(authenticate);
  *         description: Product not found
  */
 router.post("/restock", validate(restockSchema), inventoryController.restock);
+
+/**
+ * @swagger
+ * /inventory/set-quantity:
+ *   post:
+ *     summary: Set inventory quantity for a product
+ *     tags: [Inventory]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - quantity
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               quantity:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Inventory quantity set successfully
+ *       404:
+ *         description: Product not found
+ */
+router.post(
+  "/set-quantity",
+  validate(setQuantitySchema),
+  inventoryController.setQuantity,
+);
 
 /**
  * @swagger
