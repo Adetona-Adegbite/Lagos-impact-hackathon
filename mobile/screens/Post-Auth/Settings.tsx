@@ -29,6 +29,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
         style: "destructive",
         onPress: async () => {
           try {
+            await authStorage.clearAuthData();
             await clearDatabase();
             await initDatabase();
             // Try to reset the root navigator (Settings -> HomeStack -> Tabs -> RootStack)
