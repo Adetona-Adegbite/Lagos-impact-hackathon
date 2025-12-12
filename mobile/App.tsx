@@ -16,6 +16,7 @@ import AIInsightsScreen from "./screens/Post-Auth/AiInsightScreen";
 import TopSellersScreen from "./screens/Post-Auth/TopMovers";
 import SlowMovingProducts from "./screens/Post-Auth/RestockAlert";
 import SettingsScreen from "./screens/Post-Auth/Settings";
+import { MaterialIcons } from "@expo/vector-icons";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,7 +31,6 @@ const HomeScreens = () => {
       <Stack.Screen name="TopSellers" component={TopSellersScreen} />
       <Stack.Screen name="SlowMovingProducts" component={SlowMovingProducts} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
-
     </Stack.Navigator>
   );
 };
@@ -38,11 +38,24 @@ const HomeScreens = () => {
 const Tabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: { backgroundColor: "#122117" },
         tabBarActiveTintColor: "#36e27b",
-      }}
+        tabBarIcon: ({ color, size }) => {
+          let iconName: keyof typeof MaterialIcons.glyphMap = "home";
+
+          if (route.name === "Home") {
+            iconName = "home";
+          } else if (route.name === "Report") {
+            iconName = "bar-chart";
+          } else if (route.name === "Profile") {
+            iconName = "person";
+          }
+
+          return <MaterialIcons name={iconName} size={size} color={color} />;
+        },
+      })}
     >
       <Tab.Screen name="Home" component={HomeScreens} />
       <Tab.Screen name="Report" component={RetailHomeScreen} />

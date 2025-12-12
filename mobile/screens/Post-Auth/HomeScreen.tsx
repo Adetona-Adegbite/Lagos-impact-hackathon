@@ -1,5 +1,8 @@
 // src/screens/RetailHomeScreen.tsx
-import React from "react";
+import React, { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { productService } from "../../services/productService";
+import { authStorage } from "../../services/authStorage";
 import {
   SafeAreaView,
   View,
@@ -28,31 +31,6 @@ type StatCard = {
   hint?: string;
 };
 
-const STAT_CARDS: StatCard[] = [
-  {
-    id: "s1",
-    title: "Today's Sales",
-    value: "₦45,000",
-    icon: "payments",
-    accent: MAIN_GREEN,
-    hint: "+12%",
-  },
-  {
-    id: "s2",
-    title: "Low Stock",
-    value: "12 Items",
-    icon: "warning",
-    accent: "#F97316",
-  },
-  {
-    id: "s3",
-    title: "Total Items",
-    value: "450",
-    icon: "inventory",
-    accent: "#60A5FA",
-  },
-];
-
 const ACTIONS = [
   {
     id: "a1",
@@ -70,27 +48,83 @@ const ACTIONS = [
     icon: "auto-awesome",
   },
 
-    { id: "a4", title: "App Settings", subtitle: "View app settings", icon: "history" },
-];
-
-const RECENT = [
-  { id: "r1", title: "Indomie Carton x2", time: "Just now", amount: "₦12,500" },
-  { id: "r2", title: "Detergent Pack", time: "15 mins ago", amount: "₦4,200" },
+  {
+    id: "a4",
+    title: "App Settings",
+    subtitle: "View app settings",
+    icon: "history",
+  },
 ];
 
 export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
+  const [shopName, setShopName] = useState("My Shop");
+  const [stats, setStats] = useState({
+    todaySales: 0,
+    lowStock: 0,
+    totalItems: 0,
+  });
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const authData = await authStorage.getAuthData();
+      if (authData?.user?.shopName) {
+        setShopName(authData.user.shopName);
+      }
+
+      const dashboardStats = await productService.getDashboardStats();
+      setStats({
+        todaySales: dashboardStats.todaySales,
+        lowStock: dashboardStats.lowStockCount,
+        totalItems: dashboardStats.totalItemsCount,
+      });
+
+      const recent = await productService.getRecentSales();
+      setRecentSales(recent);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData]),
+  );
+
+  const statCards: StatCard[] = [
+    {
+      id: "s1",
+      title: "Today's Sales",
+      value: `₦${stats.todaySales.toLocaleString()}`,
+      icon: "payments",
+      accent: MAIN_GREEN,
+    },
+    {
+      id: "s2",
+      title: "Low Stock",
+      value: `${stats.lowStock} Items`,
+      icon: "warning",
+      accent: "#F97316",
+    },
+    {
+      id: "s3",
+      title: "Total Items",
+      value: `${stats.totalItems}`,
+      icon: "inventory",
+      accent: "#60A5FA",
+    },
+  ];
+
   const onActionPress = (id: string) => {
     // console.log("action", id);
     if (id == "a1") {
       navigation?.navigate("SalesScreen");
-    }
-    else if (id == "a2") {
+    } else if (id == "a2") {
       navigation?.navigate("InventoryScreen");
-    }
-    else if (id == "a3") {
+    } else if (id == "a3") {
       navigation?.navigate("AIInsightsScreen");
-    }
-        else if (id == "a4") {
+    } else if (id == "a4") {
       navigation?.navigate("SettingsScreen");
     }
     // navigation?.navigate(...) etc.
@@ -161,7 +195,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
             </View>
             <View>
               <Text style={styles.small}>Good Morning,</Text>
-              <Text style={styles.shopName}>Chinedu's Shop</Text>
+              <Text style={styles.shopName}>{shopName}</Text>
             </View>
           </View>
 
@@ -188,7 +222,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
 
           <FlatList
             horizontal
-            data={STAT_CARDS}
+            data={statCards}
             keyExtractor={(i) => i.id}
             renderItem={renderStat}
             showsHorizontalScrollIndicator={false}
@@ -251,7 +285,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
           <View style={styles.recentSection}>
             <Text style={styles.recentTitle}>Recent Sales</Text>
             <View style={{ height: 10 }} />
-            {RECENT.map((r) => (
+            {recentSales.map((r) => (
               <View key={r.id} style={styles.recentItem}>
                 <View style={styles.recentLeft}>
                   <View style={styles.recentIcon}>
@@ -262,11 +296,21 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
                     />
                   </View>
                   <View>
-                    <Text style={styles.recentName}>{r.title}</Text>
-                    <Text style={styles.recentTime}>{r.time}</Text>
+                    <Text style={styles.recentName}>
+                      {r.title || "Sale"}
+                      {r.itemCount > 1 ? ` + ${r.itemCount - 1} items` : ""}
+                    </Text>
+                    <Text style={styles.recentTime}>
+                      {new Date(r.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.recentAmount}>{`+ ${r.amount}`}</Text>
+                <Text
+                  style={styles.recentAmount}
+                >{`+ ₦${r.totalAmount.toLocaleString()}`}</Text>
               </View>
             ))}
           </View>

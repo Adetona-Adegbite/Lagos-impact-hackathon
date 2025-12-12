@@ -286,29 +286,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
           <MaterialIcons name="add" size={30} color="#000" />
         </TouchableOpacity>
       </View>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="home" size={24} color={PRIMARY} />
-          <Text style={[styles.tabLabel, { color: PRIMARY }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="inventory" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Inventory</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="point-of-sale" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Sales</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="insights" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Insights</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -513,21 +490,4 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-
-  bottomNav: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 72,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#e6e9e8",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingBottom: Platform.OS === "ios" ? 18 : 8,
-  },
-  tab: { alignItems: "center" },
-  tabLabel: { fontSize: 10, color: "#6b7280", fontWeight: "700", marginTop: 2 },
 });
