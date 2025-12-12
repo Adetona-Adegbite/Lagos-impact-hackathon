@@ -50,9 +50,21 @@ const ACTIONS = [
 
   {
     id: "a4",
-    title: "App Settings",
-    subtitle: "View app settings",
+    title: "All Sales",
+    subtitle: "View sales history",
     icon: "history",
+  },
+  {
+    id: "a5",
+    title: "AI Credit Score",
+    subtitle: "Loan ready insights",
+    icon: "insights",
+  },
+  {
+    id: "a6",
+    title: "Tax Insights",
+    subtitle: "Quick tax reports",
+    icon: "account-balance",
   },
 ];
 
@@ -89,7 +101,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [fetchData]),
+    }, [fetchData])
   );
 
   const statCards: StatCard[] = [
@@ -125,7 +137,11 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
     } else if (id == "a3") {
       navigation?.navigate("AIInsightsScreen");
     } else if (id == "a4") {
-      navigation?.navigate("SettingsScreen");
+      navigation?.navigate("AllSalesScreen");
+    } else if (id == "a5") {
+      navigation?.navigate("CreditProfileScreen");
+    } else if (id == "a6") {
+      navigation?.navigate("TaxInsightsScreen");
     }
     // navigation?.navigate(...) etc.
   };
