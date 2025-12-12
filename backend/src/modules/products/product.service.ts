@@ -8,9 +8,15 @@ export const createProduct = async (data: {
   category: string;
   sellingPrice: number;
   purchasePrice: number;
+  userId: string;
 }) => {
   const existingProduct = await prisma.product.findUnique({
-    where: { barcode: data.barcode },
+    where: {
+      barcode_userId: {
+        barcode: data.barcode,
+        userId: data.userId,
+      },
+    },
   });
 
   if (existingProduct) {
@@ -30,6 +36,7 @@ export const createProduct = async (data: {
         category: data.category,
         sellingPrice: data.sellingPrice,
         purchasePrice: data.purchasePrice,
+        userId: data.userId,
       },
     });
 
@@ -47,21 +54,25 @@ export const createProduct = async (data: {
 };
 
 export const getProducts = async (
+  userId: string,
   page: number = 1,
   limit: number = 20,
   search?: string,
 ) => {
   const skip = (page - 1) * limit;
 
-  const where: Prisma.ProductWhereInput = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { barcode: { contains: search } },
-          { category: { contains: search, mode: "insensitive" } },
-        ],
-      }
-    : {};
+  const where: Prisma.ProductWhereInput = {
+    userId,
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { barcode: { contains: search } },
+            { category: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({

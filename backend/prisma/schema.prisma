@@ -8,10 +8,11 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  phoneNumber String   @unique
+  id          String    @id @default(cuid())
+  phoneNumber String    @unique
   shopName    String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  products    Product[]
 }
 
 model Otp {
@@ -25,13 +26,17 @@ model Otp {
 model Product {
   id            String     @id @default(cuid())
   name          String
-  barcode       String     @unique
+  barcode       String
   category      String
   sellingPrice  Float
   purchasePrice Float
   createdAt     DateTime   @default(now())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
   inventory     Inventory?
   saleItems     SaleItem[]
+
+  @@unique([barcode, userId])
 }
 
 model Inventory {

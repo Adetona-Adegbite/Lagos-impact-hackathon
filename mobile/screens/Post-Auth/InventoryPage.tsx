@@ -10,10 +10,10 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
-  SafeAreaView,
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { productService } from "../../services/productService";
@@ -171,7 +171,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={["top"]} style={styles.safe}>
       <StatusBar
         barStyle={Platform.OS === "ios" ? "dark-content" : "dark-content"}
         backgroundColor={BG}
@@ -180,8 +180,11 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="menu" size={26} color="#111" />
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation?.goBack()}
+          >
+            <MaterialIcons name="arrow-back" size={26} color="#111" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Inventory</Text>
         </View>
@@ -190,10 +193,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
           <TouchableOpacity style={styles.iconBtn}>
             <MaterialIcons name="notifications" size={22} color="#111" />
             <View style={styles.notificationDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.scanBtn}>
-            <MaterialIcons name="qr-code-scanner" size={22} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
@@ -286,29 +285,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
           <MaterialIcons name="add" size={30} color="#000" />
         </TouchableOpacity>
       </View>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="home" size={24} color={PRIMARY} />
-          <Text style={[styles.tabLabel, { color: PRIMARY }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="inventory" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Inventory</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="point-of-sale" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Sales</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tab}>
-          <MaterialIcons name="insights" size={24} color="#6b7280" />
-          <Text style={styles.tabLabel}>Insights</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -325,9 +301,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight ?? 16) : 10,
-    paddingBottom: 10,
+    paddingVertical: 10,
     backgroundColor: BG,
     borderBottomWidth: 0.25,
     borderBottomColor: "#e6e9e8",
@@ -497,7 +471,7 @@ const styles = StyleSheet.create({
 
   fabWrap: {
     position: "absolute",
-    bottom: 96,
+    bottom: 30,
     left: 16,
     right: 16,
     alignItems: "center",
@@ -513,21 +487,4 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-
-  bottomNav: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 72,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#e6e9e8",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingBottom: Platform.OS === "ios" ? 18 : 8,
-  },
-  tab: { alignItems: "center" },
-  tabLabel: { fontSize: 10, color: "#6b7280", fontWeight: "700", marginTop: 2 },
 });

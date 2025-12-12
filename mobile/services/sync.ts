@@ -1,12 +1,11 @@
 import { executeSql } from "./database";
-import { productsApi, salesApi } from "./api";
+import { productsApi, inventoryApi, salesApi } from "./api";
 
 // Helper to get token
 const getToken = async (): Promise<string | null> => {
-  const result = await executeSql(
-    "SELECT value FROM settings WHERE key = ?",
-    ["token"],
-  );
+  const result = await executeSql("SELECT value FROM settings WHERE key = ?", [
+    "token",
+  ]);
   if (result.rows.length > 0) {
     return result.rows.item(0).value;
   }
@@ -119,6 +118,50 @@ export const SyncService = {
   },
 
   /**
+   * Push local inventory updates to the server
+   */
+  syncInventoryUp: async () => {
+    const token = await getToken();
+    if (!token) return;
+
+    const result = await executeSql(
+      "SELECT productId, quantity FROM inventory WHERE syncStatus = 'pending'",
+    );
+
+    if (result.rows.length > 0) {
+      console.log(
+        `[Sync] Uploading ${result.rows.length} pending inventory updates...`,
+      );
+    }
+
+    for (let i = 0; i < result.rows.length; i++) {
+      const item = result.rows.item(i);
+      try {
+        // Assuming an API to set the quantity for a product.
+        await inventoryApi.update(
+          {
+            productId: item.productId,
+            quantity: item.quantity,
+          },
+          token,
+        );
+
+        await executeSql(
+          "UPDATE inventory SET syncStatus = 'synced' WHERE productId = ?",
+          [item.productId],
+        );
+      } catch (e) {
+        console.error(
+          "Failed to sync inventory for product",
+          item.productId,
+          e,
+        );
+        // Continue to next item
+      }
+    }
+  },
+
+  /**
    * Download latest products and inventory from server
    */
   syncProductsDown: async () => {
@@ -197,6 +240,7 @@ export const SyncService = {
     try {
       await SyncService.syncProductsUp();
       await SyncService.syncSalesUp();
+      await SyncService.syncInventoryUp();
       await SyncService.syncProductsDown();
       // console.log("Sync completed.");
     } catch (e) {
