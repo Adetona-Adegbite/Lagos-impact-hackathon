@@ -1,6 +1,9 @@
-import prisma from '../../config/db.js';
+import prisma from "../../config/db.js";
 
-export const restockProduct = async (productId: string, quantityToAdd: number) => {
+export const restockProduct = async (
+  productId: string,
+  quantityToAdd: number,
+) => {
   const inventory = await prisma.inventory.findUnique({
     where: { productId },
   });
@@ -8,17 +11,19 @@ export const restockProduct = async (productId: string, quantityToAdd: number) =
   if (!inventory) {
     // If for some reason inventory record doesn't exist (should exist on product creation), create it
     // Check if product exists first
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
     if (!product) {
-        throw { statusCode: 404, message: 'Product not found' };
+      throw { statusCode: 404, message: "Product not found" };
     }
 
     return prisma.inventory.create({
-        data: {
-            productId,
-            quantity: quantityToAdd
-        },
-        include: { product: true }
+      data: {
+        productId,
+        quantity: quantityToAdd,
+      },
+      include: { product: true },
     });
   }
 
@@ -43,11 +48,20 @@ export const restockProduct = async (productId: string, quantityToAdd: number) =
   return updatedInventory;
 };
 
-export const getInventory = async (page: number = 1, limit: number = 20) => {
+export const getInventory = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 20,
+) => {
   const skip = (page - 1) * limit;
+
+  const where = {
+    product: { userId },
+  };
 
   const [inventory, total] = await Promise.all([
     prisma.inventory.findMany({
+      where,
       skip,
       take: limit,
       include: {
@@ -61,9 +75,9 @@ export const getInventory = async (page: number = 1, limit: number = 20) => {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updatedAt: "desc" },
     }),
-    prisma.inventory.count(),
+    prisma.inventory.count({ where }),
   ]);
 
   return {
@@ -77,9 +91,10 @@ export const getInventory = async (page: number = 1, limit: number = 20) => {
   };
 };
 
-export const getLowStock = async (threshold: number = 10) => {
+export const getLowStock = async (userId: string, threshold: number = 10) => {
   const lowStockItems = await prisma.inventory.findMany({
     where: {
+      product: { userId },
       quantity: {
         lte: threshold,
       },
@@ -95,7 +110,7 @@ export const getLowStock = async (threshold: number = 10) => {
       },
     },
     orderBy: {
-      quantity: 'asc',
+      quantity: "asc",
     },
   });
 

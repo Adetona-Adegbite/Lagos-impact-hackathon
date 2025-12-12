@@ -7,13 +7,47 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { authStorage } from "../../services/authStorage";
+import { clearDatabase, initDatabase } from "../../services/database";
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }: { navigation: any }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [shopName, setShopName] = useState("My Shop");
+
+  const handleLogout = () => {
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await clearDatabase();
+            await initDatabase();
+            // Try to reset the root navigator (Settings -> HomeStack -> Tabs -> RootStack)
+            const rootNav = navigation.getParent()?.getParent();
+            if (rootNav) {
+              rootNav.reset({
+                index: 0,
+                routes: [{ name: "WelcomeScreen" }],
+              });
+            } else {
+              navigation.navigate("WelcomeScreen");
+            }
+          } catch (error) {
+            console.error("Logout failed:", error);
+            Alert.alert("Error", "Could not log out");
+          }
+        },
+      },
+    ]);
+  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -180,6 +214,7 @@ export default function SettingsScreen() {
               styles.logoutButton,
               { backgroundColor: isDarkMode ? "#3f2d2d" : "#fee2e2" },
             ]}
+            onPress={handleLogout}
           >
             <MaterialIcons
               name="logout"
