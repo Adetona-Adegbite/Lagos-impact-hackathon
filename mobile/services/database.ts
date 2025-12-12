@@ -1,9 +1,8 @@
 import * as SQLite from "expo-sqlite";
 
 // Open the database (creates it if it doesn't exist)
-// Note: In newer versions of Expo SDK, this might need adaptation if using the 'next' API.
-// This uses the standard legacy API which is stable.
-const db = SQLite.openDatabase("supamart.db");
+// This uses the new synchronous API available in Expo SDK 50+ (expo-sqlite v14+)
+const db = SQLite.openDatabaseSync("supamart.db");
 
 export type SyncStatus = "pending" | "synced" | "failed";
 
@@ -44,15 +43,28 @@ export interface SaleItem {
 }
 
 /**
+ * Polyfill for legacy SQLResultSet interface to maintain compatibility with existing code.
+ * The new expo-sqlite API returns different structures for writes (SQLiteRunResult) and reads (array).
+ */
+export interface SQLResultSet {
+  insertId?: number;
+  rowsAffected: number;
+  rows: {
+    length: number;
+    item: (index: number) => any;
+    _array: any[];
+  };
+}
+
+/**
  * Initialize database tables
  */
-export const initDatabase = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    db.transaction(
-      (tx) => {
-        // Products table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS products (
+export const initDatabase = async (): Promise<void> => {
+  try {
+    await db.withExclusiveTransactionAsync(async (tx) => {
+      // Products table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS products (
             id TEXT PRIMARY KEY NOT NULL,
             name TEXT NOT NULL,
             barcode TEXT UNIQUE NOT NULL,
@@ -64,11 +76,11 @@ export const initDatabase = (): Promise<void> => {
             deleted INTEGER DEFAULT 0,
             syncStatus TEXT DEFAULT 'pending'
           );`,
-        );
+      );
 
-        // Inventory table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS inventory (
+      // Inventory table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS inventory (
             id TEXT PRIMARY KEY NOT NULL,
             productId TEXT UNIQUE NOT NULL,
             quantity INTEGER NOT NULL,
@@ -76,21 +88,21 @@ export const initDatabase = (): Promise<void> => {
             syncStatus TEXT DEFAULT 'pending',
             FOREIGN KEY (productId) REFERENCES products (id)
           );`,
-        );
+      );
 
-        // Sales table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS sales (
+      // Sales table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS sales (
             id TEXT PRIMARY KEY NOT NULL,
             totalAmount REAL NOT NULL,
             createdAt TEXT NOT NULL,
             syncStatus TEXT DEFAULT 'pending'
           );`,
-        );
+      );
 
-        // Sale Items table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS sale_items (
+      // Sale Items table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS sale_items (
             id TEXT PRIMARY KEY NOT NULL,
             saleId TEXT NOT NULL,
             productId TEXT NOT NULL,
@@ -99,70 +111,81 @@ export const initDatabase = (): Promise<void> => {
             FOREIGN KEY (saleId) REFERENCES sales (id),
             FOREIGN KEY (productId) REFERENCES products (id)
           );`,
-        );
+      );
 
-        // Settings table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS settings (
+      // Settings table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY NOT NULL,
             value TEXT NOT NULL
           );`,
-        );
-      },
-      (error) => {
-        console.error("Failed to initialize database:", error);
-        reject(error);
-      },
-      () => {
-        console.log("Database initialized successfully");
-        resolve();
-      },
-    );
-  });
+      );
+    });
+    console.log("Database initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize database:", error);
+    throw error;
+  }
 };
 
 /**
- * Generic execute SQL wrapper for convenience
+ * Generic execute SQL wrapper for convenience.
+ * Mimics the legacy executeSql behavior but uses new expo-sqlite methods.
  */
-export const executeSql = (
+export const executeSql = async (
   sql: string,
   params: (string | number | null)[] = [],
-): Promise<SQLite.SQLResultSet> => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        sql,
-        params,
-        (_, result) => {
-          resolve(result);
+): Promise<SQLResultSet> => {
+  // Simple heuristic to distinguish between reads (SELECT) and writes (INSERT, UPDATE, DELETE)
+  const isSelect = sql.trim().toUpperCase().startsWith("SELECT");
+
+  try {
+    if (isSelect) {
+      // For SELECT statements, use getAllAsync
+      const result = await db.getAllAsync(sql, ...params);
+      return {
+        rowsAffected: 0,
+        rows: {
+          length: result.length,
+          item: (index: number) => result[index],
+          _array: result as any[],
         },
-        (_, error) => {
-          console.error(`Error executing SQL: ${sql}`, error);
-          reject(error);
-          return false; // Stop transaction
+      };
+    } else {
+      // For INSERT, UPDATE, DELETE, use runAsync
+      const result = await db.runAsync(sql, ...params);
+      return {
+        insertId: result.lastInsertRowId,
+        rowsAffected: result.changes,
+        rows: {
+          length: 0,
+          item: (index: number) => null,
+          _array: [],
         },
-      );
-    });
-  });
+      };
+    }
+  } catch (error) {
+    console.error(`Error executing SQL: ${sql}`, error);
+    throw error;
+  }
 };
 
 /**
  * Drop all tables (useful for debugging or logout)
  */
-export const clearDatabase = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    db.transaction(
-      (tx) => {
-        tx.executeSql("DROP TABLE IF EXISTS sale_items;");
-        tx.executeSql("DROP TABLE IF EXISTS sales;");
-        tx.executeSql("DROP TABLE IF EXISTS inventory;");
-        tx.executeSql("DROP TABLE IF EXISTS products;");
-        tx.executeSql("DROP TABLE IF EXISTS settings;");
-      },
-      (error) => reject(error),
-      () => resolve(),
-    );
-  });
+export const clearDatabase = async (): Promise<void> => {
+  try {
+    await db.withExclusiveTransactionAsync(async (tx) => {
+      await tx.runAsync("DROP TABLE IF EXISTS sale_items;");
+      await tx.runAsync("DROP TABLE IF EXISTS sales;");
+      await tx.runAsync("DROP TABLE IF EXISTS inventory;");
+      await tx.runAsync("DROP TABLE IF EXISTS products;");
+      await tx.runAsync("DROP TABLE IF EXISTS settings;");
+    });
+  } catch (error) {
+    console.error("Failed to clear database:", error);
+    throw error;
+  }
 };
 
 export default db;
