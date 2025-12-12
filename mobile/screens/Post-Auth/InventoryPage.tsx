@@ -1,5 +1,5 @@
 // src/screens/InventoryScreen.tsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,16 +12,18 @@ import {
   Dimensions,
   SafeAreaView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { productService } from "../../services/productService";
 
 const { width } = Dimensions.get("window");
 const PRIMARY = "#19e680";
 const BG = "#f6f8f7";
-const CARD_DARK = "#1a2c24";
-const SURFACE = "#112119";
 
-type Product = {
+// UI Product type mapping
+type UIProduct = {
   id: string;
   title: string;
   category: string;
@@ -32,88 +34,85 @@ type Product = {
   highlight?: boolean;
 };
 
-const SAMPLE_PRODUCTS: Product[] = [
-  {
-    id: "p1",
-    title: "Coke 50cl Plastic",
-    category: "Beverages",
-    price: 250,
-    qty: 45,
-    img:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBBAWemNy0XLvNoS3rXvvaBWoyYjcqVWjRlnc6TiA-_hQKasINwjI6cFRjTp-b2MKKid0aScA9Xb7USyLHcxgSIdE-wlvp0M-swfdkDTPj0dqRxkXUAuRVNhpVZx0PmDe_5GqPR_uIwFSnuCK9t_ACVLZC9sVHDI16BTC2mkYzJGqvTF15xCHOC8yn_4Cjr-_iyiAytANej0C4sTKYN6f66kawBbEvFtE2lyPobExxhkkJ-UfprErW2a5icX1cLP9hCT-9pNU63neY",
-  },
-  {
-    id: "p2",
-    title: "Dangote Sugar",
-    category: "Pantry",
-    price: 1200,
-    qty: 3,
-    img:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBklwJtNW8J32uZ-GOXA0j7VDv2yGe1BWe3wFBQnMpFk1qeX-87NVhzML1RUVEcD-nOVf1XTFZQDzazSsZFMOqOfYzVRdeIAx_Td5mPyueJOkDyec9_TBwWGYWoJiCLBRvvXsUayTAKQl1LvqEkCAAfabV3TR1ry-7gCi-AmASiQMH1H3bd9Lx2cEExUiTMC01NUH-9WIiDKE6o__67_QkFr9fW0_O1p0N-IKhOyrMzSne6Ep4a9QsFi_X6T9lkmOcGql8l8DGSPhY",
-    lowStock: true,
-  },
-  {
-    id: "p3",
-    title: "Lays Classic Chips",
-    category: "Snacks",
-    price: 1500,
-    qty: 12,
-    img:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDKAcIvNiEXVYabsq0YX1QoaD4PTvtO0UbEqRhTbWzY76oCUnK1tiHwwbuQL_qrIN_z1KuAgobM6XW1hG4PSxD7Aizy1XFcCXmqxNIBZa0ohN6Fsee0UkP5LW0yauQHz2ToXpRkM_YC4-u8U-VbX92c7lHlUA6ADgwGN7C-ANWtkrDrHP8cimG1g4l0K_NY_Hm9zJusaZiyjAd2A0W7QoAQefhcH3KhIijFI1t6Xt3VjrqUYdmQuxtxp5E5TfO6P8XOSu_qMGtsP4E",
-  },
-  {
-    id: "p4",
-    title: "Peak Milk Powder",
-    category: "Pantry",
-    price: 4000,
-    qty: 28,
-  },
-  {
-    id: "p5",
-    title: "Lux Soap",
-    category: "Toiletries",
-    price: 450,
-    qty: 1,
-    lowStock: true,
-  },
-  {
-    id: "p6",
-    title: "Indomie Chicken",
-    category: "Pantry",
-    price: 200,
-    qty: 120,
-    img:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCfP3J8_NXGW4VMymlO56qEvNTHPXkF8GSFw3Ni1w4GS3nTnDs2R8i0T-LTkyNT4ocPugrxkKmIqWMLWIqGymJHGWJ06lnsFPrMUxPm2X3C05gHzcP-qEq0NDnpXOJpmn_vvYT-OQ-M4iDmcYR4R46d-E6NVSd46UNuonIPLtkbg-iTFIjP03G4qTd4gUQM-Zgvr4dstTjUQNsnaZSWZ0FVskg0ql1fZZy6bYnWYf-19un1gaqZvLQh7Ux_O100JffB8gF5VvplSmA",
-  },
-];
-
-export default function InventoryScreen() {
+export default function InventoryScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All Items");
+  const [products, setProducts] = useState<UIProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from local database
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const dbProducts = await productService.getAllProducts();
+
+      const mappedProducts: UIProduct[] = dbProducts.map((p) => ({
+        id: p.id,
+        title: p.name,
+        category: p.category,
+        price: p.sellingPrice,
+        qty: p.quantity || 0,
+        // Determine low stock threshold (e.g. <= 3)
+        lowStock: (p.quantity || 0) <= 3,
+        // No image support in DB yet
+        img: undefined,
+      }));
+
+      setProducts(mappedProducts);
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Reload data when screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, [fetchProducts]),
+  );
 
   const filters = useMemo(
     () => ["All Items", "Low Stock", "Beverages", "Pantry", "Snacks"],
-    []
+    [],
   );
+
+  const lowStockCount = useMemo(() => {
+    return products.filter((p) => p.lowStock || p.qty <= 3).length;
+  }, [products]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return SAMPLE_PRODUCTS.filter((p) => {
+    return products.filter((p) => {
+      // Filter logic
       if (activeFilter === "Low Stock") return p.lowStock || p.qty <= 3;
+
       if (activeFilter !== "All Items") {
-        if (activeFilter === "Beverages") return p.category === "Beverages";
-        if (activeFilter === "Pantry") return p.category === "Pantry";
-        if (activeFilter === "Snacks") return p.category === "Snacks";
+        // Simple exact match for now, could be improved
+        if (activeFilter === "Beverages" && p.category !== "Beverages")
+          return false;
+        if (activeFilter === "Pantry" && p.category !== "Pantry") return false;
+        if (activeFilter === "Snacks" && p.category !== "Snacks") return false;
+        // If we want to strictly filter by these categories only when selected:
+        if (
+          !["Beverages", "Pantry", "Snacks"].includes(activeFilter) &&
+          activeFilter !== "All Items"
+        ) {
+          return p.category === activeFilter;
+        }
       }
+
+      // Search logic
       if (!q) return true;
       return (
         p.title.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q)
       );
     });
-  }, [query, activeFilter]);
+  }, [query, activeFilter, products]);
 
-  const renderProduct = ({ item }: { item: Product }) => (
+  const renderProduct = ({ item }: { item: UIProduct }) => (
     <TouchableOpacity
       style={[
         styles.itemCard,
@@ -230,15 +229,23 @@ export default function InventoryScreen() {
             return (
               <TouchableOpacity
                 onPress={() => setActiveFilter(item)}
-                style={[styles.filterChip, active ? styles.filterChipActive : null]}
+                style={[
+                  styles.filterChip,
+                  active ? styles.filterChipActive : null,
+                ]}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.filterText, active ? styles.filterTextActive : null]}>
+                <Text
+                  style={[
+                    styles.filterText,
+                    active ? styles.filterTextActive : null,
+                  ]}
+                >
                   {item}
                 </Text>
                 {item === "Low Stock" && (
                   <View style={styles.lowCount}>
-                    <Text style={styles.lowCountText}>3</Text>
+                    <Text style={styles.lowCountText}>{lowStockCount}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -248,20 +255,33 @@ export default function InventoryScreen() {
       </View>
 
       {/* List */}
-      <FlatList
-        data={filtered}
-        keyExtractor={(p) => p.id}
-        renderItem={renderProduct}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={PRIMARY} />
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(p) => p.id}
+          renderItem={renderProduct}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No products found</Text>
+            </View>
+          }
+        />
+      )}
 
       {/* Floating Action Button */}
       <View style={styles.fabWrap} pointerEvents="box-none">
         <TouchableOpacity
           style={styles.fab}
           activeOpacity={0.9}
-          onPress={() => console.log("Add new product / Quick scan")}
+          onPress={() =>
+            navigation?.navigate("SalesScreen", { initialMode: "stock" })
+          }
         >
           <MaterialIcons name="add" size={30} color="#000" />
         </TouchableOpacity>
@@ -305,7 +325,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 16 : 10,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 16) : 10,
     paddingBottom: 10,
     backgroundColor: BG,
     borderBottomWidth: 0.25,
@@ -317,7 +338,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "transparent",
   },
-  headerTitle: { fontSize: 20, fontWeight: "800", marginLeft: 6, color: "#111" },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginLeft: 6,
+    color: "#111",
+  },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
 
   notificationDot: {
@@ -392,7 +418,25 @@ const styles = StyleSheet.create({
   },
   lowCountText: { color: "#b91c1c", fontSize: 10, fontWeight: "800" },
 
-  listContent: { paddingHorizontal: 12, paddingVertical: 14, paddingBottom: 140 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: "#6b7280",
+    fontSize: 16,
+  },
+
+  listContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    paddingBottom: 140,
+  },
 
   itemCard: {
     flexDirection: "row",

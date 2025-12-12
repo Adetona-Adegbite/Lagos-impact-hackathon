@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 // Use localhost for iOS Simulator
 // Replace with your machine's local IP address if testing on physical device
 const DEV_API_URL = Platform.select({
-  android: "http://172.20.10.3:3000",
+  android: "http://10.138.50.125:3000",
   ios: "http://localhost:3000",
   default: "http://localhost:3000",
 });

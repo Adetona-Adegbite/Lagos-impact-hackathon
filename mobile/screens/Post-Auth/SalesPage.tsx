@@ -16,6 +16,7 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
@@ -23,98 +24,103 @@ import {
   useCameraPermissions,
   BarcodeScanningResult,
 } from "expo-camera";
+import { productService } from "../../services/productService";
+
 const { width, height } = Dimensions.get("window");
-const MAIN_GREEN = "#36e27b";
-/* ----- Types ----- */
+const MAIN_GREEN = "#19e680";
+
 type CartItem = {
   id: string;
   title: string;
   unitPrice: number;
   qty: number;
   image?: string | null;
-  highlight?: boolean;
+  productId: string; // link to DB product
 };
+
 type StockItem = {
-  id: string;
+  id: string; // product id
   title: string;
   price: number;
   qty: number;
   img?: string | null;
   lowStock?: boolean;
 };
-/* ----- Demo data & helpers ----- */
-function resolveProductFromCode(
-  code: string
-): { id: string; title: string; price: number } | null {
-  if (code.includes("IND"))
-    return { id: "p1", title: "Indomie Chicken", price: 150 };
-  if (code.includes("SUG"))
-    return { id: "p2", title: "Dangote Sugar 1kg", price: 1200 };
-  if (code.includes("COC"))
-    return { id: "p3", title: "Coca Cola 50cl", price: 250 };
-  return { id: `x-${code}`, title: `Scanned: ${code}`, price: 200 };
-}
+
 /* ----- Component ----- */
-export default function ScanSellScreen({ navigation }: { navigation?: any }) {
+export default function ScanSellScreen({
+  navigation,
+  route,
+}: {
+  navigation?: any;
+  route?: any;
+}) {
   /* camera permissions & refs */
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [facing, setFacing] = useState<"back" | "front">("back");
   const [torch, setTorch] = useState(false);
+
   /* mode: "sell" | "stock" */
-  const [mode, setMode] = useState<"sell" | "stock">("sell");
-  /* cart & stock */
-  const [cart, setCart] = useState<CartItem[]>([
-    { id: "p1", title: "Indomie Chicken", unitPrice: 150, qty: 1, image: null },
-    {
-      id: "p2",
-      title: "Dangote Sugar 1kg",
-      unitPrice: 1200,
-      qty: 2,
-      image: null,
-    },
-  ]);
-  const [stock, setStock] = useState<StockItem[]>([
-    { id: "p1", title: "Indomie Chicken", price: 150, qty: 120, img: null },
-    {
-      id: "p2",
-      title: "Dangote Sugar 1kg",
-      price: 1200,
-      qty: 3,
-      img: null,
-      lowStock: true,
-    },
-    { id: "p3", title: "Coca Cola 50cl", price: 250, qty: 45, img: null },
-  ]);
+  const [mode, setMode] = useState<"sell" | "stock">(
+    route?.params?.initialMode || "sell",
+  );
+
+  useEffect(() => {
+    if (route?.params?.initialMode) {
+      setMode(route.params.initialMode);
+    }
+  }, [route?.params?.initialMode]);
+
+  /* cart */
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  /* loading state */
+  const [loading, setLoading] = useState(false);
+
   /* scan animation */
   const scanY = useRef(new Animated.Value(0)).current;
   const scanBoxSize = Math.min(width * 0.62, 320);
+
   /* scan cooldown to avoid duplicates */
   const lastScanTs = useRef<number>(0);
-  const SCAN_COOLDOWN_MS = 900;
+  const SCAN_COOLDOWN_MS = 1500; // Increased slightly for async ops
+
   /* enter-code modal */
   const [enterModalVisible, setEnterModalVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState("");
+
   /* product modal */
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<{
-    id: string;
+    id?: string; // undefined if new
+    barcode: string;
     title: string;
     price: number;
     qty: number;
+    category: string;
+    costPrice: number;
   } | null>(null);
+
   const [isNewProduct, setIsNewProduct] = useState(false);
+
+  // Edit form state
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editCostPrice, setEditCostPrice] = useState("");
+  const [editCategory, setEditCategory] = useState("General");
   const [editQty, setEditQty] = useState(0);
+
   /* bottom sheet height (keeps camera visible) */
   const BOTTOM_SHEET_MAX_HEIGHT = Math.min(height * 0.3, 520);
+
   useEffect(() => {
     if (permission === null) return;
     if (!permission.granted) {
       requestPermission();
     }
   }, [permission]);
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -128,48 +134,77 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
           duration: 1600,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, [scanY, scanBoxSize]);
+
+  // Sync edit form when modal opens
   useEffect(() => {
     if (productModalVisible && currentProduct) {
       setEditTitle(currentProduct.title);
       setEditPrice(currentProduct.price.toString());
+      setEditCostPrice(currentProduct.costPrice.toString());
+      setEditCategory(currentProduct.category);
       setEditQty(currentProduct.qty);
     }
   }, [productModalVisible, currentProduct]);
+
   const totalAmount = useMemo(
     () => cart.reduce((s, it) => s + it.qty * it.unitPrice, 0),
-    [cart]
+    [cart],
   );
+
   /* ----- Actions ----- */
   const changeCartQty = (id: string, delta: number) =>
     setCart((prev) =>
       prev
         .map((it) =>
-          it.id === id ? { ...it, qty: Math.max(0, it.qty + delta) } : it
+          it.id === id ? { ...it, qty: Math.max(0, it.qty + delta) } : it,
         )
-        .filter((it) => it.qty > 0)
+        .filter((it) => it.qty > 0),
     );
-  const changeStockQty = (id: string, delta: number) =>
-    setStock((prev) =>
-      prev.map((it) =>
-        it.id === id ? { ...it, qty: Math.max(0, it.qty + delta) } : it
-      )
-    );
+
   const clearAllCart = () =>
     Alert.alert("Clear cart", "Remove all items from cart?", [
       { text: "Cancel", style: "cancel" },
       { text: "Clear", style: "destructive", onPress: () => setCart([]) },
     ]);
-  const onCheckout = () =>
+
+  const onCheckout = async () => {
+    if (cart.length === 0) return;
+
     Alert.alert("Checkout", `Total: ₦${totalAmount.toLocaleString()}`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Pay", onPress: () => console.log("pay!") },
+      {
+        text: "Pay",
+        onPress: async () => {
+          try {
+            setLoading(true);
+            const itemsToProcess = cart.map((item) => ({
+              productId: item.productId,
+              quantity: item.qty,
+              price: item.unitPrice,
+            }));
+
+            await productService.processSale(itemsToProcess);
+
+            setCart([]);
+            Alert.alert("Success", "Sale recorded successfully!");
+          } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Failed to process sale.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
     ]);
+  };
+
   const toggleTorch = () => setTorch((prev) => !prev);
   const toggleCameraType = () =>
     setFacing((t) => (t === "back" ? "front" : "back"));
+
   const handleEnterCodeConfirm = () => {
     if (!enteredCode.trim()) {
       Alert.alert("Enter code", "Please enter a code.");
@@ -179,186 +214,210 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
     setEnteredCode("");
     setEnterModalVisible(false);
   };
-  const handleScannedCode = (data: string) => {
+
+  const handleScannedCode = async (barcode: string) => {
     const now = Date.now();
     if (now - lastScanTs.current < SCAN_COOLDOWN_MS) return;
     lastScanTs.current = now;
-    const resolved = resolveProductFromCode(data);
-    if (!resolved) return; // Though in current impl, always returns
-    const productId = resolved.id;
-    let product;
-    if (mode === "stock") {
-      const existing = stock.find((p) => p.id === productId);
-      if (existing) {
-        product = {
-          id: existing.id,
-          title: existing.title,
-          price: existing.price,
-          qty: existing.qty,
-        };
-        setIsNewProduct(false);
-      } else {
-        product = {
-          id: productId,
-          title: resolved.title,
-          price: resolved.price,
-          qty: 1,
-        };
-        setIsNewProduct(true);
-      }
-      setCurrentProduct(product);
-      setProductModalVisible(true);
-    } else {
-      // sell
-      const existing = stock.find((p) => p.id === productId);
-      if (existing) {
-        setCart((prev) => {
-          const found = prev.find((p) => p.id === productId);
-          if (found)
-            return prev.map((p) =>
-              p.id === productId ? { ...p, qty: p.qty + 1 } : p
-            );
-          return [
-            {
-              id: productId,
-              title: existing.title,
-              unitPrice: existing.price,
-              qty: 1,
-            },
-            ...prev,
-          ];
-        });
-      } else {
-        product = {
-          id: productId,
-          title: resolved.title,
-          price: resolved.price,
-          qty: 1,
-        };
-        setCurrentProduct(product);
-        setIsNewProduct(true);
+
+    try {
+      setLoading(true);
+      const product = await productService.getProductByBarcode(barcode);
+
+      if (mode === "stock") {
+        // In stock mode, we always open modal to edit/view details
+        if (product) {
+          // Existing product
+          setCurrentProduct({
+            id: product.id,
+            barcode: product.barcode,
+            title: product.name,
+            price: product.sellingPrice,
+            qty: product.quantity || 0,
+            category: product.category,
+            costPrice: product.purchasePrice,
+          });
+          setIsNewProduct(false);
+        } else {
+          // New product
+          setCurrentProduct({
+            barcode: barcode,
+            title: "",
+            price: 0,
+            qty: 1,
+            category: "General",
+            costPrice: 0,
+          });
+          setIsNewProduct(true);
+        }
         setProductModalVisible(true);
+      } else {
+        // Sell mode
+        if (product) {
+          // Check if in stock? (Optional, skipping hard check for now but could warn)
+          if ((product.quantity || 0) <= 0) {
+            // Alert.alert("Warning", "Item is out of stock!", [{text: "Add anyway"}]);
+            // Just adding for now
+          }
+
+          setCart((prev) => {
+            const found = prev.find((p) => p.productId === product.id);
+            if (found) {
+              return prev.map((p) =>
+                p.productId === product.id ? { ...p, qty: p.qty + 1 } : p,
+              );
+            }
+            return [
+              {
+                id: Date.now().toString(), // temp id for cart item
+                productId: product.id,
+                title: product.name,
+                unitPrice: product.sellingPrice,
+                qty: 1,
+                image: null,
+              },
+              ...prev,
+            ];
+          });
+        } else {
+          // Product not found in sell mode -> prompt to create?
+          Alert.alert(
+            "Product not found",
+            "Would you like to add this product to inventory?",
+            [
+              { text: "No", style: "cancel" },
+              {
+                text: "Yes",
+                onPress: () => {
+                  setCurrentProduct({
+                    barcode: barcode,
+                    title: "",
+                    price: 0,
+                    qty: 1,
+                    category: "General",
+                    costPrice: 0,
+                  });
+                  setIsNewProduct(true);
+                  setProductModalVisible(true);
+                },
+              },
+            ],
+          );
+        }
       }
+    } catch (e) {
+      console.error("Scan error", e);
+      Alert.alert("Error", "Failed to lookup product");
+    } finally {
+      setLoading(false);
     }
   };
-  const handleProductConfirm = () => {
+
+  const handleProductConfirm = async () => {
     if (!currentProduct) return;
-    const updatedProduct = {
-      id: currentProduct.id,
-      title: editTitle.trim(),
-      price: parseFloat(editPrice) || 0,
-      qty: editQty,
-    };
-    if (
-      updatedProduct.title === "" ||
-      updatedProduct.price <= 0 ||
-      updatedProduct.qty < 0
-    ) {
-      Alert.alert("Invalid input", "Please fill all fields correctly.");
+
+    const title = editTitle.trim();
+    const price = parseFloat(editPrice) || 0;
+    const cost = parseFloat(editCostPrice) || 0;
+    const qty = editQty; // Can be 0
+
+    if (!title || price < 0) {
+      Alert.alert("Invalid input", "Please check name and price.");
       return;
     }
-    if (mode === "stock") {
-      setStock((prev) => {
-        const lowStock = updatedProduct.qty < 5;
-        if (prev.find((p) => p.id === updatedProduct.id)) {
-          return prev.map((p) =>
-            p.id === updatedProduct.id
-              ? {
-                  ...p,
-                  title: updatedProduct.title,
-                  price: updatedProduct.price,
-                  qty: updatedProduct.qty,
-                  lowStock,
-                }
-              : p
-          );
-        } else {
-          return [
+
+    try {
+      setLoading(true);
+
+      if (isNewProduct) {
+        // Create
+        const newId = await productService.createProduct({
+          name: title,
+          barcode: currentProduct.barcode,
+          category: editCategory,
+          sellingPrice: price,
+          purchasePrice: cost,
+          quantity: qty,
+        });
+
+        // If in sell mode, add to cart immediately after creating
+        if (mode === "sell") {
+          setCart((prev) => [
             {
-              id: updatedProduct.id,
-              title: updatedProduct.title,
-              price: updatedProduct.price,
-              qty: updatedProduct.qty,
-              img: null,
-              lowStock,
+              id: Date.now().toString(),
+              productId: newId,
+              title: title,
+              unitPrice: price,
+              qty: 1,
+              image: null,
             },
             ...prev,
-          ];
+          ]);
         }
-      });
-    } else {
-      // sell, new product
-      const lowStock = updatedProduct.qty < 5;
-      setStock((prev) => [
-        {
-          id: updatedProduct.id,
-          title: updatedProduct.title,
-          price: updatedProduct.price,
-          qty: updatedProduct.qty,
-          img: null,
-          lowStock,
-        },
-        ...prev,
-      ]);
-      setCart((prev) => {
-        const found = prev.find((p) => p.id === updatedProduct.id);
-        if (found) {
-          return prev.map((p) =>
-            p.id === updatedProduct.id ? { ...p, qty: p.qty + 1 } : p
-          );
+
+        Alert.alert("Success", "Product added to inventory");
+      } else {
+        // Update
+        if (currentProduct.id) {
+          await productService.updateProduct(currentProduct.id, {
+            name: title,
+            sellingPrice: price,
+            purchasePrice: cost,
+            category: editCategory,
+          });
+
+          await productService.updateInventory(currentProduct.id, qty);
+          Alert.alert("Success", "Product updated");
         }
-        return [
-          {
-            id: updatedProduct.id,
-            title: updatedProduct.title,
-            unitPrice: updatedProduct.price,
-            qty: 1,
-            image: null,
-          },
-          ...prev,
-        ];
-      });
+      }
+
+      setProductModalVisible(false);
+      setCurrentProduct(null);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to save product");
+    } finally {
+      setLoading(false);
     }
-    setProductModalVisible(false);
-    setCurrentProduct(null);
   };
+
   const onBarcodeScanned = ({ data }: BarcodeScanningResult) => {
     if (!data) return;
-    console.log(`Scanned barcode: ${data}`);
     handleScannedCode(data);
   };
+
   if (permission === null) {
-    return <View />;
+    return <View style={styles.container} />;
   }
   if (!permission.granted) {
     return (
-      <SafeAreaView
-        style={[
-          styles.safe,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <Text>No access to camera. Please allow camera permissions.</Text>
-        <TouchableOpacity onPress={requestPermission}>
-          <Text>Grant Permission</Text>
+      <View style={styles.container}>
+        <Text style={{ color: "#000", textAlign: "center", marginTop: 50 }}>
+          We need your permission to show the camera
+        </Text>
+        <TouchableOpacity
+          onPress={requestPermission}
+          style={{ padding: 20, alignItems: "center" }}
+        >
+          <Text style={{ color: MAIN_GREEN, fontWeight: "bold" }}>
+            Grant Permission
+          </Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
-  /* Renderers (cart/stock rows) */
+
+  /* ----- Renders ----- */
+
   const renderCartRow = ({ item }: { item: CartItem }) => (
-    <View style={[styles.cartRow, item.highlight ? styles.highlightRow : null]}>
+    <View style={styles.cartRow}>
       <View style={styles.itemLeft}>
         <View style={styles.itemThumb}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.itemImage} />
           ) : (
             <View style={styles.itemPlaceholder}>
-              <MaterialIcons
-                name="image"
-                size={26}
-                color="rgba(255,255,255,0.5)"
-              />
+              <MaterialIcons name="image" size={20} color="#9ca3af" />
             </View>
           )}
         </View>
@@ -369,91 +428,57 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
           </Text>
         </View>
       </View>
+
       <View style={styles.qtyWrap}>
         <TouchableOpacity
           style={styles.qtyBtn}
           onPress={() => changeCartQty(item.id, -1)}
         >
-          <MaterialIcons name="remove" size={18} color="#fff" />
+          <MaterialIcons name="remove" size={16} color="#000" />
         </TouchableOpacity>
         <Text style={styles.qtyText}>{item.qty}</Text>
         <TouchableOpacity
           style={[styles.qtyBtn, styles.qtyBtnAdd]}
-          onPress={() => changeCartQty(item.id, +1)}
+          onPress={() => changeCartQty(item.id, 1)}
         >
-          <MaterialIcons name="add" size={18} color="#fff" />
+          <MaterialIcons name="add" size={16} color="#000" />
         </TouchableOpacity>
       </View>
     </View>
   );
-  const renderStockRow = ({ item }: { item: StockItem }) => (
-    <View style={[styles.cartRow, item.lowStock ? styles.highlightRow : null]}>
-      <View style={styles.itemLeft}>
-        <View style={styles.itemThumb}>
-          {item.img ? (
-            <Image source={{ uri: item.img }} style={styles.itemImage} />
-          ) : (
-            <View style={styles.itemPlaceholder}>
-              <MaterialIcons
-                name="image"
-                size={26}
-                color="rgba(255,255,255,0.5)"
-              />
-            </View>
-          )}
-        </View>
-        <View>
-          <Text style={styles.itemTitle}>{item.title}</Text>
-          <Text style={styles.itemPrice}>₦{item.price.toLocaleString()}</Text>
-        </View>
-      </View>
-      <View style={styles.qtyWrap}>
-        <TouchableOpacity
-          style={styles.qtyBtn}
-          onPress={() => changeStockQty(item.id, -1)}
-        >
-          <MaterialIcons name="remove" size={18} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.qtyText}>{item.qty}</Text>
-        <TouchableOpacity
-          style={[styles.qtyBtn, styles.qtyBtnAdd]}
-          onPress={() => changeStockQty(item.id, +1)}
-        >
-          <MaterialIcons name="add" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar
-        barStyle="light-content"
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+
+      {/* Main Layout: Camera takes full screen, UI overlays it */}
       <View style={styles.container}>
-        {/* Camera */}
         <View style={styles.cameraContainer}>
           <CameraView
-            ref={cameraRef}
             style={styles.camera}
             facing={facing}
             enableTorch={torch}
             onBarcodeScanned={onBarcodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e"],
+            }}
+            ref={cameraRef}
           />
-          {/* Top controls */}
+
+          {/* Top Controls Overlay */}
           <View style={styles.topControls}>
             <TouchableOpacity
               style={styles.circleBtn}
-              onPress={() => navigation?.goBack?.()}
+              onPress={() => navigation?.goBack()}
             >
-              <MaterialIcons name="close" size={20} color="#fff" />
+              <MaterialIcons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
+
             <View style={styles.modeToggle}>
               <TouchableOpacity
                 style={[
                   styles.modePill,
-                  mode === "sell" ? styles.modeActive : undefined,
+                  mode === "sell" ? styles.modeActive : null,
                 ]}
                 onPress={() => setMode("sell")}
               >
@@ -468,7 +493,7 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
               <TouchableOpacity
                 style={[
                   styles.modePill,
-                  mode === "stock" ? styles.modeActive : undefined,
+                  mode === "stock" ? styles.modeActive : null,
                 ]}
                 onPress={() => setMode("stock")}
               >
@@ -481,42 +506,45 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
                 </Text>
               </TouchableOpacity>
             </View>
+
             <View style={styles.rightTopActions}>
               <TouchableOpacity
                 style={styles.circleBtn}
-                onPress={() => toggleCameraType()}
+                onPress={() => setEnterModalVisible(true)}
               >
-                <MaterialIcons name="flip-camera-ios" size={20} color="#fff" />
+                <MaterialIcons name="keyboard" size={24} color="#000" />
               </TouchableOpacity>
             </View>
           </View>
-          {/* Camera shortcuts + scan box */}
+
+          {/* Camera Shortcuts (Flash, Flip) */}
           <View style={styles.cameraShortcuts}>
             <View style={styles.shortcut}>
               <TouchableOpacity
-                onPress={toggleTorch}
                 style={styles.circleBtnSmall}
+                onPress={toggleTorch}
               >
                 <MaterialIcons
                   name={torch ? "flash-on" : "flash-off"}
-                  size={18}
-                  color="#fff"
+                  size={20}
+                  color={torch ? "#FFD700" : "#000"}
                 />
               </TouchableOpacity>
               <Text style={styles.shortcutText}>Flash</Text>
             </View>
             <View style={styles.shortcut}>
               <TouchableOpacity
-                onPress={() => setEnterModalVisible(true)}
                 style={styles.circleBtnSmall}
+                onPress={toggleCameraType}
               >
-                <MaterialIcons name="keyboard" size={18} color="#fff" />
+                <MaterialIcons name="flip-camera-ios" size={20} color="#000" />
               </TouchableOpacity>
-              <Text style={styles.shortcutText}>Enter Code</Text>
+              <Text style={styles.shortcutText}>Flip</Text>
             </View>
           </View>
-          {/* Scan box */}
-          <View style={styles.centerArea}>
+
+          {/* Center Scan Area Box */}
+          <View style={styles.centerArea} pointerEvents="none">
             <View
               style={[
                 styles.scanBox,
@@ -531,213 +559,174 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
                 style={[
                   styles.scanLine,
                   {
+                    width: scanBoxSize,
                     transform: [{ translateY: scanY }],
-                    width: scanBoxSize - 16,
                   },
                 ]}
               />
             </View>
             <View style={styles.alignHint}>
-              <MaterialIcons
-                name="center-focus-strong"
-                size={18}
-                color={MAIN_GREEN}
-              />
-              <Text style={styles.alignText}>Align barcode within frame</Text>
+              <MaterialIcons name="qr-code-scanner" size={16} color="#fff" />
+              <Text style={styles.alignText}>Align code within frame</Text>
             </View>
           </View>
         </View>
-        {/* Bottom sheet */}
+
+        {/* Bottom Sheet for Cart or Info */}
         <View
           style={[styles.bottomSheet, { maxHeight: BOTTOM_SHEET_MAX_HEIGHT }]}
         >
           <View style={styles.sheetHandle} />
+
+          {/* Header row */}
           <View style={styles.sheetHeader}>
             <View>
               <Text style={styles.sheetTitle}>
-                {mode === "sell" ? "Current Cart" : "Stock Inventory"}
+                {mode === "sell" ? "Current Cart" : "Scan History"}
               </Text>
               <Text style={styles.sheetSub}>
                 {mode === "sell"
-                  ? `${cart.length} items scanned`
-                  : `${stock.length} items in stock`}
+                  ? `${cart.length} items added`
+                  : "Scan to update inventory"}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                mode === "sell"
-                  ? clearAllCart()
-                  : Alert.alert("Stock actions", "Use +/- to update stock.")
-              }
-            >
-              <Text style={styles.clearText}>
-                {mode === "sell" ? "Clear All" : "Manage"}
-              </Text>
-            </TouchableOpacity>
+            {cart.length > 0 && mode === "sell" && (
+              <TouchableOpacity onPress={clearAllCart}>
+                <Text style={styles.clearText}>Clear</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
           {mode === "sell" ? (
             <FlatList
               data={cart}
-              keyExtractor={(i) => i.id}
+              keyExtractor={(item) => item.id}
               renderItem={renderCartRow}
               style={styles.cartList}
-              contentContainerStyle={{ paddingBottom: 12 }}
+              contentContainerStyle={{ paddingBottom: 80 }}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.emptyRow}>
                   <Text style={styles.emptyText}>
-                    No items in cart yet — scan to add.
+                    Scan a barcode to add items
                   </Text>
                 </View>
               }
             />
           ) : (
-            <FlatList
-              data={stock}
-              keyExtractor={(i) => i.id}
-              renderItem={renderStockRow}
-              style={styles.cartList}
-              contentContainerStyle={{ paddingBottom: 12 }}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyText}>
-                    No stock items — scan to add.
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>
+                Ready to scan products for inventory
+              </Text>
+            </View>
+          )}
+
+          {/* Checkout Button (Sell mode only) */}
+          {mode === "sell" && cart.length > 0 && (
+            <View style={styles.checkoutWrap}>
+              <TouchableOpacity
+                style={styles.checkoutBtn}
+                activeOpacity={0.9}
+                onPress={onCheckout}
+              >
+                <View>
+                  <Text style={styles.totalLabel}>Total Amount</Text>
+                  <Text style={styles.totalValue}>
+                    ₦{totalAmount.toLocaleString()}
                   </Text>
                 </View>
-              }
-            />
+                <View style={styles.checkoutRight}>
+                  <Text style={styles.checkoutText}>Checkout</Text>
+                  <MaterialIcons name="arrow-forward" size={20} color="#000" />
+                </View>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
-        {/* Checkout / Save */}
-        {mode === "sell" ? (
-          <View style={styles.checkoutWrap}>
-            <TouchableOpacity
-              style={styles.checkoutBtn}
-              onPress={onCheckout}
-              activeOpacity={0.9}
-            >
-              <View>
-                <Text style={styles.totalLabel}>Total Amount</Text>
-                <Text style={styles.totalValue}>
-                  ₦{totalAmount.toLocaleString()}
-                </Text>
-              </View>
-              <View style={styles.checkoutRight}>
-                <Text style={styles.checkoutText}>Checkout</Text>
-                <MaterialIcons name="arrow-forward" size={20} color="#062" />
-              </View>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.checkoutWrap}>
-            <TouchableOpacity
-              style={[styles.checkoutBtn, { backgroundColor: "#0b2b20" }]}
-              onPress={() =>
-                Alert.alert(
-                  "Stock saved",
-                  "Stock changes saved locally (demo)."
-                )
-              }
-            >
-              <View>
-                <Text style={[styles.totalLabel, { color: "#fff" }]}>
-                  Stock Summary
-                </Text>
-                <Text style={[styles.totalValue, { color: "#fff" }]}>
-                  {stock.length} items
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.checkoutRight,
-                  { backgroundColor: "rgba(255,255,255,0.08)" },
-                ]}
-              >
-                <Text style={[styles.checkoutText, { color: "#fff" }]}>
-                  Save
-                </Text>
-                <MaterialIcons name="check" size={20} color="#fff" />
-              </View>
-            </TouchableOpacity>
+
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={MAIN_GREEN} />
           </View>
         )}
-        {/* Enter code modal */}
-        <Modal
-          visible={enterModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setEnterModalVisible(false)}
+      </View>
+
+      {/* --- Modals --- */}
+
+      {/* Enter Code Manual Modal */}
+      <Modal
+        visible={enterModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEnterModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={modalStyles.modalWrapper}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={modalStyles.modalWrapper}
-          >
-            <View style={modalStyles.modal}>
-              <Text style={modalStyles.modalTitle}>Enter Product Code</Text>
-              <TextInput
-                value={enteredCode}
-                onChangeText={setEnteredCode}
-                placeholder="e.g. IND-001 or barcode value"
-                placeholderTextColor="#999"
-                style={modalStyles.modalInput}
-                autoFocus
-              />
-              <View style={modalStyles.modalRow}>
-                <TouchableOpacity
-                  style={modalStyles.modalBtnAlt}
-                  onPress={() => {
-                    setEnteredCode("");
-                    setEnterModalVisible(false);
-                  }}
-                >
-                  <Text style={modalStyles.modalBtnTextAlt}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={modalStyles.modalBtn}
-                  onPress={handleEnterCodeConfirm}
-                >
-                  <Text style={modalStyles.modalBtnText}>Add</Text>
-                </TouchableOpacity>
+          <View style={modalStyles.modal}>
+            <Text style={modalStyles.modalTitle}>Enter Barcode</Text>
+            <TextInput
+              style={modalStyles.modalInput}
+              placeholder="Type code here..."
+              placeholderTextColor="#9ca3af"
+              value={enteredCode}
+              onChangeText={setEnteredCode}
+              keyboardType="number-pad"
+              autoFocus
+            />
+            <View style={modalStyles.modalRow}>
+              <TouchableOpacity
+                style={modalStyles.modalBtnAlt}
+                onPress={() => setEnterModalVisible(false)}
+              >
+                <Text style={modalStyles.modalBtnTextAlt}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={modalStyles.modalBtn}
+                onPress={handleEnterCodeConfirm}
+              >
+                <Text style={modalStyles.modalBtnText}>Scan Code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Product Edit/Add Modal */}
+      <Modal
+        visible={productModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setProductModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={productModalStyles.modalWrapper}
+        >
+          <View style={productModalStyles.modal}>
+            <Text style={productModalStyles.modalTitle}>
+              {isNewProduct ? "Add New Product" : "Edit Product"}
+            </Text>
+
+            {/* Title */}
+            <View style={productModalStyles.field}>
+              <Text style={productModalStyles.label}>Product Name</Text>
+              <View style={productModalStyles.inputWrap}>
+                <TextInput
+                  style={productModalStyles.input}
+                  value={editTitle}
+                  onChangeText={setEditTitle}
+                  placeholder="e.g. Indomie Chicken"
+                  placeholderTextColor="#6b7280"
+                />
               </View>
             </View>
-          </KeyboardAvoidingView>
-        </Modal>
-        {/* Product details modal */}
-        <Modal
-          visible={productModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setProductModalVisible(false)}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={productModalStyles.modalWrapper}
-          >
-            <View style={productModalStyles.modal}>
-              <Text style={productModalStyles.modalTitle}>
-                {isNewProduct ? "Add New Product" : "Edit Product"}
-              </Text>
-              <View style={productModalStyles.field}>
-                <Text style={productModalStyles.label}>Product Name</Text>
-                <View style={productModalStyles.inputWrap}>
-                  <TextInput
-                    style={productModalStyles.input}
-                    value={editTitle}
-                    onChangeText={setEditTitle}
-                    placeholder="Enter product name"
-                    placeholderTextColor="#999"
-                  />
-                  <MaterialIcons
-                    name="edit"
-                    size={24}
-                    color={MAIN_GREEN}
-                    style={productModalStyles.icon}
-                  />
-                </View>
-              </View>
-              <View style={productModalStyles.field}>
-                <Text style={productModalStyles.label}>Price</Text>
+
+            {/* Prices Row */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={[productModalStyles.field, { flex: 1 }]}>
+                <Text style={productModalStyles.label}>Selling Price</Text>
                 <View style={productModalStyles.inputWrap}>
                   <Text style={productModalStyles.prefix}>₦</Text>
                   <TextInput
@@ -746,69 +735,118 @@ export default function ScanSellScreen({ navigation }: { navigation?: any }) {
                       productModalStyles.inputWithPrefix,
                     ]}
                     value={editPrice}
-                    onChangeText={(text) =>
-                      setEditPrice(text.replace(/[^0-9.]/g, ""))
-                    }
-                    keyboardType="decimal-pad"
-                    placeholder="0"
-                    placeholderTextColor="#999"
+                    onChangeText={setEditPrice}
+                    keyboardType="numeric"
+                    placeholder="0.00"
+                    placeholderTextColor="#6b7280"
                   />
                 </View>
               </View>
-              <View style={productModalStyles.field}>
-                <Text style={productModalStyles.label}>Quantity</Text>
-                <View style={productModalStyles.qtyWrap}>
-                  <TouchableOpacity
-                    style={productModalStyles.qtyBtn}
-                    onPress={() => setEditQty(Math.max(0, editQty - 1))}
-                  >
-                    <MaterialIcons name="remove" size={24} color="#fff" />
-                  </TouchableOpacity>
-                  <View style={productModalStyles.qtyDisplay}>
-                    <Text style={productModalStyles.qtyText}>{editQty}</Text>
-                    <Text style={productModalStyles.qtyUnit}>Units</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={productModalStyles.qtyBtnAdd}
-                    onPress={() => setEditQty(editQty + 1)}
-                  >
-                    <MaterialIcons name="add" size={24} color="#000" />
-                  </TouchableOpacity>
+
+              <View style={[productModalStyles.field, { flex: 1 }]}>
+                <Text style={productModalStyles.label}>Cost Price</Text>
+                <View style={productModalStyles.inputWrap}>
+                  <Text style={productModalStyles.prefix}>₦</Text>
+                  <TextInput
+                    style={[
+                      productModalStyles.input,
+                      productModalStyles.inputWithPrefix,
+                    ]}
+                    value={editCostPrice}
+                    onChangeText={setEditCostPrice}
+                    keyboardType="numeric"
+                    placeholder="0.00"
+                    placeholderTextColor="#6b7280"
+                  />
                 </View>
               </View>
-              <View style={productModalStyles.modalRow}>
+            </View>
+
+            {/* Category */}
+            <View style={productModalStyles.field}>
+              <Text style={productModalStyles.label}>Category</Text>
+              <View style={productModalStyles.inputWrap}>
+                <TextInput
+                  style={productModalStyles.input}
+                  value={editCategory}
+                  onChangeText={setEditCategory}
+                  placeholder="e.g. Snacks"
+                  placeholderTextColor="#6b7280"
+                />
+              </View>
+            </View>
+
+            {/* Quantity */}
+            <View style={productModalStyles.field}>
+              <Text style={productModalStyles.label}>Stock Quantity</Text>
+              <View style={productModalStyles.qtyWrap}>
                 <TouchableOpacity
-                  style={productModalStyles.modalBtnAlt}
-                  onPress={() => setProductModalVisible(false)}
+                  style={productModalStyles.qtyBtn}
+                  onPress={() => setEditQty((q) => Math.max(0, q - 1))}
                 >
-                  <Text style={productModalStyles.modalBtnTextAlt}>Cancel</Text>
+                  <MaterialIcons name="remove" size={24} color="#111" />
                 </TouchableOpacity>
+                <View style={productModalStyles.qtyDisplay}>
+                  <Text style={productModalStyles.qtyText}>{editQty}</Text>
+                  <Text style={productModalStyles.qtyUnit}>Units</Text>
+                </View>
                 <TouchableOpacity
-                  style={productModalStyles.modalBtn}
-                  onPress={handleProductConfirm}
+                  style={[
+                    productModalStyles.qtyBtn,
+                    productModalStyles.qtyBtnAdd,
+                  ]}
+                  onPress={() => setEditQty((q) => q + 1)}
                 >
-                  <Text style={productModalStyles.modalBtnText}>Save</Text>
+                  <MaterialIcons name="add" size={24} color="#000" />
                 </TouchableOpacity>
               </View>
             </View>
-          </KeyboardAvoidingView>
-        </Modal>
-      </View>
+
+            {/* Actions */}
+            <View style={productModalStyles.modalRow}>
+              <TouchableOpacity
+                style={productModalStyles.modalBtnAlt}
+                onPress={() => setProductModalVisible(false)}
+              >
+                <Text style={productModalStyles.modalBtnTextAlt}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={productModalStyles.modalBtn}
+                onPress={handleProductConfirm}
+              >
+                <Text style={productModalStyles.modalBtnText}>
+                  {isNewProduct ? "Create Product" : "Save Changes"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
-/* ----- Styles ----- */
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#000" },
-  container: { flex: 1 },
-  cameraContainer: { flex: 1, backgroundColor: "#000" },
-  camera: { flex: 1 },
+  safe: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  container: {
+    flex: 1,
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  camera: {
+    flex: 1,
+  },
   topControls: {
     position: "absolute",
-    top: Platform.OS === "android" ? StatusBar.currentHeight ?? 12 : 12,
-    left: 12,
-    right: 12,
-    zIndex: 30,
+    top: Platform.OS === "android" ? 40 : 60,
+    left: 16,
+    right: 16,
+    zIndex: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -816,301 +854,424 @@ const styles = StyleSheet.create({
   circleBtn: {
     width: 44,
     height: 44,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 22,
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
   modeToggle: {
     flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.42)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     padding: 4,
-    borderRadius: 999,
+    borderRadius: 30,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  modePill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 },
-  modeActive: { backgroundColor: MAIN_GREEN },
-  modeText: { color: "rgba(255,255,255,0.85)", fontWeight: "700" },
-  modeActiveText: { color: "#062", fontWeight: "900" },
-  rightTopActions: { flexDirection: "row", gap: 8 },
+  modePill: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+  },
+  modeActive: {
+    backgroundColor: MAIN_GREEN,
+  },
+  modeText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  modeActiveText: {
+    color: "#000",
+    fontWeight: "700",
+  },
+  rightTopActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
   cameraShortcuts: {
     position: "absolute",
-    top: (StatusBar.currentHeight ?? 24) + 48,
-    left: 12,
-    right: 12,
-    zIndex: 30,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-  },
-  shortcut: { alignItems: "center" },
-  circleBtnSmall: {
-    width: 44,
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  shortcutText: { color: "rgba(255,255,255,0.8)", fontSize: 11 },
-  centerArea: {
-    position: "absolute",
-    top: (StatusBar.currentHeight ?? 24) + 42,
+    top: Platform.OS === "android" ? 110 : 130,
     left: 0,
     right: 0,
+    zIndex: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    gap: 40,
+  },
+  shortcut: {
     alignItems: "center",
-    zIndex: 20,
+  },
+  circleBtnSmall: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  shortcutText: {
+    color: "#fff",
+    fontSize: 12,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowRadius: 4,
+  },
+
+  centerArea: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: height * 0.3, // approximate center above bottom sheet
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
   },
   scanBox: {
-    borderWidth: 2,
-    borderColor: "rgba(54,226,123,0.45)",
+    borderWidth: 0,
+    borderColor: "rgba(255,255,255,0.3)",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    shadowColor: MAIN_GREEN,
-    shadowOpacity: 0.18,
-    elevation: 8,
-    backgroundColor: "transparent",
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    elevation: 10,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
   corner: {
     position: "absolute",
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderTopWidth: 4,
     borderLeftWidth: 4,
     borderColor: MAIN_GREEN,
-    borderRadius: 6,
+    borderRadius: 8,
   },
-  tl: { left: -2, top: -2, transform: [{ rotate: "0deg" }] },
-  tr: { right: -2, top: -2, transform: [{ rotate: "90deg" }] },
-  bl: { left: -2, bottom: -2, transform: [{ rotate: "-90deg" }] },
-  br: { right: -2, bottom: -2, transform: [{ rotate: "180deg" }] },
+  tl: {
+    left: 0,
+    top: 0,
+    transform: [{ rotate: "0deg" }],
+  },
+  tr: {
+    right: 0,
+    top: 0,
+    transform: [{ rotate: "90deg" }],
+  },
+  bl: {
+    left: 0,
+    bottom: 0,
+    transform: [{ rotate: "-90deg" }],
+  },
+  br: {
+    right: 0,
+    bottom: 0,
+    transform: [{ rotate: "180deg" }],
+  },
   scanLine: {
     position: "absolute",
     height: 3,
     backgroundColor: MAIN_GREEN,
-    opacity: 0.95,
+    opacity: 0.8,
     shadowColor: MAIN_GREEN,
-    shadowRadius: 8,
-    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    shadowOpacity: 1,
   },
   alignHint: {
-    marginTop: 14,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingHorizontal: 14,
+    marginTop: 20,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: 20,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  alignText: { color: MAIN_GREEN, marginLeft: 8, fontWeight: "700" },
+  alignText: {
+    color: "#fff",
+    marginLeft: 0,
+    fontWeight: "600",
+  },
+
   bottomSheet: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 90,
-    backgroundColor: "#0f211a",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 8,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    bottom: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.1,
     elevation: 20,
   },
   sheetHandle: {
-    width: 48,
-    height: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#e5e7eb",
     alignSelf: "center",
-    marginBottom: 8,
+    marginBottom: 16,
   },
   sheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingBottom: 8,
+    alignItems: "center",
+    paddingBottom: 16,
   },
-  sheetTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  sheetSub: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
-  clearText: { color: MAIN_GREEN, fontWeight: "800" },
-  cartList: { marginTop: 6, maxHeight: 1000 },
+  sheetTitle: {
+    color: "#111",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  sheetSub: {
+    color: "#6b7280",
+    fontSize: 13,
+  },
+  clearText: {
+    color: "#ef4444",
+    fontWeight: "600",
+  },
+  cartList: {
+    marginTop: 0,
+    maxHeight: 300,
+  },
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 10,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "#f9fafb",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
-    marginBottom: 8,
+    borderColor: "#e5e7eb",
+    marginBottom: 10,
   },
   highlightRow: {
-    backgroundColor: "rgba(54,226,123,0.06)",
-    borderColor: "rgba(54,226,123,0.16)",
+    backgroundColor: "#f0fdf4",
+    borderColor: "#bbf7d0",
   },
-  itemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  itemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
   itemThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  itemImage: { width: "100%", height: "100%", resizeMode: "cover" },
-  itemPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center" },
-  itemTitle: { color: "#fff", fontSize: 14, fontWeight: "800" },
-  itemPrice: { color: MAIN_GREEN, fontWeight: "800", marginTop: 4 },
-  qtyWrap: { flexDirection: "row", alignItems: "center", gap: 8 },
-  qtyBtn: {
-    width: 34,
-    height: 34,
+    width: 48,
+    height: 48,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    overflow: "hidden",
+    backgroundColor: "#e5e7eb",
+  },
+  itemImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  itemPlaceholder: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  qtyBtnAdd: { backgroundColor: "rgba(255,255,255,0.12)" },
-  qtyText: {
-    color: "#fff",
-    minWidth: 24,
-    textAlign: "center",
-    fontWeight: "800",
+  itemTitle: {
+    color: "#111",
+    fontSize: 15,
+    fontWeight: "700",
   },
-  emptyRow: { paddingVertical: 24, alignItems: "center" },
-  emptyText: { color: "rgba(255,255,255,0.6)" },
-  checkoutWrap: { position: "absolute", left: 12, right: 12, bottom: 12 },
-  checkoutBtn: {
-    height: 64,
-    borderRadius: 999,
-    backgroundColor: MAIN_GREEN,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    elevation: 12,
+  itemPrice: {
+    color: MAIN_GREEN,
+    fontWeight: "700",
+    marginTop: 2,
   },
-  totalLabel: {
-    color: "rgba(0,0,0,0.65)",
-    fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  totalValue: { color: "#062", fontSize: 18, fontWeight: "900" },
-  checkoutRight: {
+  qtyWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "rgba(0,0,0,0.08)",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 18,
   },
-  checkoutText: { fontWeight: "800", color: "#062" },
+  qtyBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  qtyBtnAdd: {
+    backgroundColor: MAIN_GREEN,
+    borderColor: MAIN_GREEN,
+  },
+  qtyText: {
+    color: "#111",
+    minWidth: 16,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  emptyRow: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: "#9ca3af",
+  },
+  checkoutWrap: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: Platform.OS === "ios" ? 34 : 20,
+  },
+  checkoutBtn: {
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#111",
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    elevation: 4,
+  },
+  totalLabel: {
+    color: "#9ca3af",
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  totalValue: {
+    color: MAIN_GREEN,
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  checkoutRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  checkoutText: {
+    fontWeight: "700",
+    color: "#000",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
 });
-/* ----- Modal styles ----- */
+
 const modalStyles = StyleSheet.create({
   modalWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
   modal: {
-    width: "90%",
+    width: "85%",
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 24,
+    padding: 24,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    marginBottom: 12,
+    marginBottom: 16,
     color: "#111",
   },
   modalInput: {
-    height: 48,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e6e9e8",
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  modalRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
-  modalBtn: {
-    backgroundColor: MAIN_GREEN,
+    borderColor: "#e5e7eb",
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
+    marginBottom: 20,
+    fontSize: 16,
   },
-  modalBtnText: { color: "#062", fontWeight: "800" },
-  modalBtnAlt: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  modalBtnTextAlt: { color: "#111", fontWeight: "700" },
+  modalRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  modalBtn: {
+    backgroundColor: "#000",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  modalBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  modalBtnAlt: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  modalBtnTextAlt: {
+    color: "#6b7280",
+    fontWeight: "600",
+  },
 });
-/* ----- Product Modal styles ----- */
+
 const productModalStyles = StyleSheet.create({
   modalWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.7)",
   },
   modal: {
     width: "90%",
-    backgroundColor: "#1a2c23",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 24,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    marginBottom: 12,
-    color: "#fff",
+    marginBottom: 20,
+    color: "#111",
   },
   field: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   label: {
-    color: "#999",
+    color: "#4b5563",
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
-    marginBottom: 4,
+    marginBottom: 6,
     marginLeft: 4,
   },
   inputWrap: {
     position: "relative",
   },
   input: {
-    height: 48,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    backgroundColor: "#23362b",
-    paddingHorizontal: 12,
-    color: "#fff",
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f9fafb",
+    paddingHorizontal: 16,
+    color: "#111",
     fontSize: 16,
-  },
-  icon: {
-    position: "absolute",
-    right: 12,
-    top: "50%",
-    transform: [{ translateY: -12 }],
   },
   prefix: {
     position: "absolute",
-    left: 12,
-    top: "50%",
-    transform: [{ translateY: -12 }],
-    color: MAIN_GREEN,
-    fontSize: 18,
+    left: 16,
+    top: 14,
+    zIndex: 1,
+    color: "#9ca3af",
+    fontSize: 16,
   },
   inputWithPrefix: {
     paddingLeft: 32,
@@ -1119,19 +1280,22 @@ const productModalStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#23362b",
+    backgroundColor: "#f9fafb",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    borderRadius: 10,
-    padding: 8,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    padding: 6,
   },
   qtyBtn: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "#fff",
     borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    elevation: 1,
   },
   qtyBtnAdd: {
     backgroundColor: MAIN_GREEN,
@@ -1140,27 +1304,38 @@ const productModalStyles = StyleSheet.create({
     alignItems: "center",
   },
   qtyText: {
-    color: "#fff",
-    fontSize: 24,
+    color: "#111",
+    fontSize: 20,
     fontWeight: "800",
   },
   qtyUnit: {
-    color: "#999",
-    fontSize: 12,
-    marginTop: 4,
+    color: "#6b7280",
+    fontSize: 10,
+    marginTop: -2,
   },
   modalRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    gap: 12,
+    marginTop: 8,
   },
   modalBtn: {
-    backgroundColor: MAIN_GREEN,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: "#000",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
-  modalBtnText: { color: "#000", fontWeight: "800" },
-  modalBtnAlt: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  modalBtnTextAlt: { color: "#fff", fontWeight: "700" },
+  modalBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  modalBtnAlt: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  modalBtnTextAlt: {
+    color: "#6b7280",
+    fontWeight: "600",
+  },
 });
