@@ -6,6 +6,11 @@ import VerifyOtpScreen from "./screens/Auth/OTPVerification";
 import RetailHomeScreen from "./screens/Post-Auth/HomeScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import ScanSellScreen from "./screens/Post-Auth/SalesPage";
+import InventoryScreen from "./screens/Post-Auth/InventoryPage";
+import AIInsightsScreen from "./screens/Post-Auth/AiInsightScreen";
+import TopSellersScreen from "./screens/Post-Auth/TopMovers";
+import SlowMovingProducts from "./screens/Post-Auth/RestockAlert";
+import SettingsScreen from "./screens/Post-Auth/Settings";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -15,6 +20,12 @@ const HomeScreens = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="RetailHome" component={RetailHomeScreen} />
       <Stack.Screen name="SalesScreen" component={ScanSellScreen} />
+      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
+      <Stack.Screen name="AIInsightsScreen" component={AIInsightsScreen} />
+      <Stack.Screen name="TopSellers" component={TopSellersScreen} />
+      <Stack.Screen name="SlowMovingProducts" component={SlowMovingProducts} />
+      <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+
     </Stack.Navigator>
   );
 };

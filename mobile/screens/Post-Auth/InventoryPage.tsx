@@ -1,0 +1,489 @@
+// src/screens/InventoryScreen.tsx
+import { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  TextInput,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  Dimensions,
+  SafeAreaView,
+  Platform,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
+const PRIMARY = "#19e680";
+const BG = "#f6f8f7";
+const CARD_DARK = "#1a2c24";
+const SURFACE = "#112119";
+
+type Product = {
+  id: string;
+  title: string;
+  category: string;
+  price: number;
+  qty: number;
+  img?: string;
+  lowStock?: boolean;
+  highlight?: boolean;
+};
+
+const SAMPLE_PRODUCTS: Product[] = [
+  {
+    id: "p1",
+    title: "Coke 50cl Plastic",
+    category: "Beverages",
+    price: 250,
+    qty: 45,
+    img:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBBAWemNy0XLvNoS3rXvvaBWoyYjcqVWjRlnc6TiA-_hQKasINwjI6cFRjTp-b2MKKid0aScA9Xb7USyLHcxgSIdE-wlvp0M-swfdkDTPj0dqRxkXUAuRVNhpVZx0PmDe_5GqPR_uIwFSnuCK9t_ACVLZC9sVHDI16BTC2mkYzJGqvTF15xCHOC8yn_4Cjr-_iyiAytANej0C4sTKYN6f66kawBbEvFtE2lyPobExxhkkJ-UfprErW2a5icX1cLP9hCT-9pNU63neY",
+  },
+  {
+    id: "p2",
+    title: "Dangote Sugar",
+    category: "Pantry",
+    price: 1200,
+    qty: 3,
+    img:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBklwJtNW8J32uZ-GOXA0j7VDv2yGe1BWe3wFBQnMpFk1qeX-87NVhzML1RUVEcD-nOVf1XTFZQDzazSsZFMOqOfYzVRdeIAx_Td5mPyueJOkDyec9_TBwWGYWoJiCLBRvvXsUayTAKQl1LvqEkCAAfabV3TR1ry-7gCi-AmASiQMH1H3bd9Lx2cEExUiTMC01NUH-9WIiDKE6o__67_QkFr9fW0_O1p0N-IKhOyrMzSne6Ep4a9QsFi_X6T9lkmOcGql8l8DGSPhY",
+    lowStock: true,
+  },
+  {
+    id: "p3",
+    title: "Lays Classic Chips",
+    category: "Snacks",
+    price: 1500,
+    qty: 12,
+    img:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDKAcIvNiEXVYabsq0YX1QoaD4PTvtO0UbEqRhTbWzY76oCUnK1tiHwwbuQL_qrIN_z1KuAgobM6XW1hG4PSxD7Aizy1XFcCXmqxNIBZa0ohN6Fsee0UkP5LW0yauQHz2ToXpRkM_YC4-u8U-VbX92c7lHlUA6ADgwGN7C-ANWtkrDrHP8cimG1g4l0K_NY_Hm9zJusaZiyjAd2A0W7QoAQefhcH3KhIijFI1t6Xt3VjrqUYdmQuxtxp5E5TfO6P8XOSu_qMGtsP4E",
+  },
+  {
+    id: "p4",
+    title: "Peak Milk Powder",
+    category: "Pantry",
+    price: 4000,
+    qty: 28,
+  },
+  {
+    id: "p5",
+    title: "Lux Soap",
+    category: "Toiletries",
+    price: 450,
+    qty: 1,
+    lowStock: true,
+  },
+  {
+    id: "p6",
+    title: "Indomie Chicken",
+    category: "Pantry",
+    price: 200,
+    qty: 120,
+    img:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCfP3J8_NXGW4VMymlO56qEvNTHPXkF8GSFw3Ni1w4GS3nTnDs2R8i0T-LTkyNT4ocPugrxkKmIqWMLWIqGymJHGWJ06lnsFPrMUxPm2X3C05gHzcP-qEq0NDnpXOJpmn_vvYT-OQ-M4iDmcYR4R46d-E6NVSd46UNuonIPLtkbg-iTFIjP03G4qTd4gUQM-Zgvr4dstTjUQNsnaZSWZ0FVskg0ql1fZZy6bYnWYf-19un1gaqZvLQh7Ux_O100JffB8gF5VvplSmA",
+  },
+];
+
+export default function InventoryScreen() {
+  const [query, setQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All Items");
+
+  const filters = useMemo(
+    () => ["All Items", "Low Stock", "Beverages", "Pantry", "Snacks"],
+    []
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return SAMPLE_PRODUCTS.filter((p) => {
+      if (activeFilter === "Low Stock") return p.lowStock || p.qty <= 3;
+      if (activeFilter !== "All Items") {
+        if (activeFilter === "Beverages") return p.category === "Beverages";
+        if (activeFilter === "Pantry") return p.category === "Pantry";
+        if (activeFilter === "Snacks") return p.category === "Snacks";
+      }
+      if (!q) return true;
+      return (
+        p.title.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    });
+  }, [query, activeFilter]);
+
+  const renderProduct = ({ item }: { item: Product }) => (
+    <TouchableOpacity
+      style={[
+        styles.itemCard,
+        item.lowStock ? styles.itemLow : null,
+        item.highlight ? styles.itemHighlight : null,
+      ]}
+      activeOpacity={0.85}
+      onPress={() => {
+        /* navigate to product detail - replace with your nav logic */
+        console.log("open", item.id);
+      }}
+    >
+      <View style={styles.thumbWrap}>
+        {item.img ? (
+          <Image source={{ uri: item.img }} style={styles.thumb} />
+        ) : (
+          <View style={styles.thumbPlaceholder}>
+            <MaterialIcons name="image" size={28} color="#9ca3af" />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.itemContent}>
+        <Text numberOfLines={1} style={styles.itemTitle}>
+          {item.title}
+        </Text>
+        <Text numberOfLines={1} style={styles.itemCategory}>
+          {item.category}
+        </Text>
+        <Text style={styles.itemPrice}>₦{item.price.toLocaleString()}</Text>
+      </View>
+
+      <View style={styles.itemRight}>
+        <View
+          style={[
+            styles.qtyPill,
+            item.lowStock ? styles.qtyPillLow : styles.qtyPillGood,
+          ]}
+        >
+          {item.lowStock ? (
+            <MaterialIcons name="warning" size={12} color="#b91c1c" />
+          ) : (
+            <View style={styles.dot} />
+          )}
+          <Text
+            style={[
+              styles.qtyText,
+              item.lowStock ? styles.qtyTextLow : styles.qtyTextGood,
+            ]}
+          >
+            {item.qty} Qty
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar
+        barStyle={Platform.OS === "ios" ? "dark-content" : "dark-content"}
+        backgroundColor={BG}
+      />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.iconBtn}>
+            <MaterialIcons name="menu" size={26} color="#111" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Inventory</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.iconBtn}>
+            <MaterialIcons name="notifications" size={22} color="#111" />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.scanBtn}>
+            <MaterialIcons name="qr-code-scanner" size={22} color="#000" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBox}>
+          <MaterialIcons name="search" size={20} color="#9ca3af" />
+          <TextInput
+            placeholder="Search products (e.g., Indomie)..."
+            placeholderTextColor="#9ca3af"
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+          />
+          <TouchableOpacity style={styles.filterBtn}>
+            <MaterialIcons name="tune" size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filtersWrap}>
+        <FlatList
+          horizontal
+          data={filters}
+          keyExtractor={(i) => i}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 12 }}
+          renderItem={({ item }) => {
+            const active = item === activeFilter;
+            return (
+              <TouchableOpacity
+                onPress={() => setActiveFilter(item)}
+                style={[styles.filterChip, active ? styles.filterChipActive : null]}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.filterText, active ? styles.filterTextActive : null]}>
+                  {item}
+                </Text>
+                {item === "Low Stock" && (
+                  <View style={styles.lowCount}>
+                    <Text style={styles.lowCountText}>3</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+
+      {/* List */}
+      <FlatList
+        data={filtered}
+        keyExtractor={(p) => p.id}
+        renderItem={renderProduct}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Floating Action Button */}
+      <View style={styles.fabWrap} pointerEvents="box-none">
+        <TouchableOpacity
+          style={styles.fab}
+          activeOpacity={0.9}
+          onPress={() => console.log("Add new product / Quick scan")}
+        >
+          <MaterialIcons name="add" size={30} color="#000" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.tab}>
+          <MaterialIcons name="home" size={24} color={PRIMARY} />
+          <Text style={[styles.tabLabel, { color: PRIMARY }]}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tab}>
+          <MaterialIcons name="inventory" size={24} color="#6b7280" />
+          <Text style={styles.tabLabel}>Inventory</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tab}>
+          <MaterialIcons name="point-of-sale" size={24} color="#6b7280" />
+          <Text style={styles.tabLabel}>Sales</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tab}>
+          <MaterialIcons name="insights" size={24} color="#6b7280" />
+          <Text style={styles.tabLabel}>Insights</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+/* Styles */
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 16 : 10,
+    paddingBottom: 10,
+    backgroundColor: BG,
+    borderBottomWidth: 0.25,
+    borderBottomColor: "#e6e9e8",
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+  },
+  headerTitle: { fontSize: 20, fontWeight: "800", marginLeft: 6, color: "#111" },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+
+  notificationDot: {
+    position: "absolute",
+    right: 6,
+    top: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 8,
+    backgroundColor: "#ef4444",
+    borderWidth: 2,
+    borderColor: BG,
+  },
+  scanBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: PRIMARY,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  searchWrap: { paddingHorizontal: 12, paddingTop: 8 },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 48,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#e6e9e8",
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    height: "100%",
+    color: "#111",
+    fontSize: 15,
+  },
+  filterBtn: { paddingLeft: 8 },
+
+  filtersWrap: { marginTop: 12, height: 44 },
+
+  filterChip: {
+    marginRight: 10,
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e6e9e8",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  filterChipActive: {
+    backgroundColor: "#111814",
+    borderColor: "#111814",
+  },
+  filterText: { color: "#111", fontWeight: "700", fontSize: 13 },
+  filterTextActive: { color: "#fff" },
+
+  lowCount: {
+    marginLeft: 8,
+    backgroundColor: "#fee2e2",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lowCountText: { color: "#b91c1c", fontSize: 10, fontWeight: "800" },
+
+  listContent: { paddingHorizontal: 12, paddingVertical: 14, paddingBottom: 140 },
+
+  itemCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e6e9e8",
+    marginBottom: 12,
+  },
+  itemLow: {
+    borderLeftWidth: 6,
+    borderLeftColor: "#ef4444",
+  },
+  itemHighlight: {
+    backgroundColor: "#ecfccb",
+    borderColor: "#d9f99d",
+  },
+
+  thumbWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "#f3f4f6",
+  },
+  thumb: { width: "100%", height: "100%", resizeMode: "cover" },
+  thumbPlaceholder: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f3f4f6",
+  },
+
+  itemContent: { flex: 1, justifyContent: "center" },
+  itemTitle: { fontSize: 15, fontWeight: "800", color: "#111" },
+  itemCategory: { fontSize: 13, color: "#6b7280", marginTop: 2 },
+  itemPrice: { marginTop: 6, fontSize: 14, fontWeight: "800", color: PRIMARY },
+
+  itemRight: { alignItems: "flex-end", justifyContent: "center" },
+  qtyPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  qtyPillGood: { backgroundColor: "#ecfdf5" },
+  qtyPillLow: { backgroundColor: "#fff1f2" },
+  dot: { width: 8, height: 8, borderRadius: 8, backgroundColor: "#059669" },
+  qtyText: { fontSize: 11, fontWeight: "700" },
+  qtyTextGood: { color: "#065f46" },
+  qtyTextLow: { color: "#7f1d1d" },
+
+  fabWrap: {
+    position: "absolute",
+    bottom: 96,
+    left: 16,
+    right: 16,
+    alignItems: "center",
+  },
+  fab: {
+    width: width - 32,
+    height: 56,
+    borderRadius: 999,
+    backgroundColor: PRIMARY,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+    flexDirection: "row",
+    gap: 12,
+  },
+
+  bottomNav: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 72,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#e6e9e8",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingBottom: Platform.OS === "ios" ? 18 : 8,
+  },
+  tab: { alignItems: "center" },
+  tabLabel: { fontSize: 10, color: "#6b7280", fontWeight: "700", marginTop: 2 },
+});
