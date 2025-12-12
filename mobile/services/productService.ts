@@ -1,5 +1,5 @@
 import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
-import { inventoryApi } from "./api";
+import { productsApi, inventoryApi } from "./api";
 import { authStorage } from "./authStorage";
 import cuid from "cuid";
 
@@ -287,5 +287,23 @@ export const productService = {
     `;
     const result = await executeSql(sql, [limit]);
     return result.rows._array;
+  },
+
+  /**
+   * Get all product categories
+   */
+  getCategories: async (): Promise<string[]> => {
+    const token = await authStorage.getToken();
+    if (!token) throw new Error("Not authenticated");
+    return productsApi.getCategories(token);
+  },
+
+  /**
+   * Recommend a category for a product
+   */
+  recommendCategory: async (name: string): Promise<{ category: string }> => {
+    const token = await authStorage.getToken();
+    if (!token) throw new Error("Not authenticated");
+    return productsApi.recommendCategory(name, token);
   },
 };

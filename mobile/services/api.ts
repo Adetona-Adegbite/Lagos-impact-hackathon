@@ -74,6 +74,21 @@ export const productsApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  getCategories: (token: string) => {
+    return request<string[]>("/api/v1/products/categories", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  recommendCategory: (name: string, token: string) => {
+    return request<{ category: string }>(
+      `/api/v1/products/recommend-category?name=${encodeURIComponent(name)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
 };
 
 export const salesApi = {

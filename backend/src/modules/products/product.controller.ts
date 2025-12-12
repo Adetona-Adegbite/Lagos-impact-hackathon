@@ -81,3 +81,33 @@ export const remove = async (
     next(error);
   }
 };
+
+export const getCategories = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const categories = productService.getCategories();
+    sendSuccess(res, categories, "Categories retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const recommendCategory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { name } = req.query;
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({ message: "Product name is required" });
+    }
+    const category = await productService.recommendCategory(name);
+    sendSuccess(res, { category }, "Category recommended successfully");
+  } catch (error) {
+    next(error);
+  }
+};

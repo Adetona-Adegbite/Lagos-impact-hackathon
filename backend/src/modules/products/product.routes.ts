@@ -108,6 +108,44 @@ router.post("/", validate(createProductSchema), productController.create);
  *         description: List of products
  */
 router.get("/", productController.getAll);
+
+/**
+ * @swagger
+ * /products/categories:
+ *   get:
+ *     summary: Get all product categories
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of product categories
+ */
+router.get("/categories", productController.getCategories);
+
+/**
+ * @swagger
+ * /products/recommend-category:
+ *   get:
+ *     summary: Recommend a category for a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product name
+ *     responses:
+ *       200:
+ *         description: Recommended category
+ *       400:
+ *         description: Product name is required
+ */
+router.get("/recommend-category", productController.recommendCategory);
+
 /**
  * @swagger
  * /products/{id}:

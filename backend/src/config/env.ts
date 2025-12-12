@@ -13,6 +13,7 @@ const envSchema = z.object({
     .default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 const envParsed = envSchema.safeParse(process.env);
