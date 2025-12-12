@@ -1,13 +1,22 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 // Use 10.0.2.2 for Android Emulator to access host machine's localhost
 // Use localhost for iOS Simulator
 // Replace with your machine's local IP address if testing on physical device
-const DEV_API_URL = Platform.select({
-  android: "http://10.138.50.125:3000",
-  ios: "http://localhost:3000",
-  default: "http://localhost:3000",
-});
+const hostUri = Constants.expoConfig?.hostUri;
+const ipAddress = hostUri?.split(":")[0];
+
+console.log({ ipAddress });
+const DEV_API_URL = ipAddress
+  ? `http://${ipAddress}:3000`
+  : Platform.select({
+      // Fallback for when not running in Expo Go or with a dev client,
+      // or for physical device testing.
+      android: "http://192.168.101.6:3000",
+      ios: "http://localhost:3000",
+      default: "http://localhost:3000",
+    });
 
 export const BASE_URL = DEV_API_URL;
 
