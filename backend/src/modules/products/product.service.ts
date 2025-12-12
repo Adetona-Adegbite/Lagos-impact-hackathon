@@ -1,5 +1,7 @@
 import prisma from "../../config/db.js";
 import { Prisma } from "@prisma/client";
+import { GoogleGenAI } from "@google/genai";
+import { PRODUCT_CATEGORIES } from "./categories.js";
 
 export const createProduct = async (data: {
   id?: string;
@@ -21,7 +23,7 @@ export const createProduct = async (data: {
 
   if (existingProduct) {
     throw {
-      statusCode: 400,
+      statusCode: 409,
       message: "Product with this barcode already exists",
     };
   }
@@ -160,4 +162,50 @@ export const deleteProduct = async (id: string) => {
   });
 
   return { message: "Product deleted successfully" };
+};
+
+export const getCategories = () => {
+  return PRODUCT_CATEGORIES;
+};
+
+export const recommendCategory = async (name: string) => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw {
+      statusCode: 500,
+      message: "Gemini API key is not configured.",
+    };
+  }
+  const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const prompt = `Based on the product name "${name}", which of the following categories is the best fit? Please choose only one from the list.
+
+Categories:
+${PRODUCT_CATEGORIES.join("\n")}
+
+Respond with only the category name from the list provided.`;
+
+  try {
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
+    const category = result.text?.trim();
+
+    // Return the category if it's in our list, otherwise maybe a default or the raw response
+    if (category && PRODUCT_CATEGORIES.includes(category)) {
+      return category;
+    } else {
+      // A simple fallback if Gemini hallucinates a category
+      console.warn(
+        `Gemini returned a category not in the list: "${category}". Picking first category as fallback.`,
+      );
+      return PRODUCT_CATEGORIES[0];
+    }
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    throw {
+      statusCode: 500,
+      message: "Failed to get category recommendation.",
+    };
+  }
 };

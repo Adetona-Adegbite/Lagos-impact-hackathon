@@ -1,13 +1,10 @@
 import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
+import { productsApi, inventoryApi } from "./api";
+import { authStorage } from "./authStorage";
+import cuid from "cuid";
 
 // Helper to generate IDs
-const generateId = () => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
+const generateId = cuid;
 
 const getCurrentTimestamp = () => new Date().toISOString();
 
@@ -165,6 +162,15 @@ export const productService = {
         [inventoryId, productId, newQuantity, now],
       );
     }
+
+    // Fire and forget sync to backend
+    authStorage.getToken().then((token) => {
+      if (token) {
+        inventoryApi
+          .update({ productId, quantity: newQuantity }, token)
+          .catch((e) => console.warn("Live inventory update failed", e));
+      }
+    });
   },
 
   /**
@@ -281,5 +287,23 @@ export const productService = {
     `;
     const result = await executeSql(sql, [limit]);
     return result.rows._array;
+  },
+
+  /**
+   * Get all product categories
+   */
+  getCategories: async (): Promise<string[]> => {
+    const token = await authStorage.getToken();
+    if (!token) throw new Error("Not authenticated");
+    return productsApi.getCategories(token);
+  },
+
+  /**
+   * Recommend a category for a product
+   */
+  recommendCategory: async (name: string): Promise<{ category: string }> => {
+    const token = await authStorage.getToken();
+    if (!token) throw new Error("Not authenticated");
+    return productsApi.recommendCategory(name, token);
   },
 };

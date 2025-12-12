@@ -34,7 +34,11 @@ async function request<T>(
   const responseData = await response.json();
 
   if (!response.ok) {
-    throw new Error(responseData.message || "Something went wrong");
+    const error: any = new Error(
+      responseData.message || "Something went wrong",
+    );
+    error.status = response.status;
+    throw error;
   }
 
   return responseData.data || responseData;
@@ -69,6 +73,21 @@ export const productsApi = {
     return request<any>(`/api/v1/products?page=${page}&limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  getCategories: (token: string) => {
+    return request<string[]>("/api/v1/products/categories", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  recommendCategory: (name: string, token: string) => {
+    return request<{ category: string }>(
+      `/api/v1/products/recommend-category?name=${encodeURIComponent(name)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 };
 
