@@ -21,7 +21,7 @@ const { width } = Dimensions.get("window");
 const PRIMARY = "#36e27b";
 const SURFACE = "#1a2c22";
 const SURFACE_BORDER = "#2f4538";
-const BG = "#f6f8f7";
+const BG = "#122117";
 
 type Tx = {
   id: string;
@@ -199,7 +199,7 @@ export default function CreditProfileScreen({
           onPress={() => navigation?.goBack?.()}
           style={styles.iconBtn}
         >
-          <MaterialIcons name="arrow-back" size={20} color="#111" />
+          <MaterialIcons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>My Credit Profile</Text>
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
+  headerTitle: { fontSize: 16, fontWeight: "800", color: "#fff" },
 
   content: { padding: 16, paddingBottom: 180 },
 

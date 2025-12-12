@@ -199,14 +199,14 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
               onPress={() => navigation?.goBack?.()}
               style={styles.backBtn}
             >
-              <MaterialIcons name="arrow-back" size={20} color="#111" />
+              <MaterialIcons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Daily Sales</Text>
             <TouchableOpacity
               style={styles.profileBtn}
               onPress={() => console.log("profile")}
             >
-              <MaterialIcons name="account-circle" size={28} color="#111" />
+              <MaterialIcons name="account-circle" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -355,7 +355,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f6f8f7" },
+  safe: { flex: 1, backgroundColor: "#122117" },
   container: { paddingBottom: 36 },
 
   header: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#111" },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
   profileBtn: {
     width: 40,
     height: 40,
@@ -442,23 +442,23 @@ const styles = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 6 },
 
   revenueRow: { paddingVertical: 12 },
-  revenueLabel: { fontSize: 13, color: "#6B7280", marginBottom: 6 },
-  revenueValue: { fontSize: 36, fontWeight: "900", color: "#111" },
+  revenueLabel: { fontSize: 13, color: "#7f9587", marginBottom: 6 },
+  revenueValue: { fontSize: 36, fontWeight: "900", color: "#fff" },
 
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     borderRadius: 999,
     height: 48,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#ECEFF3",
+    // borderWidth: 1,
+    // borderColor: "#ECEFF3",
     marginHorizontal: 0,
     marginTop: 2,
     overflow: "hidden",
   },
-  searchInput: { flex: 1, paddingHorizontal: 12, color: "#111", fontSize: 15 },
+  searchInput: { flex: 1, paddingHorizontal: 12, color: "#fff", fontSize: 15 },
 
   filterRow: {
     flexDirection: "row',",
@@ -486,10 +486,10 @@ const styles = StyleSheet.create({
   listSection: { paddingHorizontal: 16, paddingTop: 6 },
   saleCard: {
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#1c2e24",
     padding: 12,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#000",
   },
   saleRow: {
     flexDirection: "row",
@@ -504,14 +504,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  saleTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
+  saleTitle: { fontSize: 16, fontWeight: "800", color: "#fff" },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 8 },
   metaText: { color: "#6B7280", fontSize: 12 },
   metaRowInner: { flexDirection: "row", alignItems: "center", gap: 6 },
   metaTextSmall: { color: "#6B7280", fontSize: 12 },
   dot: { width: 6, height: 6, borderRadius: 6, backgroundColor: "#E6E6E6" },
 
-  amountText: { fontSize: 16, fontWeight: "900", color: "#111" },
+  amountText: { fontSize: 16, fontWeight: "900", color: "#fff" },
   statusPill: {
     marginTop: 6,
     paddingHorizontal: 8,

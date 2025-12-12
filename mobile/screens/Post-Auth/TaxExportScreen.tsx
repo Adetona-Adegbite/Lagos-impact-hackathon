@@ -183,7 +183,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
           onPress={() => navigation?.goBack?.()}
           style={styles.iconBtn}
         >
-          <MaterialIcons name="arrow-back" size={20} color="#111" />
+          <MaterialIcons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Tax Export</Text>
@@ -192,7 +192,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
           onPress={() => console.log("help")}
           style={styles.iconBtn}
         >
-          <MaterialIcons name="help-outline" size={20} color="#111" />
+          <MaterialIcons name="help-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -340,8 +340,8 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
           style={[styles.bottomBtn, styles.csvBtn]}
           onPress={exportCSV}
         >
-          <MaterialIcons name="ios-share" size={18} color="#fff" />
-          <Text style={[styles.bottomBtnText, { color: "#fff" }]}>
+          <MaterialIcons name="ios-share" size={18} color="#111" />
+          <Text style={[styles.bottomBtnText, { color: "#111" }]}>
             Export CSV
           </Text>
         </TouchableOpacity>
@@ -351,7 +351,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f6f8f7" },
+  safe: { flex: 1, backgroundColor: "#122117" },
   header: {
     height: 64,
     borderBottomWidth: 0.3,
@@ -360,7 +360,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#fff",
   },
   iconBtn: {
     width: 40,
@@ -368,7 +367,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
+  headerTitle: { fontSize: 16, fontWeight: "800", color: "#fff" },
 
   content: { padding: 16, paddingBottom: 200 },
 
@@ -405,7 +404,7 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontWeight: "900",
     fontSize: 18,
-    color: "#111",
+    color: "#fff",
     marginBottom: 4,
   },
   actionSubtitle: { color: "#6b7280", fontSize: 13, marginBottom: 8 },
@@ -426,7 +425,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 6,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#111" },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#fff" },
   aiTag: {
     marginLeft: "auto",
     backgroundColor: PRIMARY + "20",

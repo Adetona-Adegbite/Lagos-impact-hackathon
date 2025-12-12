@@ -1,5 +1,5 @@
 // src/screens/LoginScreen.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -15,37 +15,49 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApi } from "../../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
 
 const MAIN_GREEN = "#36e27b";
+
+const LANGUAGES = [
+  { label: "English", code: "en" },
+  { label: "Hausa", code: "ha" },
+  { label: "Yoruba", code: "yo" },
+  { label: "Igbo", code: "ig" },
+  { label: "Pidgin", code: "pcm" },
+];
 
 export default function LoginScreen({ navigation }: { navigation?: any }) {
   const [phone, setPhone] = useState("");
   const [shopName, setShopName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [language, setLanguage] = useState("en");
+
+  useEffect(() => {
+    const loadLang = async () => {
+      const lang = await AsyncStorage.getItem("selectedLanguage");
+      if (lang) setLanguage(lang);
+    };
+    loadLang();
+  }, []);
 
   const handleGetCode = async () => {
     if (!phone) {
       Alert.alert("Required", "Please enter your phone number.");
       return;
     }
-
     setIsLoading(true);
     try {
       await authApi.requestOtp(phone);
       navigation?.navigate("VerifyOtp", { phone, shopName });
+      await AsyncStorage.setItem("selectedLanguage", language);
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogle = () => {
-    // TODO: wire Google OAuth flow
-    console.log("Google login");
   };
 
   const openLink = (url: string) =>
@@ -94,6 +106,35 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
               Let's get your shop running. Enter your details to start tracking
               sales.
             </Text>
+          </View>
+
+          {/* Language Selector */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={styles.label}>Select Language</Text>
+            <View style={styles.languageRow}>
+              {LANGUAGES.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageBtn,
+                    language === lang.code && { backgroundColor: MAIN_GREEN },
+                  ]}
+                  onPress={() => setLanguage(lang.code)}
+                >
+                  <Text
+                    style={[
+                      styles.languageText,
+                      language === lang.code && {
+                        color: "#fff",
+                        fontWeight: "700",
+                      },
+                    ]}
+                  >
+                    {lang.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Form */}
@@ -158,26 +199,6 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
                 </>
               )}
             </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>Or continue with</Text>
-              <View style={styles.divider} />
-            </View>
-
-            {/* Google */}
-            <TouchableOpacity
-              style={styles.socialBtn}
-              onPress={handleGoogle}
-              activeOpacity={0.9}
-            >
-              <View style={styles.googleIcon}>
-                {/* Google glyph approximation */}
-                <AntDesign name="google" size={18} color="#DB4437" />
-              </View>
-              <Text style={styles.googleText}>Google</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Footer */}
@@ -214,8 +235,7 @@ const styles = StyleSheet.create({
   ka: { flex: 1 },
   container: {
     paddingHorizontal: 20,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight ?? 20) : 18,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 18,
     paddingBottom: 10,
   },
   topBar: {
@@ -262,6 +282,15 @@ const styles = StyleSheet.create({
   h1: { fontSize: 28, fontWeight: "800", color: "#fff", marginBottom: 6 },
   h2: { fontSize: 15, color: "#9aa19d", lineHeight: 20, maxWidth: 520 },
 
+  languageRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  languageBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "#27312b",
+  },
+  languageText: { fontSize: 14, color: "#fff" },
+
   form: { marginTop: 8, gap: 12 },
   field: { marginBottom: 8 },
   label: { fontSize: 13, fontWeight: "700", marginBottom: 8, color: "#fff" },
@@ -278,7 +307,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   newShopText: { fontSize: 11, color: "#6B7280" },
-
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -312,7 +340,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-
     shadowColor: MAIN_GREEN,
     shadowOpacity: 0.18,
     elevation: 6,
@@ -323,36 +350,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     paddingHorizontal: 6,
   },
-
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 16,
-    marginBottom: 6,
-  },
-  divider: { height: 1, flex: 1, backgroundColor: "#E6E9E8" },
-  dividerText: { fontSize: 11, color: "#9AA0A6", fontWeight: "700" },
-
-  socialBtn: {
-    height: 56,
-    borderRadius: 999,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#E6E9E8",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  googleIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  googleText: { fontSize: 15, color: "#111", fontWeight: "700" },
 
   footer: { marginTop: 18, paddingVertical: 10, alignItems: "center" },
   smallText: { color: "#9AA0A6", textAlign: "center", fontSize: 12 },
