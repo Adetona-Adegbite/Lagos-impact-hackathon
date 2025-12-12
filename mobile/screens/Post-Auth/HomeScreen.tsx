@@ -317,24 +317,6 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
 
           <View style={{ height: 120 }} />
         </ScrollView>
-
-        {/* Floating Quick Scan Button */}
-        <View style={styles.floatingWrap}>
-          <TouchableOpacity
-            style={styles.quickScanBtn}
-            activeOpacity={0.9}
-            onPress={() => console.log("Quick Scan")}
-          >
-            <MaterialIcons
-              // @ts-ignore
-              name="qr-code-scanner"
-              size={20}
-              color="#062"
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.quickScanText}>Quick Scan Product</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
