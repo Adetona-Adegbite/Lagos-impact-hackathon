@@ -1,0 +1,207 @@
+import { executeSql } from "./database";
+import { productsApi, salesApi } from "./api";
+
+// Helper to get token
+const getToken = async (): Promise<string | null> => {
+  const result = await executeSql(
+    "SELECT value FROM settings WHERE key = ?",
+    ["token"],
+  );
+  if (result.rows.length > 0) {
+    return result.rows.item(0).value;
+  }
+  return null;
+};
+
+export const SyncService = {
+  /**
+   * Push pending sales to the server
+   */
+  syncSalesUp: async () => {
+    const token = await getToken();
+    if (!token) {
+      console.warn("[Sync] No token found, skipping syncSalesUp");
+      return;
+    }
+
+    // 1. Get pending sales
+    const salesResult = await executeSql(
+      "SELECT * FROM sales WHERE syncStatus = 'pending'",
+    );
+
+    if (salesResult.rows.length === 0) return;
+
+    const sales = [];
+    for (let i = 0; i < salesResult.rows.length; i++) {
+      const sale = salesResult.rows.item(i);
+
+      // Get items for this sale
+      const itemsResult = await executeSql(
+        "SELECT * FROM sale_items WHERE saleId = ?",
+        [sale.id],
+      );
+
+      const items = [];
+      for (let j = 0; j < itemsResult.rows.length; j++) {
+        const item = itemsResult.rows.item(j);
+        items.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          priceAtSale: item.priceAtSale,
+        });
+      }
+
+      sales.push({
+        id: sale.id,
+        totalAmount: sale.totalAmount,
+        createdAt: sale.createdAt,
+        items,
+      });
+    }
+
+    // 2. Send to backend
+    console.log(`[Sync] Uploading ${sales.length} pending sales...`);
+    const response = await salesApi.sync(sales, token);
+
+    // 3. Mark successful ones as synced
+    if (response.results) {
+      for (const res of response.results) {
+        if (res.status === "synced" || res.status === "already_synced") {
+          await executeSql(
+            "UPDATE sales SET syncStatus = 'synced' WHERE id = ?",
+            [res.id],
+          );
+        }
+      }
+    }
+  },
+
+  /**
+   * Push locally created products to server
+   */
+  syncProductsUp: async () => {
+    const token = await getToken();
+    if (!token) return;
+
+    const result = await executeSql(
+      "SELECT * FROM products WHERE syncStatus = 'pending'",
+    );
+
+    if (result.rows.length > 0) {
+      console.log(`[Sync] Uploading ${result.rows.length} pending products...`);
+    }
+
+    for (let i = 0; i < result.rows.length; i++) {
+      const product = result.rows.item(i);
+
+      try {
+        await productsApi.create(
+          {
+            id: product.id,
+            name: product.name,
+            barcode: product.barcode,
+            category: product.category,
+            sellingPrice: product.sellingPrice,
+            purchasePrice: product.purchasePrice,
+          },
+          token,
+        );
+
+        await executeSql(
+          "UPDATE products SET syncStatus = 'synced' WHERE id = ?",
+          [product.id],
+        );
+      } catch (e) {
+        console.error("Failed to sync product", product.id, e);
+        // Continue to next product
+      }
+    }
+  },
+
+  /**
+   * Download latest products and inventory from server
+   */
+  syncProductsDown: async () => {
+    const token = await getToken();
+    if (!token) return;
+
+    // Fetch all products
+    // TODO: implement pagination loop if total > limit
+    const response = await productsApi.getAll(token, 1, 1000);
+    const products = response.items || [];
+
+    console.log(`[Sync] Downloaded ${products.length} products`);
+
+    await executeSql("BEGIN TRANSACTION");
+    try {
+      for (const p of products) {
+        // Check local status
+        const local = await executeSql(
+          "SELECT syncStatus FROM products WHERE id = ?",
+          [p.id],
+        );
+        if (
+          local.rows.length > 0 &&
+          local.rows.item(0).syncStatus === "pending"
+        ) {
+          // Local changes pending, skip overwrite
+          continue;
+        }
+
+        // Insert or Replace Product
+        await executeSql(
+          `INSERT OR REPLACE INTO products (id, name, barcode, category, sellingPrice, purchasePrice, createdAt, updatedAt, deleted, syncStatus)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'synced')`,
+          [
+            p.id,
+            p.name,
+            p.barcode,
+            p.category,
+            p.sellingPrice,
+            p.purchasePrice,
+            p.createdAt,
+            new Date().toISOString(), // updatedAt
+          ],
+        );
+
+        // Upsert Inventory
+        if (p.inventory) {
+          const existInv = await executeSql(
+            "SELECT id FROM inventory WHERE productId = ?",
+            [p.id],
+          );
+          if (existInv.rows.length > 0) {
+            await executeSql(
+              "UPDATE inventory SET quantity = ?, syncStatus = 'synced', updatedAt = ? WHERE productId = ?",
+              [p.inventory.quantity, new Date().toISOString(), p.id],
+            );
+          } else {
+            // Create a deterministic ID for local inventory record if needed
+            const invId = `inv_${p.id}`;
+            await executeSql(
+              "INSERT INTO inventory (id, productId, quantity, updatedAt, syncStatus) VALUES (?, ?, ?, ?, 'synced')",
+              [invId, p.id, p.inventory.quantity, new Date().toISOString()],
+            );
+          }
+        }
+      }
+      await executeSql("COMMIT");
+    } catch (e) {
+      await executeSql("ROLLBACK");
+      throw e;
+    }
+  },
+
+  syncAll: async () => {
+    // console.log("Starting sync...");
+    try {
+      await SyncService.syncProductsUp();
+      await SyncService.syncSalesUp();
+      await SyncService.syncProductsDown();
+      // console.log("Sync completed.");
+    } catch (e) {
+      console.error("Sync failed:", e);
+      throw e;
+    }
+  },
+};

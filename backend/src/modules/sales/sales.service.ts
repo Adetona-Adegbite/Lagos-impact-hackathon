@@ -5,6 +5,19 @@ interface CheckoutItem {
   quantity: number;
 }
 
+interface SyncSaleItem {
+  productId: string;
+  quantity: number;
+  priceAtSale: number;
+}
+
+interface SyncSale {
+  id?: string;
+  totalAmount: number;
+  createdAt?: string;
+  items: SyncSaleItem[];
+}
+
 export const processCheckout = async (items: CheckoutItem[]) => {
   if (items.length === 0) {
     throw { statusCode: 400, message: "Cart cannot be empty" };
@@ -155,4 +168,72 @@ export const getSaleById = async (id: string) => {
   }
 
   return sale;
+};
+
+export const syncSales = async (sales: SyncSale[]) => {
+  const results = [];
+
+  for (const saleData of sales) {
+    // Check if sale already exists
+    if (saleData.id) {
+      const existing = await prisma.sale.findUnique({
+        where: { id: saleData.id },
+      });
+      if (existing) {
+        results.push({ id: saleData.id, status: "already_synced" });
+        continue;
+      }
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Create Sale
+        await tx.sale.create({
+          data: {
+            id: saleData.id, // Use provided ID if available
+            totalAmount: saleData.totalAmount,
+            createdAt: saleData.createdAt
+              ? new Date(saleData.createdAt)
+              : undefined,
+            items: {
+              create: saleData.items.map((item) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                priceAtSale: item.priceAtSale,
+              })),
+            },
+          },
+        });
+
+        // Update Inventory
+        for (const item of saleData.items) {
+          // Check if inventory exists for this product
+          const inventory = await tx.inventory.findUnique({
+            where: { productId: item.productId },
+          });
+
+          if (inventory) {
+            await tx.inventory.update({
+              where: { productId: item.productId },
+              data: {
+                quantity: {
+                  decrement: item.quantity,
+                },
+              },
+            });
+          }
+        }
+      });
+      results.push({ id: saleData.id, status: "synced" });
+    } catch (error) {
+      console.error(`Failed to sync sale ${saleData.id}:`, error);
+      results.push({
+        id: saleData.id,
+        status: "failed",
+        error: "Transaction failed",
+      });
+    }
+  }
+
+  return { results };
 };

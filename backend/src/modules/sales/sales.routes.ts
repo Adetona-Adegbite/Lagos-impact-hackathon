@@ -29,7 +29,71 @@ const checkoutSchema = z.object({
   }),
 });
 
+const syncSalesSchema = z.object({
+  body: z.object({
+    sales: z.array(
+      z.object({
+        id: z.string().optional(),
+        totalAmount: z.number(),
+        createdAt: z.string().optional(),
+        items: z.array(
+          z.object({
+            productId: z.string(),
+            quantity: z.number(),
+            priceAtSale: z.number(),
+          }),
+        ),
+      }),
+    ),
+  }),
+});
+
 router.use(authenticate);
+
+/**
+ * @swagger
+ * /sales/sync:
+ *   post:
+ *     summary: Sync offline sales
+ *     tags: [Sales]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sales
+ *             properties:
+ *               sales:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     totalAmount:
+ *                       type: number
+ *                     createdAt:
+ *                       type: string
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           productId:
+ *                             type: string
+ *                           quantity:
+ *                             type: number
+ *                           priceAtSale:
+ *                             type: number
+ *     responses:
+ *       200:
+ *         description: Sales synced successfully
+ */
+router.post("/sync", validate(syncSalesSchema), salesController.sync);
 
 /**
  * @swagger

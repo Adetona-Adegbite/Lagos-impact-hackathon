@@ -12,7 +12,10 @@ import {
   ScrollView,
   StatusBar,
   Linking,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
+import { authApi } from "../../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
 
@@ -21,11 +24,23 @@ const MAIN_GREEN = "#36e27b";
 export default function LoginScreen({ navigation }: { navigation?: any }) {
   const [phone, setPhone] = useState("");
   const [shopName, setShopName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGetCode = () => {
-    // TODO: wire OTP request (validate phone & shopName)
-    // console.log("Get code for", phone, shopName);
-    navigation?.navigate("VerifyOtp", { phone });
+  const handleGetCode = async () => {
+    if (!phone) {
+      Alert.alert("Required", "Please enter your phone number.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authApi.requestOtp(phone);
+      navigation?.navigate("VerifyOtp", { phone, shopName });
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogle = () => {
@@ -129,12 +144,19 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
 
             {/* Primary Action */}
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, isLoading && { opacity: 0.7 }]}
               activeOpacity={0.88}
               onPress={handleGetCode}
+              disabled={isLoading}
             >
-              <Text style={styles.primaryBtnText}>Get Code</Text>
-              <MaterialIcons name="arrow-forward" size={18} color="#072" />
+              {isLoading ? (
+                <ActivityIndicator color="#062" />
+              ) : (
+                <>
+                  <Text style={styles.primaryBtnText}>Get Code</Text>
+                  <MaterialIcons name="arrow-forward" size={18} color="#072" />
+                </>
+              )}
             </TouchableOpacity>
 
             {/* Divider */}
@@ -192,7 +214,8 @@ const styles = StyleSheet.create({
   ka: { flex: 1 },
   container: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 18,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 20) : 18,
     paddingBottom: 10,
   },
   topBar: {
