@@ -21,7 +21,7 @@ export const createProduct = async (data: {
 
   if (existingProduct) {
     throw {
-      statusCode: 400,
+      statusCode: 409,
       message: "Product with this barcode already exists",
     };
   }

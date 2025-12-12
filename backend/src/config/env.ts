@@ -13,7 +13,6 @@ const envSchema = z.object({
     .default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
-  // UNIMTX_ACCESS_KEY_ID: z.string().min(1, "UNIMTX_ACCESS_KEY_ID is required"),
 });
 
 const envParsed = envSchema.safeParse(process.env);
