@@ -362,12 +362,16 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#122117",
+    paddingTop: StatusBar.currentHeight,
+  },
   container: { paddingBottom: 36 },
 
   header: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 8,
     backgroundColor: "transparent",
   },

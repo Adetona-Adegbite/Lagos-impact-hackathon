@@ -127,6 +127,7 @@ export const getSales = async (page: number = 1, limit: number = 20) => {
             product: {
               select: { name: true },
             },
+            productId: true,
           },
         },
       },

@@ -246,13 +246,79 @@ export const SyncService = {
     }
   },
 
+  /**
+   * Download latest sales from server
+   */
+  syncSalesDown: async () => {
+    const token = await getToken();
+    if (!token) return;
+
+    // Fetch all sales
+    const response = await salesApi.getAll(token, 1, 1000);
+    const sales = response.items || [];
+
+    console.log(`[Sync] Downloaded ${sales.length} sales`);
+
+    await executeSql("BEGIN TRANSACTION");
+    try {
+      for (const s of sales) {
+        // Check local status
+        const local = await executeSql(
+          "SELECT syncStatus FROM sales WHERE id = ?",
+          [s.id],
+        );
+        if (
+          local.rows.length > 0 &&
+          local.rows.item(0).syncStatus === "pending"
+        ) {
+          // Local changes pending, skip overwrite
+          continue;
+        }
+
+        // Insert or Replace Sale
+        await executeSql(
+          `INSERT OR REPLACE INTO sales (id, totalAmount, createdAt, syncStatus)
+           VALUES (?, ?, ?, 'synced')`,
+          [s.id, s.totalAmount, s.createdAt],
+        );
+
+        // Handle items
+        await executeSql("DELETE FROM sale_items WHERE saleId = ?", [s.id]);
+
+        if (s.items) {
+          for (const item of s.items) {
+            const itemId = item.id || `${s.id}_${item.productId}`;
+            await executeSql(
+              `INSERT INTO sale_items (id, saleId, productId, quantity, priceAtSale)
+               VALUES (?, ?, ?, ?, ?)`,
+              [itemId, s.id, item.productId, item.quantity, item.priceAtSale],
+            );
+          }
+        }
+      }
+      await executeSql("COMMIT");
+    } catch (e) {
+      await executeSql("ROLLBACK");
+      throw e;
+    }
+  },
+
+  syncUp: async () => {
+    await SyncService.syncProductsUp();
+    await SyncService.syncSalesUp();
+    await SyncService.syncInventoryUp();
+  },
+
+  syncDown: async () => {
+    await SyncService.syncProductsDown();
+    await SyncService.syncSalesDown();
+  },
+
   syncAll: async () => {
     // console.log("Starting sync...");
     try {
-      await SyncService.syncProductsUp();
-      await SyncService.syncSalesUp();
-      await SyncService.syncInventoryUp();
-      await SyncService.syncProductsDown();
+      await SyncService.syncUp();
+      await SyncService.syncDown();
       // console.log("Sync completed.");
     } catch (e) {
       console.error("Sync failed:", e);

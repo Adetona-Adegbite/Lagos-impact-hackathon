@@ -178,7 +178,14 @@ export default function VerifyOtpScreen({
         if (!ok) throw new Error("Invalid code");
       } else {
         const response = await authApi.verifyOtp(phone, code, shopName);
-        await authStorage.saveAuthData(response.token, response.user);
+
+        // If user provided a shopName, prefer it over what server returns
+        const userToSave = { ...response.user };
+        if (shopName) {
+          userToSave.shopName = shopName;
+        }
+
+        await authStorage.saveAuthData(response.token, userToSave);
         // Trigger initial sync (fire and forget)
         SyncService.syncProductsDown().catch((e) =>
           console.log("Initial sync warning:", e),

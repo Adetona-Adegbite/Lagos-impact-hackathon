@@ -77,6 +77,21 @@ export const productsApi = {
     });
   },
 
+  update: (id: string, data: any, token: string) => {
+    return request<any>(`/api/v1/products/${id}`, {
+      method: "PATCH",
+      data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  delete: (id: string, token: string) => {
+    return request<any>(`/api/v1/products/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
   getAll: (token: string, page = 1, limit = 1000) => {
     return request<any>(`/api/v1/products?page=${page}&limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -104,6 +119,12 @@ export const salesApi = {
     return request<any>("/api/v1/sales/sync", {
       method: "POST",
       data: { sales },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  getAll: (token: string, page = 1, limit = 1000) => {
+    return request<any>(`/api/v1/sales?page=${page}&limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   },

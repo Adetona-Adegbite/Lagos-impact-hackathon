@@ -1,5 +1,5 @@
 // src/screens/AIInsightsScreen.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
   Dimensions,
   TextInput,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { authStorage } from "../../services/authStorage";
+import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
 const PRIMARY = "#36e27b";
@@ -23,6 +26,17 @@ type Range = "month" | "ytd";
 export default function AIInsightsScreen({ navigation }: { navigation: any }) {
   const [range, setRange] = useState<Range>("month");
   const [query, setQuery] = useState("");
+  const [shopName, setShopName] = useState("My Shop");
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const authData = await authStorage.getAuthData();
+      if (authData?.user?.shopName) {
+        setShopName(authData.user.shopName);
+      }
+    };
+    loadSettings();
+  }, []); // Depend on [] so it runs once on mount
 
   const sampleWeekly = [40, 60, 30, 75, 90, 50, 20];
   const taxScore = 85;
@@ -47,8 +61,8 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
             <MaterialIcons name="arrow-back" size={20} color="#111" />
           </TouchableOpacity>
           <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.userName}>Oga Emmanuel</Text>
+            <Text style={styles.welcomeText}>{t("welcomeBack")}</Text>
+            <Text style={styles.userName}>{shopName}</Text>
           </View>
         </View>
 
@@ -361,12 +375,17 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#122117",
+    paddingTop: StatusBar.currentHeight,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
     borderBottomWidth: 0.5,
     borderColor: "#e6e9e8",
   },

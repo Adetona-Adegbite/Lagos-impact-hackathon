@@ -43,7 +43,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
     try {
       const header = ["id", "date", "method", "total", "vat"].join(",");
       const rows = SAMPLE_RECEIPTS.map((r) =>
-        [r.id, r.date, r.method, r.total, r.vat].join(",")
+        [r.id, r.date, r.method, r.total, r.vat].join(","),
       );
       const csv = [header, ...rows].join("\n");
 
@@ -58,7 +58,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
         // As a last resort, try writing to cacheDirectory without type errors
         Alert.alert(
           "Storage path missing",
-          "Could not find a suitable file directory on this device."
+          "Could not find a suitable file directory on this device.",
         );
         return;
       }
@@ -66,7 +66,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
 
       await FileSystem.writeAsStringAsync(
         filepath,
-        csv /*, { encoding: (FileSystem as any).EncodingType?.UTF8 } */
+        csv /*, { encoding: (FileSystem as any).EncodingType?.UTF8 } */,
       );
 
       const sharingAvailable = await Sharing.isAvailableAsync();
@@ -97,7 +97,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
           <td style="padding:8px;border:1px solid #eee;text-align:right">₦${r.total.toLocaleString()}</td>
           <td style="padding:8px;border:1px solid #eee;text-align:right">₦${r.vat.toLocaleString()}</td>
         </tr>
-      `
+      `,
       ).join("");
 
       const html = `
@@ -139,7 +139,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
       if (!baseDir) {
         Alert.alert(
           "Storage path missing",
-          "Could not find a suitable file directory on this device."
+          "Could not find a suitable file directory on this device.",
         );
         return;
       }
@@ -351,12 +351,16 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#122117",
+    paddingTop: StatusBar.currentHeight,
+  },
   header: {
-    height: 64,
     borderBottomWidth: 0.3,
     borderColor: "#e6e9e8",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

@@ -11,6 +11,7 @@ export interface Translation {
 
   // LoginScreen
   welcomeOga: string;
+  welcomeBack: string;
   loginSubtitle: string;
   phoneNumber: string;
   shopName: string;
@@ -134,6 +135,7 @@ const translations: { [key: string]: Translation } = {
     continue: "Continue",
     // LoginScreen
     welcomeOga: "Welcome, Oga! 👋",
+    welcomeBack: "Welcome back,",
     loginSubtitle:
       "Let's get your shop running. Enter your details to start tracking sales.",
     phoneNumber: "Phone Number",
@@ -251,7 +253,8 @@ const translations: { [key: string]: Translation } = {
     pidgin: "Nigerian Pidgin",
     continue: "Continue",
     // LoginScreen
-    welcomeOga: "Oga, you are welcome! 👋",
+    welcomeOga: "Welcome, Oga! 👋",
+    welcomeBack: "You don return,",
     loginSubtitle:
       "Make we set up your shop. Put your details make you fit begin track your sales.",
     phoneNumber: "Your Phone Number",
@@ -370,6 +373,7 @@ const translations: { [key: string]: Translation } = {
     continue: "Ci gaba",
     // LoginScreen
     welcomeOga: "Barka da zuwa, Oga! 👋",
+    welcomeBack: "Barka da dawowa,",
     loginSubtitle:
       "Bari mu saita shagon ku. Shigar da bayananku don fara bin diddigin tallace-tallace.",
     phoneNumber: "Lambar Waya",
@@ -488,6 +492,7 @@ const translations: { [key: string]: Translation } = {
     continue: "Tẹsiwaju",
     // LoginScreen
     welcomeOga: "Kaabo, Oga! 👋",
+    welcomeBack: "Kaabo pada,",
     loginSubtitle:
       "Jẹ ki a ṣeto ile itaja rẹ. Fi awọn alaye rẹ sii lati bẹrẹ titọpa tita.",
     phoneNumber: "Nọmba Foonu",
@@ -606,6 +611,7 @@ const translations: { [key: string]: Translation } = {
     continue: "Gaa n'ihu",
     // LoginScreen
     welcomeOga: "Nnọọ, Oga! 👋",
+    welcomeBack: "Nnọọ lọghachi,",
     loginSubtitle:
       "Ka anyị hazie ụlọ ahịa gị. Tinye nkọwa gị ka ịmalite ịdekọ ahịa.",
     phoneNumber: "Nọmba Ekwentị",
@@ -787,7 +793,7 @@ export const localizationService = {
    * @param key The key of the translation string
    */
   t: (key: keyof Translation): string => {
-    return currentTranslations[key] || key;
+    return currentTranslations[key] || translations.en[key] || key;
   },
 
   /**

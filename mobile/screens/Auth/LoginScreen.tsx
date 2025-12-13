@@ -23,9 +23,9 @@ const MAIN_GREEN = "#36e27b";
 
 const LANGUAGES = [
   { label: t("english"), code: "en" },
-  { label: t("hausa"), code: "ha" },
-  { label: t("yoruba"), code: "yo" },
-  { label: t("igbo"), code: "ig" },
+  { label: t("hausa"), code: "hausa" },
+  { label: t("yoruba"), code: "yoruba" },
+  { label: t("igbo"), code: "igbo" },
   { label: t("pidgin"), code: "pcm" },
 ];
 
@@ -142,7 +142,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="80 1234 5678"
+                  placeholder="8012345678"
                   placeholderTextColor="#9AA0A6"
                   keyboardType="phone-pad"
                   value={phone}
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   },
   flag: { fontSize: 18, marginRight: 8 },
   countryCode: { fontSize: 15, color: "#fff", fontWeight: "600" },
-  input: { flex: 1, paddingHorizontal: 14, fontSize: 16, color: "#111" },
+  input: { flex: 1, paddingHorizontal: 14, fontSize: 16, color: "#fff" },
   iconWrap: { paddingHorizontal: 14 },
 
   primaryBtn: {

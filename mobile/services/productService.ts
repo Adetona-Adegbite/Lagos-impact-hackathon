@@ -1,5 +1,5 @@
 import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
-import { productsApi, inventoryApi } from "./api";
+import { productsApi, inventoryApi, salesApi } from "./api";
 import { authStorage } from "./authStorage";
 import cuid from "cuid";
 
@@ -81,6 +81,24 @@ export const productService = {
         [inventoryId, productId, data.quantity, now],
       );
 
+      // Fire and forget sync to backend
+      authStorage.getToken().then((token) => {
+        if (token) {
+          productsApi
+            .create({ ...data, id: productId }, token)
+            .then(() => {
+              // Also sync initial inventory
+              return inventoryApi.update(
+                { productId, quantity: data.quantity },
+                token,
+              );
+            })
+            .catch((e) =>
+              console.warn("Live product creation/inventory sync failed", e),
+            );
+        }
+      });
+
       return productId;
     } catch (error) {
       console.error("Error creating product:", error);
@@ -133,6 +151,15 @@ export const productService = {
 
     const sql = `UPDATE products SET ${updates.join(", ")} WHERE id = ?`;
     await executeSql(sql, params);
+
+    // Fire and forget sync to backend
+    authStorage.getToken().then((token) => {
+      if (token) {
+        productsApi
+          .update(id, data, token)
+          .catch((e) => console.warn("Live product update failed", e));
+      }
+    });
   },
 
   /**
@@ -212,6 +239,25 @@ export const productService = {
         );
       }
 
+      // Fire and forget sync to backend
+      authStorage.getToken().then((token) => {
+        if (token) {
+          const saleData = {
+            id: saleId,
+            totalAmount,
+            createdAt: now,
+            items: items.map((i) => ({
+              productId: i.productId,
+              quantity: i.quantity,
+              priceAtSale: i.price,
+            })),
+          };
+          salesApi
+            .sync([saleData], token)
+            .catch((e) => console.warn("Live sale sync failed", e));
+        }
+      });
+
       return saleId;
     } catch (error) {
       console.error("Error processing sale:", error);
@@ -228,6 +274,15 @@ export const productService = {
       `UPDATE products SET deleted = 1, updatedAt = ?, syncStatus = 'pending' WHERE id = ?`,
       [now, productId],
     );
+
+    // Fire and forget sync to backend
+    authStorage.getToken().then((token) => {
+      if (token) {
+        productsApi
+          .delete(productId, token)
+          .catch((e) => console.warn("Live product deletion failed", e));
+      }
+    });
   },
 
   /**

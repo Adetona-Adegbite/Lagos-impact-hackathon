@@ -2,7 +2,7 @@ import * as SQLite from "expo-sqlite";
 
 // Open the database (creates it if it doesn't exist)
 // This uses the new synchronous API available in Expo SDK 50+ (expo-sqlite v14+)
-const db = SQLite.openDatabaseSync("supamart.db");
+const db = SQLite.openDatabaseSync("supamartv3.db");
 
 export type SyncStatus = "pending" | "synced" | "failed";
 
