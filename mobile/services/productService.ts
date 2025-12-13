@@ -345,6 +345,24 @@ export const productService = {
   },
 
   /**
+   * Get all sales history
+   */
+  getAllSales: async () => {
+    const sql = `
+      SELECT
+        s.id,
+        s.totalAmount,
+        s.createdAt,
+        (SELECT p.name FROM sale_items si JOIN products p ON si.productId = p.id WHERE si.saleId = s.id LIMIT 1) as title,
+        (SELECT COUNT(*) FROM sale_items si WHERE si.saleId = s.id) as itemCount
+      FROM sales s
+      ORDER BY s.createdAt DESC
+    `;
+    const result = await executeSql(sql);
+    return result.rows._array;
+  },
+
+  /**
    * Get all product categories
    */
   getCategories: async (): Promise<string[]> => {

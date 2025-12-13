@@ -1,5 +1,7 @@
 // src/screens/SalesScreen.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { productService } from "../../services/productService";
 import {
   SafeAreaView,
   View,
@@ -29,86 +31,60 @@ type Sale = {
   accent?: string;
 };
 
-const SAMPLE_SALES_TODAY: Sale[] = [
-  {
-    id: "s1",
-    title: "Milo Refill x2, Sugar...",
-    time: "10:42 AM",
-    method: "Cash",
-    amount: 3200,
-    status: "Paid",
-    color: "#F59E0B",
-    accent: "#F97316",
-  },
-  {
-    id: "s2",
-    title: "Peak Milk, Bread, Eggs...",
-    time: "09:15 AM",
-    method: "POS",
-    amount: 8500,
-    status: "Paid",
-    color: "#60A5FA",
-    accent: "#3B82F6",
-  },
-  {
-    id: "s3",
-    title: "Indomie Carton (Chicken)",
-    time: "08:55 AM",
-    method: "Transfer",
-    amount: 12400,
-    status: "Pending",
-    color: "#C084FC",
-    accent: "#8B5CF6",
-  },
-  {
-    id: "s4",
-    title: "Ankara Fabric 6 yards",
-    time: "08:30 AM",
-    method: "Cash",
-    amount: 6000,
-    status: "Paid",
-    color: "#2DD4BF",
-    accent: "#14B8A6",
-  },
-];
-
-const SAMPLE_SALES_YESTERDAY: Sale[] = [
-  {
-    id: "y1",
-    title: "Detergent, Soap bar...",
-    time: "19:45 PM",
-    method: "Cash",
-    amount: 1850,
-    status: "Paid",
-    color: "#9CA3AF",
-  },
-];
-
 export default function SalesScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState(t("today"));
-  const [selectedRange, setSelectedRange] = useState(t("today"));
+  const [sales, setSales] = useState<any[]>([]);
 
-  const filters = [t("today"), t("paymentMethod"), t("status")];
-
-  const todaySales = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return SAMPLE_SALES_TODAY.filter(
-      (s) => !q || s.title.toLowerCase().includes(q),
-    );
-  }, [query]);
-
-  const yesterdaySales = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return SAMPLE_SALES_YESTERDAY.filter(
-      (s) => !q || s.title.toLowerCase().includes(q),
-    );
-  }, [query]);
-
-  const totalToday = useMemo(
-    () => SAMPLE_SALES_TODAY.reduce((sum, s) => sum + s.amount, 0),
-    [],
+  useFocusEffect(
+    useCallback(() => {
+      productService.getAllSales().then(setSales);
+    }, []),
   );
+
+  const filters: string[] = [
+    /* t("today") */
+  ];
+
+  const { todaySales, previousSales, totalToday } = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    const today: Sale[] = [];
+    const prev: Sale[] = [];
+    let total = 0;
+
+    const colors = ["#F59E0B", "#60A5FA", "#C084FC", "#2DD4BF"];
+    const accents = ["#F97316", "#3B82F6", "#8B5CF6", "#14B8A6"];
+
+    sales.forEach((s, i) => {
+      const dateStr = s.createdAt.split("T")[0];
+      const sale: Sale = {
+        id: s.id,
+        title: s.title || "Sale Item",
+        time: new Date(s.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        method: "Cash", // Defaulting to Cash
+        amount: s.totalAmount,
+        status: "Paid", // Defaulting to Paid
+        color: colors[i % colors.length],
+        accent: accents[i % accents.length],
+      };
+
+      if (q && !sale.title.toLowerCase().includes(q)) return;
+
+      if (dateStr === todayStr) {
+        today.push(sale);
+        total += s.totalAmount;
+      } else {
+        prev.push(sale);
+      }
+    });
+
+    return { todaySales: today, previousSales: prev, totalToday: total };
+  }, [sales, query]);
 
   const renderSaleItem = ({ item }: { item: Sale }) => (
     <TouchableOpacity
@@ -332,17 +308,21 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
             ListHeaderComponent={() => null}
           />
 
-          <View style={{ marginTop: 16, marginBottom: 8 }}>
-            <Text style={styles.sectionHeader}>{t("yesterday")}</Text>
-          </View>
+          {previousSales.length > 0 && (
+            <>
+              <View style={{ marginTop: 16, marginBottom: 8 }}>
+                <Text style={styles.sectionHeader}>History</Text>
+              </View>
 
-          <FlatList
-            data={yesterdaySales}
-            keyExtractor={(s) => s.id}
-            renderItem={renderSaleItem}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-            scrollEnabled={false}
-          />
+              <FlatList
+                data={previousSales}
+                keyExtractor={(s) => s.id}
+                renderItem={renderSaleItem}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                scrollEnabled={false}
+              />
+            </>
+          )}
 
           <View style={{ height: 120 }} />
         </View>
