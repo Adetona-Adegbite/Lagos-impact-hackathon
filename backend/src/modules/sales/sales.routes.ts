@@ -140,6 +140,13 @@ router.post("/checkout", validate(checkoutSchema), salesController.checkout);
  *     tags: [Sales]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lang
+ *         schema:
+ *           type: string
+ *           enum: [en, pcm, hausa, yoruba, igbo]
+ *         description: Language for the insight
  *     responses:
  *       200:
  *         description: Insights generated

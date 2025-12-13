@@ -240,7 +240,7 @@ export const syncSales = async (sales: SyncSale[]) => {
   return { results };
 };
 
-export const generateBusinessInsights = async () => {
+export const generateBusinessInsights = async (language = "en") => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -279,15 +279,24 @@ export const generateBusinessInsights = async () => {
 
   const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+  const languageMap: { [key: string]: string } = {
+    en: "English",
+    pcm: "Nigerian Pidgin",
+    hausa: "Hausa",
+    yoruba: "Yoruba",
+    igbo: "Igbo",
+  };
+  const targetLanguage = languageMap[language] || "English";
+
   const prompt = `
-    You are a smart retail business assistant. Analyze this data:
+    You are a smart retail business assistant. Analyze this data in ${targetLanguage}:
     - Today's Revenue: ₦${todayRevenue}
     - Month Revenue: ₦${monthRevenue}
     - Low Stock Items: ${lowStockNames || "None"}
     - Date: ${today.toDateString()}
 
     Generate a JSON response for a dashboard widget.
-    Structure:
+    Structure (translate title and value strings to ${targetLanguage}):
     {
       "message": "Concise, actionable insight (max 20 words). E.g. 'Good sales today! Restock Indomie.'",
       "chips": [
@@ -302,32 +311,10 @@ export const generateBusinessInsights = async () => {
 
   try {
     const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            chips: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  value: { type: "string" },
-                  color: { type: "string" },
-                },
-                required: ["title", "value", "color"],
-              },
-            },
-          },
-          required: ["message", "chips"],
-        },
-      },
     });
-    const text = result.text || "{}";
+    const text = result.text || "";
     const cleanText = text.replace(/```json|```/g, "").trim();
     return JSON.parse(cleanText);
   } catch (error) {

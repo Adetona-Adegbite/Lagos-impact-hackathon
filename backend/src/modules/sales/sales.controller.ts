@@ -62,7 +62,8 @@ export const getBusinessInsights = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await salesService.generateBusinessInsights();
+    const language = req.query.lang as string | undefined;
+    const result = await salesService.generateBusinessInsights(language);
     sendSuccess(res, result, "Business insights generated");
   } catch (error) {
     next(error);

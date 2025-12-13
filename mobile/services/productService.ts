@@ -1,6 +1,7 @@
 import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
 import { productsApi, inventoryApi, salesApi } from "./api";
 import { authStorage } from "./authStorage";
+import { localizationService } from "../utils/localization";
 import cuid from "cuid";
 
 // Helper to generate IDs
@@ -386,6 +387,7 @@ export const productService = {
   getBusinessInsights: async () => {
     const token = await authStorage.getToken();
     if (!token) throw new Error("Not authenticated");
-    return salesApi.getInsights(token);
+    const lang = localizationService.getCurrentLanguage() || "en";
+    return salesApi.getInsights(token, lang);
   },
 };

@@ -69,4 +69,27 @@ router.get("/trends", insightController.getTrends);
  */
 router.get("/recommendations", insightController.getRecommendations);
 
+/**
+ * @swagger
+ * /insights/main:
+ *   get:
+ *     summary: Generates and retrieves comprehensive business insights
+ *     tags: [Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lang
+ *         schema:
+ *           type: string
+ *           enum: [en, pcm, hausa, yoruba, igbo]
+ *         description: The language for the insight response.
+ *     responses:
+ *       200:
+ *         description: Main business insights generated successfully
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/main", insightController.getMainInsights);
+
 export default router;

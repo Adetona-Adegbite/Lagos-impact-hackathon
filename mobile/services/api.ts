@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { MainInsightsInput, MainInsightsOutput } from "../src/types/insights";
 
 // Use 10.0.2.2 for Android Emulator to access host machine's localhost
 // Use localhost for iOS Simulator
@@ -129,8 +130,8 @@ export const salesApi = {
     });
   },
 
-  getInsights: (token: string) => {
-    return request<any>("/api/v1/sales/insights", {
+  getInsights: (token: string, lang: string) => {
+    return request<any>(`/api/v1/sales/insights?lang=${lang}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
@@ -142,6 +143,15 @@ export const inventoryApi = {
     return request<any>("/api/v1/inventory/set-quantity", {
       method: "POST",
       data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const insightsApi = {
+  generateMainInsights: (token: string, lang: string) => {
+    return request<MainInsightsOutput>(`/api/v1/insights/main?lang=${lang}`, {
+      method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
   },

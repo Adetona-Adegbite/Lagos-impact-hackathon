@@ -53,3 +53,17 @@ export const getRecommendations = async (
     next(error);
   }
 };
+
+export const getMainInsights = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const language = req.query.lang as string | undefined;
+    const result = await insightService.generateMainInsights(language);
+    sendSuccess(res, result, "Main insights generated successfully");
+  } catch (error) {
+    next(error);
+  }
+};

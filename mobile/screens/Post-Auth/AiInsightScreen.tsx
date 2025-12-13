@@ -9,11 +9,17 @@ import {
   Dimensions,
   TextInput,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { authStorage } from "../../services/authStorage";
-import { t } from "../../utils/localization";
+import { localizationService, t } from "../../utils/localization";
+import {
+  MainInsightsInput,
+  MainInsightsOutput,
+} from "../../src/types/insights";
+import { insightsApi } from "../../services/api";
 
 const { width } = Dimensions.get("window");
 const PRIMARY = "#36e27b";
@@ -28,6 +34,12 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
   const [query, setQuery] = useState("");
   const [shopName, setShopName] = useState("My Shop");
 
+  const [insights, setInsights] = useState<MainInsightsOutput | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentLanguage = localizationService.getCurrentLanguage();
+
   useEffect(() => {
     const loadSettings = async () => {
       const authData = await authStorage.getAuthData();
@@ -38,10 +50,36 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
     loadSettings();
   }, []); // Depend on [] so it runs once on mount
 
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const authData = await authStorage.getAuthData();
+        if (!authData?.token) {
+          setError("You are not logged in.");
+          setLoading(false);
+          return;
+        }
+
+        const result = await insightsApi.generateMainInsights(
+          authData.token,
+          currentLanguage,
+        );
+        setInsights(result);
+      } catch (e: any) {
+        setError(e.message || "Failed to fetch insights.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (shopName !== "My Shop") {
+      fetchInsights();
+    }
+  }, [shopName, currentLanguage]); // Refetch if shopName or language changes
+
   const sampleWeekly = [40, 60, 30, 75, 90, 50, 20];
-  const taxScore = 85;
-  const estVAT = 42500;
-  const turnover = 18200000;
 
   const filteredNote = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -139,223 +177,158 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
           </View>
         </View>
 
-        {/* Tax Compliance card */}
-        <TouchableOpacity activeOpacity={0.95} style={styles.taxCard}>
-          <View style={styles.taxTopRow}>
-            <View style={styles.taxLeft}>
-              <View style={styles.iconBadge}>
-                <MaterialIcons name="verified-user" size={18} color={PRIMARY} />
-              </View>
-              <Text style={styles.taxLabel}>Tax Compliance Score</Text>
-            </View>
-            <View>
-              <View style={styles.tagHealthy}>
-                <Text style={styles.tagHealthyText}>Healthy</Text>
-              </View>
-            </View>
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color={PRIMARY}
+            style={{ marginTop: 50 }}
+          />
+        ) : error ? (
+          <View style={styles.auditCard}>
+            <Text style={styles.auditTitle}>Error</Text>
+            <Text style={styles.auditText}>{error}</Text>
           </View>
-
-          <View style={styles.taxBody}>
-            <View style={styles.taxScoreRow}>
-              <Text style={styles.taxScore}>{taxScore}</Text>
-              <Text style={styles.taxMax}>/ 100</Text>
-            </View>
-
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${taxScore}%` }]} />
-            </View>
-
-            <Text style={styles.taxNote}>
-              Your business is compliant. Keep recording expenses & receipts to
-              maintain score.
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Two metric cards */}
-        <View style={styles.metricsGrid}>
-          <TouchableOpacity style={styles.metricCard}>
-            <View style={styles.metricRow}>
-              <MaterialIcons name="account-balance" size={18} color="#0f172a" />
-              <Text style={styles.metricTitle}>Est. VAT Liability</Text>
-            </View>
-            <Text style={styles.metricValue}>₦ {estVAT.toLocaleString()}</Text>
-            <View style={styles.metricFooter}>
-              <MaterialIcons name="warning" size={12} color={WARNING} />
-              <Text style={styles.metricFooterText}> Due in 12 days</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.metricCard}>
-            <View style={styles.metricRow}>
-              <MaterialIcons name="monitor" size={18} color="#0f172a" />
-              <Text style={styles.metricTitle}>Annual Turnover</Text>
-            </View>
-            <Text style={styles.metricValue}>
-              ₦ {turnover.toLocaleString()}
-            </Text>
-            <View style={{ marginTop: 10 }}>
-              <View style={styles.smallProgressWrap}>
-                <View style={[styles.smallProgressFill, { width: "72%" }]} />
+        ) : insights ? (
+          <>
+            {/* Business Direction Card */}
+            <View style={styles.taxCard}>
+              <View style={styles.taxTopRow}>
+                <View style={styles.taxLeft}>
+                  <View style={styles.iconBadge}>
+                    <MaterialIcons name="insights" size={18} color={PRIMARY} />
+                  </View>
+                  <Text style={styles.taxLabel}>Business Direction</Text>
+                </View>
               </View>
-              <View style={styles.metricFooterRight}>
-                <Text style={styles.metricFooterTextSmall}>
-                  Progress to 25M cap
+              <View style={styles.taxBody}>
+                <Text style={styles.taxNote}>
+                  {insights.business_direction}
                 </Text>
-                <Text style={styles.metricFooterTextSmall}>72%</Text>
+                <Text
+                  style={[
+                    styles.taxNote,
+                    { marginTop: 10, fontStyle: "italic" },
+                  ]}
+                >
+                  {insights.closing_note}
+                </Text>
               </View>
             </View>
-          </TouchableOpacity>
-        </View>
 
-        {/* Audit Readiness */}
-        <View style={styles.auditCard}>
-          <View style={styles.auditTop}>
-            <View style={styles.auditIcon}>
-              <MaterialIcons name="policy" size={18} color={DANGER} />
-            </View>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <View style={styles.auditTitleRow}>
-                <Text style={styles.auditTitle}>Audit Readiness Alert</Text>
-                <View style={styles.pulseDot} />
+            {/* Key Insights */}
+            <View style={styles.auditCard}>
+              <View style={styles.auditTop}>
+                <View
+                  style={[styles.auditIcon, { backgroundColor: "#fffbe6" }]}
+                >
+                  <MaterialIcons name="star" size={18} color="#f59e0b" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.auditTitle}>Key Insights</Text>
+                </View>
               </View>
-              <Text style={styles.auditText}>
-                Found <Text style={styles.bold}>3 high-value transactions</Text>{" "}
-                missing digital receipts or tax tags.
-              </Text>
+              {insights.key_insights.map((insight, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    marginTop: 8,
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Text style={{ color: "#666", marginTop: 2 }}>•</Text>
+                  <Text style={styles.auditText}>{insight}</Text>
+                </View>
+              ))}
             </View>
-          </View>
 
-          <View style={styles.auditAvatars}>
-            <View style={styles.avatarTx}>
-              <Text style={styles.avatarText}>TX</Text>
-            </View>
-            <View
-              style={[
-                styles.avatarTx,
-                { marginLeft: -8, backgroundColor: "#e5e7eb" },
-              ]}
-            >
-              <Text style={styles.avatarText}>TX</Text>
-            </View>
-            <View
-              style={[
-                styles.avatarTx,
-                { marginLeft: -8, backgroundColor: "#fee2e2" },
-              ]}
-            >
-              <Text style={styles.avatarText}>+1</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.reviewBtn}>
-            <Text style={styles.reviewBtnText}>Review Missing Items</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Profit / Deductions grid */}
-        {/* <View style={styles.metricsGrid}>
-          <View style={styles.largeCard}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <View style={styles.purpleIcon}>
-                <MaterialIcons name="trending-up" size={18} color="#7c3aed" />
+            {/* Prediction and Risks */}
+            <View style={styles.metricsGrid}>
+              <View style={styles.largeCard}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <View style={styles.purpleIcon}>
+                    <MaterialIcons
+                      name="online-prediction"
+                      size={18}
+                      color="#7c3aed"
+                    />
+                  </View>
+                  <Text style={styles.cardTitleSmall}>
+                    Near-Term Prediction
+                  </Text>
+                </View>
+                <Text style={[styles.smallNote, { marginTop: 8 }]}>
+                  {insights.near_term_prediction}
+                </Text>
               </View>
-              <Text style={styles.cardTitleSmall}>Profit Consistency</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "baseline",
-                gap: 8,
-                marginTop: 8,
-              }}
-            >
-              <Text style={styles.largeStat}>Stable</Text>
-              <Text style={styles.smallStat}>+2.4% vs last mo</Text>
-            </View>
-            <View style={styles.sparkBars}>
-              <View
-                style={[
-                  styles.spark,
-                  { height: "40%", backgroundColor: "#e9d5ff" },
-                ]}
-              />
-              <View
-                style={[
-                  styles.spark,
-                  { height: "60%", backgroundColor: "#ddd6fe" },
-                ]}
-              />
-              <View
-                style={[
-                  styles.spark,
-                  { height: "50%", backgroundColor: "#c7b2ff" },
-                ]}
-              />
-              <View
-                style={[
-                  styles.spark,
-                  { height: "75%", backgroundColor: "#a78bfa" },
-                ]}
-              />
-            </View>
-          </View>
 
-          <View style={styles.largeCard}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <View style={styles.tealIcon}>
-                <MaterialIcons name="savings" size={18} color="#0f766e" />
-              </View>
-              <Text style={styles.cardTitleSmall}>Deductions Finder</Text>
+              {insights.risk_alerts.length > 0 && (
+                <View style={styles.largeCard}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <View
+                      style={[styles.tealIcon, { backgroundColor: "#fee2e2" }]}
+                    >
+                      <MaterialIcons name="warning" size={18} color="#ef4444" />
+                    </View>
+                    <Text style={styles.cardTitleSmall}>Risk Alerts</Text>
+                  </View>
+                  {insights.risk_alerts.map((alert, index) => (
+                    <Text
+                      key={index}
+                      style={[
+                        styles.smallNote,
+                        { marginTop: 4, color: "#7f1d1d" },
+                      ]}
+                    >
+                      - {alert}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </View>
-            <Text style={styles.smallNote}>
-              Is "Generator Fuel" deductible?
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-              <View style={styles.deductionYes}>
-                <MaterialIcons name="check-circle" size={20} color="#059669" />
-                <Text style={styles.deductionYesText}>YES</Text>
-              </View>
-              <View style={{ flex: 1, justifyContent: "center" }}>
-                {/* <Text style={styles.smallNoteMuted}>
-                 */}
-        {/* <Text>Valid business expense.</Text>
-              </View>
-            </View>
-          </View>
-        </View> */}
 
-        {/* Sales Overview */}
-        <View style={styles.salesOverview}>
-          <View style={styles.salesHeader}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <MaterialIcons name="bar-chart" size={18} color="#fff" />
-              <Text style={styles.cardTitleSmall}>Sales Overview</Text>
+            {/* Recommended Actions */}
+            <View style={styles.auditCard}>
+              <View style={styles.auditTop}>
+                <View
+                  style={[styles.auditIcon, { backgroundColor: "#f0fdf4" }]}
+                >
+                  <MaterialIcons name="task-alt" size={18} color="#10b981" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.auditTitle}>Recommended Actions</Text>
+                </View>
+              </View>
+              {insights.recommended_actions.map((action, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    marginTop: 8,
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Text style={{ color: "#10b981", marginTop: 2 }}>✓</Text>
+                  <Text style={styles.auditText}>{action}</Text>
+                </View>
+              ))}
             </View>
-            <Text style={styles.largeStat}>₦ 154,200</Text>
-          </View>
-
-          <View style={styles.weeklyGraph}>
-            {sampleWeekly.map((h, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.weeklyBar,
-                  {
-                    height: `${h}%`,
-                    backgroundColor: i === 4 ? PRIMARY : "#E5E7EB",
-                  },
-                ]}
-              />
-            ))}
-          </View>
-        </View>
+          </>
+        ) : null}
 
         {filteredNote ? (
           <Text style={styles.filteredNote}>{filteredNote}</Text>
@@ -627,28 +600,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   deductionYesText: { color: "#065f46", fontWeight: "900", marginTop: 6 },
-
-  salesOverview: {
-    margin: 16,
-    borderRadius: 12,
-    backgroundColor: "#1c2e24",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#eef2f4",
-  },
-  salesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  weeklyGraph: {
-    flexDirection: "row",
-    height: 120,
-    alignItems: "flex-end",
-    marginTop: 12,
-    gap: 6,
-  },
-  weeklyBar: { flex: 1, marginHorizontal: 4, borderRadius: 6 },
 
   filteredNote: {
     paddingHorizontal: 16,

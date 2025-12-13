@@ -31,21 +31,14 @@ type Sale = {
   accent?: string;
 };
 
-const FALLBACK_INSIGHTS = {
-  message: "Your daily business insights will appear here.",
-  chips: [
-    { title: "Tax Risk", value: "N/A" },
-    { title: "Est. Revenue", value: "N/A" },
-    { title: "VAT Collected", value: "N/A" },
-    { title: "Attention", value: "N/A" },
-  ],
-};
-
 export default function SalesScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState(t("today"));
   const [sales, setSales] = useState<any[]>([]);
-  const [insights, setInsights] = useState<any>(FALLBACK_INSIGHTS);
+  const [insights, setInsights] = useState<any>({
+    message: t("assistantMessage"),
+    chips: [],
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchInsights = useCallback(() => {
@@ -55,7 +48,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
       .then(setInsights)
       .catch((err) => {
         console.warn("Failed to fetch insights:", err);
-        setInsights(FALLBACK_INSIGHTS);
+        setInsights({ message: t("assistantMessage"), chips: [] });
       })
       .finally(() => setIsRefreshing(false));
   }, []);
@@ -76,23 +69,36 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
     /* t("today") */
   ];
 
-  const { todaySales, previousSales, totalToday } = useMemo(() => {
+  const {
+    todaySales,
+    previousSales,
+    totalToday,
+    weeklyGraphData,
+    totalWeekly,
+  } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayDate = new Date();
+    todayDate.setHours(1, 0, 0, 0);
+    const todayStr = todayDate.toISOString().split("T")[0];
+
+    const oneWeekAgo = new Date(todayDate);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 6);
 
     const today: Sale[] = [];
     const prev: Sale[] = [];
     let total = 0;
+    const weeklySalesData = new Array(7).fill(0);
 
     const colors = ["#F59E0B", "#60A5FA", "#C084FC", "#2DD4BF"];
     const accents = ["#F97316", "#3B82F6", "#8B5CF6", "#14B8A6"];
 
     sales.forEach((s, i) => {
-      const dateStr = s.createdAt.split("T")[0];
+      const saleDate = new Date(s.createdAt);
+      const dateStr = saleDate.toISOString().split("T")[0];
       const sale: Sale = {
         id: s.id,
-        title: s.title || "Sale Item",
-        time: new Date(s.createdAt).toLocaleTimeString([], {
+        title: s.items?.[0]?.product?.name || "Quick Sale",
+        time: saleDate.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -111,9 +117,33 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
       } else {
         prev.push(sale);
       }
+
+      // Calculate weekly sales
+      if (saleDate >= oneWeekAgo) {
+        const diffDays = Math.floor(
+          (todayDate.getTime() - new Date(saleDate).setHours(0, 0, 0, 0)) /
+            (1000 * 60 * 60 * 24),
+        );
+        if (diffDays >= 0 && diffDays < 7) {
+          weeklySalesData[6 - diffDays] += s.totalAmount;
+        }
+      }
     });
 
-    return { todaySales: today, previousSales: prev, totalToday: total };
+    const totalWeekly = weeklySalesData.reduce((a, b) => a + b, 0);
+    const maxSale = Math.max(...weeklySalesData);
+    const weeklyGraphData =
+      maxSale > 0
+        ? weeklySalesData.map((s) => (s / maxSale) * 100)
+        : new Array(7).fill(0);
+
+    return {
+      todaySales: today,
+      previousSales: prev,
+      totalToday: total,
+      weeklyGraphData,
+      totalWeekly,
+    };
   }, [sales, query]);
 
   const renderSaleItem = ({ item }: { item: Sale }) => (
@@ -283,6 +313,35 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
             <Text style={styles.revenueValue}>
               ₦ {totalToday.toLocaleString()}
             </Text>
+          </View>
+
+          {/* Sales Overview */}
+          <View style={styles.salesOverview}>
+            <View style={styles.salesHeader}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <MaterialIcons name="bar-chart" size={18} color="#fff" />
+                <Text style={styles.cardTitleSmall}>Weekly Overview</Text>
+              </View>
+              <Text style={styles.largeStat}>
+                ₦ {totalWeekly.toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.weeklyGraph}>
+              {weeklyGraphData.map((h, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.weeklyBar,
+                    {
+                      height: `${h || 0}%`,
+                      backgroundColor: i === 6 ? MAIN_GREEN : "#374151",
+                    },
+                  ]}
+                />
+              ))}
+            </View>
           </View>
 
           <View style={styles.searchWrap}>
@@ -568,5 +627,40 @@ const styles = StyleSheet.create({
     elevation: 6,
     shadowColor: MAIN_GREEN,
     shadowOpacity: 0.25,
+  },
+  salesOverview: {
+    marginVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#1c2e24",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#000",
+  },
+  salesHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cardTitleSmall: {
+    fontWeight: "800",
+    color: "#fff",
+    fontSize: 14,
+  },
+  largeStat: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#fff",
+  },
+  weeklyGraph: {
+    flexDirection: "row",
+    height: 100,
+    alignItems: "flex-end",
+    marginTop: 12,
+    gap: 6,
+  },
+  weeklyBar: {
+    flex: 1,
+    marginHorizontal: 2,
+    borderRadius: 6,
   },
 });
