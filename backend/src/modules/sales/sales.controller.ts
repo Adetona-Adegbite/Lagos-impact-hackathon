@@ -55,3 +55,16 @@ export const getOne = async (
     next(error);
   }
 };
+
+export const getBusinessInsights = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await salesService.generateBusinessInsights();
+    sendSuccess(res, result, "Business insights generated");
+  } catch (error) {
+    next(error);
+  }
+};

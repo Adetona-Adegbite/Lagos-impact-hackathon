@@ -1,4 +1,5 @@
 import prisma from "../../config/db.js";
+import { GoogleGenAI } from "@google/genai";
 
 interface CheckoutItem {
   productId: string;
@@ -237,4 +238,112 @@ export const syncSales = async (sales: SyncSale[]) => {
   }
 
   return { results };
+};
+
+export const generateBusinessInsights = async () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const [todaySales, monthSales, lowStock] = await Promise.all([
+    prisma.sale.aggregate({
+      where: { createdAt: { gte: today } },
+      _sum: { totalAmount: true },
+      _count: true,
+    }),
+    prisma.sale.aggregate({
+      where: { createdAt: { gte: startOfMonth } },
+      _sum: { totalAmount: true },
+    }),
+    prisma.inventory.findMany({
+      where: { quantity: { lte: 10 } },
+      take: 3,
+      include: { product: { select: { name: true } } },
+      orderBy: { quantity: "asc" },
+    }),
+  ]);
+
+  const todayRevenue = todaySales._sum.totalAmount || 0;
+  const monthRevenue = monthSales._sum.totalAmount || 0;
+  const lowStockNames = lowStock.map((i) => i.product.name).join(", ");
+
+  if (!process.env.GEMINI_API_KEY) {
+    return {
+      message: "Configure Gemini API Key to see AI insights.",
+      chips: [
+        { title: "Revenue", value: `₦${monthRevenue.toLocaleString()}` },
+        { title: "Status", value: "Offline mode" },
+      ],
+    };
+  }
+
+  const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const prompt = `
+    You are a smart retail business assistant. Analyze this data:
+    - Today's Revenue: ₦${todayRevenue}
+    - Month Revenue: ₦${monthRevenue}
+    - Low Stock Items: ${lowStockNames || "None"}
+    - Date: ${today.toDateString()}
+
+    Generate a JSON response for a dashboard widget.
+    Structure:
+    {
+      "message": "Concise, actionable insight (max 20 words). E.g. 'Good sales today! Restock Indomie.'",
+      "chips": [
+        { "title": "Tax Risk", "value": "Low/Medium/High", "color": "#10B981/#F59E0B/#EF4444" },
+        { "title": "Est. Revenue", "value": "₦X (Month Projection)" },
+        { "title": "VAT (7.5%)", "value": "₦X (Collected)" },
+        { "title": "Attention", "value": "Short alert e.g. 'Low Stock' or 'All Good'" }
+      ]
+    }
+    Output ONLY valid JSON. Do not use markdown blocks.
+  `;
+
+  try {
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            chips: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  value: { type: "string" },
+                  color: { type: "string" },
+                },
+                required: ["title", "value", "color"],
+              },
+            },
+          },
+          required: ["message", "chips"],
+        },
+      },
+    });
+    const text = result.text || "{}";
+    const cleanText = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleanText);
+  } catch (error) {
+    console.error("Gemini Insight Error:", error);
+    return {
+      message: "Great job on sales today! Keep it up.",
+      chips: [
+        {
+          title: "Est. Revenue",
+          value: `₦${monthRevenue.toLocaleString()}`,
+        },
+        {
+          title: "VAT Collected",
+          value: `₦${(monthRevenue * 0.075).toLocaleString()}`,
+        },
+      ],
+    };
+  }
 };

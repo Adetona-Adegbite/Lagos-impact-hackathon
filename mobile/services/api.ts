@@ -128,6 +128,12 @@ export const salesApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  getInsights: (token: string) => {
+    return request<any>("/api/v1/sales/insights", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 export const inventoryApi = {

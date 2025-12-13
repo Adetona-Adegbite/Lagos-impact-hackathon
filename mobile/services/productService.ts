@@ -379,4 +379,13 @@ export const productService = {
     if (!token) throw new Error("Not authenticated");
     return productsApi.recommendCategory(name, token);
   },
+
+  /**
+   * Get business insights from the backend
+   */
+  getBusinessInsights: async () => {
+    const token = await authStorage.getToken();
+    if (!token) throw new Error("Not authenticated");
+    return salesApi.getInsights(token);
+  },
 };

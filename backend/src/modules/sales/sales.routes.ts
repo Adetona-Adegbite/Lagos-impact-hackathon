@@ -134,6 +134,20 @@ router.post("/checkout", validate(checkoutSchema), salesController.checkout);
 
 /**
  * @swagger
+ * /sales/insights:
+ *   get:
+ *     summary: Get AI-powered business insights
+ *     tags: [Sales]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Insights generated
+ */
+router.get("/insights", salesController.getBusinessInsights);
+
+/**
+ * @swagger
  * /sales:
  *   get:
  *     summary: Get all sales history

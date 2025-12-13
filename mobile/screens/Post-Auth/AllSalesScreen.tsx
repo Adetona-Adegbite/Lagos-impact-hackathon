@@ -1,5 +1,5 @@
 // src/screens/SalesScreen.tsx
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { productService } from "../../services/productService";
 import {
@@ -31,10 +31,40 @@ type Sale = {
   accent?: string;
 };
 
+const FALLBACK_INSIGHTS = {
+  message: "Your daily business insights will appear here.",
+  chips: [
+    { title: "Tax Risk", value: "N/A" },
+    { title: "Est. Revenue", value: "N/A" },
+    { title: "VAT Collected", value: "N/A" },
+    { title: "Attention", value: "N/A" },
+  ],
+};
+
 export default function SalesScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState(t("today"));
   const [sales, setSales] = useState<any[]>([]);
+  const [insights, setInsights] = useState<any>(FALLBACK_INSIGHTS);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchInsights = useCallback(() => {
+    setIsRefreshing(true);
+    productService
+      .getBusinessInsights()
+      .then(setInsights)
+      .catch((err) => {
+        console.warn("Failed to fetch insights:", err);
+        setInsights(FALLBACK_INSIGHTS);
+      })
+      .finally(() => setIsRefreshing(false));
+  }, []);
+
+  useEffect(() => {
+    fetchInsights();
+    const interval = setInterval(fetchInsights, 3600000); // every hour
+    return () => clearInterval(interval);
+  }, [fetchInsights]);
 
   useFocusEffect(
     useCallback(() => {
@@ -194,55 +224,58 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
           </View>
 
           {/* Business assistant card */}
-          <TouchableOpacity activeOpacity={0.9} style={styles.assistantCard}>
+          <View style={styles.assistantCard}>
             <View style={styles.assistantTop}>
-              <MaterialIcons name="auto-awesome" size={18} color="#8b5cf6" />
-              <Text style={styles.assistantLabel}>
-                {t("businessAssistant")}
-              </Text>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <MaterialIcons name="auto-awesome" size={18} color="#8b5cf6" />
+                <Text style={styles.assistantLabel}>
+                  {t("businessAssistant")}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={fetchInsights} disabled={isRefreshing}>
+                <MaterialIcons
+                  name="refresh"
+                  size={20}
+                  color={isRefreshing ? "#ccc" : "#8b5cf6"}
+                />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.assistantText}>{t("assistantMessage")}</Text>
+            <Text style={styles.assistantText}>
+              {isRefreshing ? "Generating new insights..." : insights.message}
+            </Text>
 
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.assistantChipsRow}
             >
-              <View style={styles.chip}>
-                <Text style={styles.chipTitle}>{t("taxRisk")}</Text>
-                <View style={styles.chipRow}>
-                  <View
-                    style={[styles.statusDot, { backgroundColor: "#F97316" }]}
-                  />
-                  <Text style={styles.chipValue}>{t("medium")}</Text>
+              {insights.chips?.map((chip: any, i: number) => (
+                <View style={styles.chip} key={i}>
+                  <Text
+                    style={[
+                      styles.chipTitle,
+                      chip.color ? { color: chip.color } : {},
+                    ]}
+                  >
+                    {chip.title}
+                  </Text>
+                  <View style={styles.chipRow}>
+                    {chip.title === "Tax Risk" && (
+                      <View
+                        style={[
+                          styles.statusDot,
+                          { backgroundColor: chip.color || "#ccc" },
+                        ]}
+                      />
+                    )}
+                    <Text style={styles.chipValue}>{chip.value}</Text>
+                  </View>
                 </View>
-              </View>
-
-              <View style={styles.chip}>
-                <Text style={styles.chipTitle}>
-                  {t("estimatedTaxableRevenue")}
-                </Text>
-                <Text style={styles.chipValue}>₦ 850k</Text>
-              </View>
-
-              <View style={styles.chip}>
-                <Text style={styles.chipTitle}>{t("vatCollected")}</Text>
-                <Text style={styles.chipValue}>₦ 12,500</Text>
-              </View>
-
-              <View style={styles.chip}>
-                <Text style={styles.chipTitleDanger}>{t("potentialLoss")}</Text>
-                <View style={styles.chipRow}>
-                  <MaterialIcons
-                    name="trending-down"
-                    size={14}
-                    color="#ef4444"
-                  />
-                  <Text style={styles.chipValue}>{t("lowStock")}</Text>
-                </View>
-              </View>
+              ))}
             </ScrollView>
-          </TouchableOpacity>
+          </View>
 
           {/* Revenue and search */}
           <View style={styles.revenueRow}>
@@ -390,7 +423,7 @@ const styles = StyleSheet.create({
   assistantTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   assistantLabel: {
