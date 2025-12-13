@@ -332,7 +332,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.9}
-        onPress={() => console.log("add sale")}
+        onPress={() => navigation.navigate("SalesScreen")}
       >
         <MaterialIcons name="add" size={36} color="#000" />
       </TouchableOpacity>
