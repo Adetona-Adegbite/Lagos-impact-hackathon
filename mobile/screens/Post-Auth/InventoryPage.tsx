@@ -1,29 +1,37 @@
-// src/screens/InventoryScreen.tsx
-import { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
-  StatusBar,
   TextInput,
   Image,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
-  Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import {
+  ArrowLeft,
+  Search,
+  SlidersHorizontal,
+  Bell,
+  Package,
+  AlertTriangle,
+  Plus,
+  ChevronRight,
+  ImageIcon,
+} from "lucide-react-native";
 import { productService } from "../../services/productService";
 import { t } from "../../utils/localization";
+import { Text } from "../../components/ui/text";
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { cn } from "../../lib/utils";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#19e680";
-const BG = "#f6f8f7";
 
-// UI Product type mapping
 type UIProduct = {
   id: string;
   title: string;
@@ -32,7 +40,6 @@ type UIProduct = {
   qty: number;
   img?: string;
   lowStock?: boolean;
-  highlight?: boolean;
 };
 
 export default function InventoryScreen({ navigation }: { navigation?: any }) {
@@ -41,7 +48,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
   const [products, setProducts] = useState<UIProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from local database
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -53,9 +59,7 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
         category: p.category,
         price: p.sellingPrice,
         qty: p.quantity || 0,
-        // Determine low stock threshold (e.g. <= 3)
         lowStock: (p.quantity || 0) <= 3,
-        // No image support in DB yet
         img: undefined,
       }));
 
@@ -67,7 +71,6 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
     }
   }, []);
 
-  // Reload data when screen focuses
   useFocusEffect(
     useCallback(() => {
       fetchProducts();
@@ -86,31 +89,16 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
   );
 
   const lowStockCount = useMemo(() => {
-    return products.filter((p) => p.lowStock || p.qty <= 3).length;
+    return products.filter((p) => p.lowStock).length;
   }, [products]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
-      // Filter logic
-      if (activeFilter === "Low Stock") return p.lowStock || p.qty <= 3;
-
+      if (activeFilter === "Low Stock") return p.lowStock;
       if (activeFilter !== "All Items") {
-        // Simple exact match for now, could be improved
-        if (activeFilter === "Beverages" && p.category !== "Beverages")
-          return false;
-        if (activeFilter === "Pantry" && p.category !== "Pantry") return false;
-        if (activeFilter === "Snacks" && p.category !== "Snacks") return false;
-        // If we want to strictly filter by these categories only when selected:
-        if (
-          !["Beverages", "Pantry", "Snacks"].includes(activeFilter) &&
-          activeFilter !== "All Items"
-        ) {
-          return p.category === activeFilter;
-        }
+        if (p.category !== activeFilter) return false;
       }
-
-      // Search logic
       if (!q) return true;
       return (
         p.title.toLowerCase().includes(q) ||
@@ -120,378 +108,207 @@ export default function InventoryScreen({ navigation }: { navigation?: any }) {
   }, [query, activeFilter, products]);
 
   const renderProduct = ({ item }: { item: UIProduct }) => (
-    <TouchableOpacity
-      style={[
-        styles.itemCard,
-        item.lowStock ? styles.itemLow : null,
-        item.highlight ? styles.itemHighlight : null,
-      ]}
-      activeOpacity={0.85}
-      onPress={() => {
-        /* navigate to product detail - replace with your nav logic */
-        console.log("open", item.id);
-      }}
-    >
-      <View style={styles.thumbWrap}>
+    <Card className="flex-row items-center p-3 mb-3 bg-secondary/50 border-border/50">
+      <View className="w-16 h-16 rounded-xl overflow-hidden bg-background items-center justify-center">
         {item.img ? (
-          <Image source={{ uri: item.img }} style={styles.thumb} />
+          <Image
+            source={{ uri: item.img }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
         ) : (
-          <View style={styles.thumbPlaceholder}>
-            <MaterialIcons name="image" size={28} color="#9ca3af" />
-          </View>
+          <ImageIcon size={24} className="text-muted-foreground/30" />
         )}
       </View>
 
-      <View style={styles.itemContent}>
-        <Text numberOfLines={1} style={styles.itemTitle}>
+      <View className="flex-1 ml-4 justify-center">
+        <Text className="text-sm font-black text-foreground" numberOfLines={1}>
           {item.title}
         </Text>
-        <Text numberOfLines={1} style={styles.itemCategory}>
+        <Text className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
           {item.category}
         </Text>
-        <Text style={styles.itemPrice}>₦{item.price.toLocaleString()}</Text>
+        <Text className="text-primary font-black mt-1">
+          ₦{item.price.toLocaleString()}
+        </Text>
       </View>
 
-      <View style={styles.itemRight}>
+      <View className="items-end">
         <View
-          style={[
-            styles.qtyPill,
-            item.lowStock ? styles.qtyPillLow : styles.qtyPillGood,
-          ]}
+          className={cn(
+            "flex-row items-center gap-1.5 px-3 py-1.5 rounded-full",
+            item.lowStock ? "bg-destructive/10" : "bg-primary/10",
+          )}
         >
           {item.lowStock ? (
-            <MaterialIcons name="warning" size={12} color="#b91c1c" />
+            <AlertTriangle size={12} className="text-destructive" />
           ) : (
-            <View style={styles.dot} />
+            <View className="w-2 h-2 rounded-full bg-primary" />
           )}
           <Text
-            style={[
-              styles.qtyText,
-              item.lowStock ? styles.qtyTextLow : styles.qtyTextGood,
-            ]}
+            className={cn(
+              "text-[10px] font-black uppercase",
+              item.lowStock ? "text-destructive" : "text-primary",
+            )}
           >
             {item.qty} {t("quantity")}
           </Text>
         </View>
+        <Pressable
+          className="mt-2"
+          onPress={() => console.log("edit", item.id)}
+        >
+          <ChevronRight size={18} className="text-muted-foreground/50" />
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </Card>
   );
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safe}>
-      <StatusBar
-        barStyle={Platform.OS === "ios" ? "dark-content" : "dark-content"}
-        backgroundColor={BG}
-      />
+    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+      <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.iconBtn}
+      <View className="flex-row items-center justify-between px-5 py-3 border-b border-border/10">
+        <View className="flex-row items-center gap-4">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="w-10 h-10 rounded-full bg-secondary"
             onPress={() => navigation?.goBack()}
           >
-            <MaterialIcons name="arrow-back" size={26} color="#111" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t("inventory")}</Text>
+            <ArrowLeft size={22} color="white" />
+          </Button>
+          <Text variant="h3" className="font-black text-foreground">
+            {t("inventory")}
+          </Text>
         </View>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="notifications" size={22} color="#111" />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-        </View>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="w-10 h-10 rounded-full bg-secondary"
+        >
+          <Bell size={20} color="white" />
+          <View className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-destructive" />
+        </Button>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={20} color="#9ca3af" />
+      {/* Search & Filter */}
+      <View className="px-5 pt-4 gap-4">
+        <View className="flex-row items-center h-12 rounded-2xl bg-secondary border border-border px-4">
+          <Search size={18} className="text-muted-foreground" />
           <TextInput
             placeholder={t("searchPlaceholder")}
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
+            placeholderTextColor="#6b7280"
+            className="flex-1 ml-3 h-full text-foreground font-bold"
             value={query}
             onChangeText={setQuery}
-            returnKeyType="search"
           />
-          <TouchableOpacity style={styles.filterBtn}>
-            <MaterialIcons name="tune" size={20} color="#6b7280" />
-          </TouchableOpacity>
+          <Pressable>
+            <SlidersHorizontal size={18} className="text-muted-foreground" />
+          </Pressable>
         </View>
-      </View>
 
-      {/* Filters */}
-      <View style={styles.filtersWrap}>
-        <FlatList
-          horizontal
-          data={filters}
-          keyExtractor={(i) => i.key}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
-          renderItem={({ item }) => {
-            const active = item.key === activeFilter;
-            return (
-              <TouchableOpacity
-                onPress={() => setActiveFilter(item.key)}
-                style={[
-                  styles.filterChip,
-                  active ? styles.filterChipActive : null,
-                ]}
-                activeOpacity={0.85}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    active ? styles.filterTextActive : null,
-                  ]}
+        {/* Filter Chips */}
+        <View className="h-10">
+          <FlatList
+            horizontal
+            data={filters}
+            keyExtractor={(i) => i.key}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => {
+              const active = item.key === activeFilter;
+              return (
+                <Pressable
+                  onPress={() => setActiveFilter(item.key)}
+                  className={cn(
+                    "flex-row items-center px-4 h-9 rounded-full mr-2 border",
+                    active
+                      ? "bg-primary border-primary"
+                      : "bg-secondary/50 border-border",
+                  )}
                 >
-                  {item.label}
-                </Text>
-                {item.key === "Low Stock" && (
-                  <View style={styles.lowCount}>
-                    <Text style={styles.lowCountText}>{lowStockCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          }}
-        />
+                  <Text
+                    className={cn(
+                      "text-xs font-black",
+                      active
+                        ? "text-primary-foreground uppercase"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </Text>
+                  {item.key === "Low Stock" && (
+                    <View
+                      className={cn(
+                        "ml-2 px-1.5 py-0.5 rounded-full",
+                        active
+                          ? "bg-primary-foreground/20"
+                          : "bg-destructive/20",
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          "text-[10px] font-black",
+                          active
+                            ? "text-primary-foreground"
+                            : "text-destructive",
+                        )}
+                      >
+                        {lowStockCount}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            }}
+          />
+        </View>
       </View>
 
       {/* List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY} />
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(p) => p.id}
-          renderItem={renderProduct}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t("noProductsFound")}</Text>
-            </View>
-          }
-        />
-      )}
+      <View className="flex-1 px-5 pt-4">
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#36e27b" />
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(p) => p.id}
+            renderItem={renderProduct}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View className="items-center py-20 bg-secondary/20 rounded-3xl border border-dashed border-border mt-4">
+                <Package size={48} className="text-muted-foreground/20 mb-3" />
+                <Text
+                  variant="p"
+                  className="text-muted-foreground font-bold text-center"
+                >
+                  {t("noProductsFound")}
+                </Text>
+              </View>
+            }
+          />
+        )}
+      </View>
 
       {/* Floating Action Button */}
-      <View style={styles.fabWrap} pointerEvents="box-none">
-        <TouchableOpacity
-          style={styles.fab}
-          activeOpacity={0.9}
+      <View className="absolute bottom-10 left-5 right-5 shadow-2xl shadow-primary/40">
+        <Button
           onPress={() =>
             navigation?.navigate("SalesScreen", { initialMode: "stock" })
           }
+          className="h-16 rounded-full bg-primary flex-row gap-2"
         >
-          <MaterialIcons name="add" size={30} color="#000" />
-        </TouchableOpacity>
+          <Plus size={24} color="#000" strokeWidth={3} />
+          <Text className="text-primary-foreground font-black text-lg uppercase tracking-tight">
+            {t("addItem")}
+          </Text>
+        </Button>
       </View>
     </SafeAreaView>
   );
 }
-
-/* Styles */
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: BG,
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: BG,
-    borderBottomWidth: 0.25,
-    borderBottomColor: "#e6e9e8",
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 10,
-    backgroundColor: "transparent",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginLeft: 6,
-    color: "#111",
-  },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-
-  notificationDot: {
-    position: "absolute",
-    right: 6,
-    top: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 8,
-    backgroundColor: "#ef4444",
-    borderWidth: 2,
-    borderColor: BG,
-  },
-  scanBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: PRIMARY,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  searchWrap: { paddingHorizontal: 12, paddingTop: 8 },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 48,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#e6e9e8",
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    height: "100%",
-    color: "#111",
-    fontSize: 15,
-  },
-  filterBtn: { paddingLeft: 8 },
-
-  filtersWrap: { marginTop: 12, height: 44 },
-
-  filterChip: {
-    marginRight: 10,
-    paddingHorizontal: 14,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e6e9e8",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  filterChipActive: {
-    backgroundColor: "#111814",
-    borderColor: "#111814",
-  },
-  filterText: { color: "#111", fontWeight: "700", fontSize: 13 },
-  filterTextActive: { color: "#fff" },
-
-  lowCount: {
-    marginLeft: 8,
-    backgroundColor: "#fee2e2",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lowCountText: { color: "#b91c1c", fontSize: 10, fontWeight: "800" },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#6b7280",
-    fontSize: 16,
-  },
-
-  listContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    paddingBottom: 140,
-  },
-
-  itemCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e6e9e8",
-    marginBottom: 12,
-  },
-  itemLow: {
-    borderLeftWidth: 6,
-    borderLeftColor: "#ef4444",
-  },
-  itemHighlight: {
-    backgroundColor: "#ecfccb",
-    borderColor: "#d9f99d",
-  },
-
-  thumbWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#f3f4f6",
-  },
-  thumb: { width: "100%", height: "100%", resizeMode: "cover" },
-  thumbPlaceholder: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6",
-  },
-
-  itemContent: { flex: 1, justifyContent: "center" },
-  itemTitle: { fontSize: 15, fontWeight: "800", color: "#111" },
-  itemCategory: { fontSize: 13, color: "#6b7280", marginTop: 2 },
-  itemPrice: { marginTop: 6, fontSize: 14, fontWeight: "800", color: PRIMARY },
-
-  itemRight: { alignItems: "flex-end", justifyContent: "center" },
-  qtyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  qtyPillGood: { backgroundColor: "#ecfdf5" },
-  qtyPillLow: { backgroundColor: "#fff1f2" },
-  dot: { width: 8, height: 8, borderRadius: 8, backgroundColor: "#059669" },
-  qtyText: { fontSize: 11, fontWeight: "700" },
-  qtyTextGood: { color: "#065f46" },
-  qtyTextLow: { color: "#7f1d1d" },
-
-  fabWrap: {
-    position: "absolute",
-    bottom: 30,
-    left: 16,
-    right: 16,
-    alignItems: "center",
-  },
-  fab: {
-    width: width - 32,
-    height: 56,
-    borderRadius: 999,
-    backgroundColor: PRIMARY,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-    flexDirection: "row",
-    gap: 12,
-  },
-});

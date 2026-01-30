@@ -1,3 +1,4 @@
+import "./global.css";
 import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -20,6 +21,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import SalesScreen from "./screens/Post-Auth/AllSalesScreen";
 import CreditProfileScreen from "./screens/Post-Auth/CreditProfileScreen";
 import TaxExportScreen from "./screens/Post-Auth/TaxExportScreen";
+import { PortalHost } from "./components/PortalHost";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -122,6 +124,7 @@ export default function App() {
         <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
         <Stack.Screen name="HomeScreen" component={Tabs} />
       </Stack.Navigator>
+      <PortalHost />
     </NavigationContainer>
   );
 }

@@ -1,11 +1,6 @@
-// src/screens/ScanSellScreen.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  SafeAreaView,
   View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Image,
   FlatList,
   Animated,
@@ -13,22 +8,48 @@ import {
   StatusBar,
   Alert,
   Modal,
-  TextInput,
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   CameraView,
   useCameraPermissions,
   BarcodeScanningResult,
 } from "expo-camera";
+import {
+  X,
+  Zap,
+  ZapOff,
+  RefreshCw,
+  Keyboard,
+  Plus,
+  Minus,
+  ShoppingCart,
+  Package,
+  ArrowRight,
+  Scan,
+  Check,
+  Trash2,
+  Barcode,
+  Sparkles,
+  ChevronDown,
+  ArrowLeft,
+  ImageIcon,
+} from "lucide-react-native";
 import { productService } from "../../services/productService";
 import RNPickerSelect from "react-native-picker-select";
+import { Button } from "../../components/ui/button";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
+import { Card } from "../../components/ui/card";
+import { cn } from "../../lib/utils";
+import { t } from "../../utils/localization";
 
 const { width, height } = Dimensions.get("window");
-const MAIN_GREEN = "#19e680";
+const SCAN_COOLDOWN_MS = 1500;
 
 type CartItem = {
   id: string;
@@ -36,19 +57,9 @@ type CartItem = {
   unitPrice: number;
   qty: number;
   image?: string | null;
-  productId: string; // link to DB product
+  productId: string;
 };
 
-type StockItem = {
-  id: string; // product id
-  title: string;
-  price: number;
-  qty: number;
-  img?: string | null;
-  lowStock?: boolean;
-};
-
-/* ----- Component ----- */
 export default function ScanSellScreen({
   navigation,
   route,
@@ -56,13 +67,11 @@ export default function ScanSellScreen({
   navigation?: any;
   route?: any;
 }) {
-  /* camera permissions & refs */
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [facing, setFacing] = useState<"back" | "front">("back");
   const [torch, setTorch] = useState(false);
 
-  /* mode: "sell" | "stock" */
   const [mode, setMode] = useState<"sell" | "stock">(
     route?.params?.initialMode || "sell",
   );
@@ -73,28 +82,19 @@ export default function ScanSellScreen({
     }
   }, [route?.params?.initialMode]);
 
-  /* cart */
   const [cart, setCart] = useState<CartItem[]>([]);
-
-  /* loading state */
   const [loading, setLoading] = useState(false);
 
-  /* scan animation */
   const scanY = useRef(new Animated.Value(0)).current;
-  const scanBoxSize = Math.min(width * 0.62, 320);
-
-  /* scan cooldown to avoid duplicates */
+  const scanBoxSize = Math.min(width * 0.65, 320);
   const lastScanTs = useRef<number>(0);
-  const SCAN_COOLDOWN_MS = 1500; // Increased slightly for async ops
 
-  /* enter-code modal */
   const [enterModalVisible, setEnterModalVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState("");
 
-  /* product modal */
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<{
-    id?: string; // undefined if new
+    id?: string;
     barcode: string;
     title: string;
     price: number;
@@ -104,8 +104,6 @@ export default function ScanSellScreen({
   } | null>(null);
 
   const [isNewProduct, setIsNewProduct] = useState(false);
-
-  // Edit form state
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editCostPrice, setEditCostPrice] = useState("");
@@ -113,9 +111,6 @@ export default function ScanSellScreen({
   const [editQty, setEditQty] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
   const [isRecommendingCategory, setIsRecommendingCategory] = useState(false);
-
-  /* bottom sheet height (keeps camera visible) */
-  const BOTTOM_SHEET_MAX_HEIGHT = Math.min(height * 0.3, 520);
 
   useEffect(() => {
     if (permission === null) return;
@@ -128,20 +123,19 @@ export default function ScanSellScreen({
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanY, {
-          toValue: -scanBoxSize / 2 + 6,
+          toValue: -scanBoxSize / 2 + 10,
           duration: 0,
           useNativeDriver: true,
         }),
         Animated.timing(scanY, {
-          toValue: scanBoxSize / 2 - 6,
-          duration: 1600,
+          toValue: scanBoxSize / 2 - 10,
+          duration: 1800,
           useNativeDriver: true,
         }),
       ]),
     ).start();
   }, [scanY, scanBoxSize]);
 
-  // Sync edit form when modal opens
   useEffect(() => {
     if (productModalVisible && currentProduct) {
       setEditTitle(currentProduct.title);
@@ -166,8 +160,6 @@ export default function ScanSellScreen({
           setEditCategory(fetchedCategories[0]);
         }
       } catch (error) {
-        console.error("Failed to fetch categories", error);
-        // Provide a fallback list
         setCategories(["General", "Snacks", "Beverages"]);
       }
     };
@@ -184,13 +176,12 @@ export default function ScanSellScreen({
         setEditCategory(recommendedCategory);
       }
     } catch (error) {
-      console.error("Failed to recommend category", error);
+      console.error(error);
     } finally {
       setIsRecommendingCategory(false);
     }
   };
 
-  /* ----- Actions ----- */
   const changeCartQty = (id: string, delta: number) =>
     setCart((prev) =>
       prev
@@ -227,7 +218,6 @@ export default function ScanSellScreen({
             setCart([]);
             Alert.alert("Success", "Sale recorded successfully!");
           } catch (error) {
-            console.error(error);
             Alert.alert("Error", "Failed to process sale.");
           } finally {
             setLoading(false);
@@ -261,9 +251,7 @@ export default function ScanSellScreen({
       const product = await productService.getProductByBarcode(barcode);
 
       if (mode === "stock") {
-        // In stock mode, we always open modal to edit/view details
         if (product) {
-          // Existing product
           setCurrentProduct({
             id: product.id,
             barcode: product.barcode,
@@ -275,7 +263,6 @@ export default function ScanSellScreen({
           });
           setIsNewProduct(false);
         } else {
-          // New product
           setCurrentProduct({
             barcode: barcode,
             title: "",
@@ -288,14 +275,7 @@ export default function ScanSellScreen({
         }
         setProductModalVisible(true);
       } else {
-        // Sell mode
         if (product) {
-          // Check if in stock? (Optional, skipping hard check for now but could warn)
-          if ((product.quantity || 0) <= 0) {
-            // Alert.alert("Warning", "Item is out of stock!", [{text: "Add anyway"}]);
-            // Just adding for now
-          }
-
           setCart((prev) => {
             const found = prev.find((p) => p.productId === product.id);
             if (found) {
@@ -304,22 +284,21 @@ export default function ScanSellScreen({
               );
             }
             return [
+              ...prev,
               {
-                id: Date.now().toString(), // temp id for cart item
+                id: Date.now().toString(),
                 productId: product.id,
                 title: product.name,
                 unitPrice: product.sellingPrice,
                 qty: 1,
                 image: null,
               },
-              ...prev,
             ];
           });
         } else {
-          // Product not found in sell mode -> prompt to create?
           Alert.alert(
             "Product not found",
-            "Would you like to add this product to inventory?",
+            `Code: ${barcode}. Add to inventory?`,
             [
               { text: "No", style: "cancel" },
               {
@@ -342,8 +321,7 @@ export default function ScanSellScreen({
         }
       }
     } catch (e) {
-      console.error("Scan error", e);
-      Alert.alert("Error", "Failed to lookup product");
+      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -355,18 +333,16 @@ export default function ScanSellScreen({
     const title = editTitle.trim();
     const price = parseFloat(editPrice) || 0;
     const cost = parseFloat(editCostPrice) || 0;
-    const qty = editQty; // Can be 0
+    const qty = editQty;
 
-    if (!title || price < 0) {
-      Alert.alert("Invalid input", "Please check name and price.");
+    if (!title) {
+      Alert.alert("Error", "Product name is required.");
       return;
     }
 
     try {
       setLoading(true);
-
       if (isNewProduct) {
-        // Create
         const newId = await productService.createProduct({
           name: title,
           barcode: currentProduct.barcode,
@@ -376,9 +352,9 @@ export default function ScanSellScreen({
           quantity: qty,
         });
 
-        // If in sell mode, add to cart immediately after creating
         if (mode === "sell") {
           setCart((prev) => [
+            ...prev,
             {
               id: Date.now().toString(),
               productId: newId,
@@ -387,346 +363,364 @@ export default function ScanSellScreen({
               qty: 1,
               image: null,
             },
-            ...prev,
           ]);
         }
+      } else if (currentProduct.id) {
+        await productService.updateProduct(currentProduct.id, {
+          name: title,
+          sellingPrice: price,
+          purchasePrice: cost,
+          category: editCategory,
+          quantity: qty,
+        });
 
-        Alert.alert("Success", "Product added to inventory");
-      } else {
-        // Update
-        if (currentProduct.id) {
-          await productService.updateProduct(currentProduct.id, {
-            name: title,
-            sellingPrice: price,
-            purchasePrice: cost,
-            category: editCategory,
-          });
-
-          await productService.updateInventory(currentProduct.id, qty);
-          Alert.alert("Success", "Product updated");
+        if (mode === "sell") {
+          setCart((prev) =>
+            prev.map((item) =>
+              item.productId === currentProduct.id
+                ? { ...item, title: title, unitPrice: price }
+                : item,
+            ),
+          );
         }
       }
-
       setProductModalVisible(false);
-      setCurrentProduct(null);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to save product");
+    } catch (e) {
+      Alert.alert("Error", "Failed to save product.");
     } finally {
       setLoading(false);
     }
   };
 
-  const onBarcodeScanned = ({ data }: BarcodeScanningResult) => {
-    if (!data) return;
-    handleScannedCode(data);
+  const onBarcodeScanned = (result: BarcodeScanningResult) => {
+    if (result.data) handleScannedCode(result.data);
   };
 
-  if (permission === null) {
-    return <View style={styles.container} />;
-  }
-  if (!permission.granted) {
+  if (permission && !permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={{ color: "#000", textAlign: "center", marginTop: 50 }}>
-          We need your permission to show the camera
+      <SafeAreaView className="flex-1 bg-background items-center justify-center p-5">
+        <Package size={60} className="text-muted-foreground mb-4" />
+        <Text variant="h2" className="text-center mb-2">
+          Camera Access Needed
         </Text>
-        <TouchableOpacity
+        <Text variant="p" className="text-center text-muted-foreground mb-8">
+          We need your permission to show the camera for scanning barcodes.
+        </Text>
+        <Button
           onPress={requestPermission}
-          style={{ padding: 20, alignItems: "center" }}
+          className="w-full h-14 rounded-full"
         >
-          <Text style={{ color: MAIN_GREEN, fontWeight: "bold" }}>
-            Grant Permission
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <Text className="font-bold text-lg">Grant Permission</Text>
+        </Button>
+      </SafeAreaView>
     );
   }
 
-  /* ----- Renders ----- */
-
-  const renderCartRow = ({ item }: { item: CartItem }) => (
-    <View style={styles.cartRow}>
-      <View style={styles.itemLeft}>
-        <View style={styles.itemThumb}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
-          ) : (
-            <View style={styles.itemPlaceholder}>
-              <MaterialIcons name="image" size={20} color="#9ca3af" />
-            </View>
-          )}
-        </View>
-        <View>
-          <Text style={styles.itemTitle}>{item.title}</Text>
-          <Text style={styles.itemPrice}>
-            ₦{item.unitPrice.toLocaleString()}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.qtyWrap}>
-        <TouchableOpacity
-          style={styles.qtyBtn}
-          onPress={() => changeCartQty(item.id, -1)}
-        >
-          <MaterialIcons name="remove" size={16} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.qtyText}>{item.qty}</Text>
-        <TouchableOpacity
-          style={[styles.qtyBtn, styles.qtyBtnAdd]}
-          onPress={() => changeCartQty(item.id, 1)}
-        >
-          <MaterialIcons name="add" size={16} color="#000" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <View className="flex-1 bg-black">
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
 
-      {/* Main Layout: Camera takes full screen, UI overlays it */}
-      <View style={styles.container}>
-        <View style={styles.cameraContainer}>
+      {/* Camera */}
+      <View className="flex-1 bg-black overflow-hidden">
+        {permission?.granted && (
           <CameraView
-            style={styles.camera}
+            ref={cameraRef}
+            className="flex-1"
             facing={facing}
             enableTorch={torch}
             onBarcodeScanned={onBarcodeScanned}
             barcodeScannerSettings={{
-              barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e"],
+              barcodeTypes: [
+                "ean13",
+                "ean8",
+                "upc_a",
+                "upc_e",
+                "code128",
+                "code39",
+                "qr",
+              ],
             }}
-            ref={cameraRef}
           />
+        )}
 
-          {/* Top Controls Overlay */}
-          <View style={styles.topControls}>
-            <TouchableOpacity
-              style={styles.circleBtn}
-              onPress={() => navigation?.goBack()}
+        {/* Top Controls Overlay */}
+        <SafeAreaView className="absolute top-0 left-0 right-0 z-10 flex-row justify-between items-center px-5 pt-4">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="w-11 h-11 rounded-full bg-black/40 border border-white/20"
+            onPress={() => navigation?.goBack()}
+          >
+            <ArrowLeft size={22} color="white" />
+          </Button>
+
+          <View className="flex-row bg-black/40 p-1 rounded-full border border-white/20">
+            <Pressable
+              onPress={() => setMode("sell")}
+              className={cn(
+                "px-5 py-2 rounded-full",
+                mode === "sell" ? "bg-primary" : "bg-transparent",
+              )}
             >
-              <MaterialIcons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-
-            <View style={styles.modeToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  mode === "sell" ? styles.modeActive : null,
-                ]}
-                onPress={() => setMode("sell")}
+              <Text
+                className={cn(
+                  "font-black text-xs uppercase",
+                  mode === "sell" ? "text-primary-foreground" : "text-white",
+                )}
               >
-                <Text
-                  style={
-                    mode === "sell" ? styles.modeActiveText : styles.modeText
-                  }
-                >
-                  Sell
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  mode === "stock" ? styles.modeActive : null,
-                ]}
-                onPress={() => setMode("stock")}
+                {t("sell")}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMode("stock")}
+              className={cn(
+                "px-5 py-2 rounded-full",
+                mode === "stock" ? "bg-primary" : "bg-transparent",
+              )}
+            >
+              <Text
+                className={cn(
+                  "font-black text-xs uppercase",
+                  mode === "stock" ? "text-primary-foreground" : "text-white",
+                )}
               >
-                <Text
-                  style={
-                    mode === "stock" ? styles.modeActiveText : styles.modeText
-                  }
-                >
-                  Stock
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.rightTopActions}>
-              <TouchableOpacity
-                style={styles.circleBtn}
-                onPress={() => setEnterModalVisible(true)}
-              >
-                <MaterialIcons name="keyboard" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
+                {t("inventory")}
+              </Text>
+            </Pressable>
           </View>
 
-          {/* Camera Shortcuts (Flash, Flip) */}
-          <View style={styles.cameraShortcuts}>
-            <View style={styles.shortcut}>
-              <TouchableOpacity
-                style={styles.circleBtnSmall}
-                onPress={toggleTorch}
-              >
-                <MaterialIcons
-                  name={torch ? "flash-on" : "flash-off"}
-                  size={20}
-                  color={torch ? "#FFD700" : "#000"}
-                />
-              </TouchableOpacity>
-              <Text style={styles.shortcutText}>Flash</Text>
-            </View>
-            <View style={styles.shortcut}>
-              <TouchableOpacity
-                style={styles.circleBtnSmall}
-                onPress={toggleCameraType}
-              >
-                <MaterialIcons name="flip-camera-ios" size={20} color="#000" />
-              </TouchableOpacity>
-              <Text style={styles.shortcutText}>Flip</Text>
-            </View>
+          <View className="flex-row gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="w-11 h-11 rounded-full bg-black/40 border border-white/20"
+              onPress={toggleTorch}
+            >
+              {torch ? (
+                <Zap size={20} color="#36e27b" />
+              ) : (
+                <ZapOff size={20} color="white" />
+              )}
+            </Button>
+          </View>
+        </SafeAreaView>
+
+        {/* Center Scan Area */}
+        <View className="absolute inset-0 items-center justify-center z-0 pointer-events-none">
+          <View
+            style={{ width: scanBoxSize, height: scanBoxSize }}
+            className="border-2 border-white/30 rounded-[32px] overflow-hidden bg-white/5"
+          >
+            {/* Corner Accents */}
+            <View className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-2xl" />
+            <View className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-2xl" />
+            <View className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-2xl" />
+            <View className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-2xl" />
+
+            {/* Scan Line Animation */}
+            <Animated.View
+              style={{
+                transform: [{ translateY: scanY }],
+                width: "100%",
+              }}
+              className="h-1 bg-primary opacity-80 shadow-lg shadow-primary"
+            />
           </View>
 
-          {/* Center Scan Area Box */}
-          <View style={styles.centerArea} pointerEvents="none">
-            <View
-              style={[
-                styles.scanBox,
-                { width: scanBoxSize, height: scanBoxSize },
-              ]}
-            >
-              <View style={[styles.corner, styles.tl]} />
-              <View style={[styles.corner, styles.tr]} />
-              <View style={[styles.corner, styles.bl]} />
-              <View style={[styles.corner, styles.br]} />
-              <Animated.View
-                style={[
-                  styles.scanLine,
-                  {
-                    width: scanBoxSize,
-                    transform: [{ translateY: scanY }],
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.alignHint}>
-              <MaterialIcons name="qr-code-scanner" size={16} color="#fff" />
-              <Text style={styles.alignText}>Align code within frame</Text>
-            </View>
+          <View className="mt-8 flex-row items-center gap-2 bg-black/50 px-4 py-2 rounded-full border border-white/10">
+            <Scan size={16} className="text-primary" />
+            <Text className="text-white text-xs font-bold uppercase tracking-widest">
+              Align barcode to scan
+            </Text>
           </View>
         </View>
 
-        {/* Bottom Sheet for Cart or Info */}
-        <View
-          style={[styles.bottomSheet, { maxHeight: BOTTOM_SHEET_MAX_HEIGHT }]}
-        >
-          <View style={styles.sheetHandle} />
-
-          {/* Header row */}
-          <View style={styles.sheetHeader}>
-            <View>
-              <Text style={styles.sheetTitle}>
-                {mode === "sell" ? "Current Cart" : "Scan History"}
-              </Text>
-              <Text style={styles.sheetSub}>
-                {mode === "sell"
-                  ? `${cart.length} items added`
-                  : "Scan to update inventory"}
-              </Text>
+        {/* Side Shortcuts Overlay */}
+        <View className="absolute top-1/2 right-4 -translate-y-1/2 z-10 gap-6">
+          <Pressable onPress={toggleCameraType} className="items-center">
+            <View className="w-12 h-12 rounded-full bg-black/40 border border-white/10 items-center justify-center mb-1">
+              <RefreshCw size={22} color="white" />
             </View>
-            {cart.length > 0 && mode === "sell" && (
-              <TouchableOpacity onPress={clearAllCart}>
-                <Text style={styles.clearText}>Clear</Text>
-              </TouchableOpacity>
+            <Text className="text-white text-[10px] font-black uppercase shadow-black">
+              Flip
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setEnterModalVisible(true)}
+            className="items-center"
+          >
+            <View className="w-12 h-12 rounded-full bg-black/40 border border-white/10 items-center justify-center mb-1">
+              <Keyboard size={22} color="white" />
+            </View>
+            <Text className="text-white text-[10px] font-black uppercase shadow-black">
+              Manual
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Bottom Session Panel */}
+      <View className="absolute bottom-0 left-0 right-0 bg-background rounded-t-[40px] shadow-2xl shadow-black p-6 pb-10">
+        <View className="w-12 h-1.5 bg-muted rounded-full self-center mb-5" />
+
+        <View className="flex-row justify-between items-center mb-4">
+          <View>
+            <Text variant="h3" className="font-black text-foreground">
+              {mode === "sell" ? t("cart") : t("scannedItems")}
+            </Text>
+            {mode === "sell" && (
+              <Text variant="muted" className="text-xs font-bold uppercase">
+                {cart.length} {t("items")}
+              </Text>
             )}
           </View>
-
-          {mode === "sell" ? (
-            <FlatList
-              data={cart}
-              keyExtractor={(item) => item.id}
-              renderItem={renderCartRow}
-              style={styles.cartList}
-              contentContainerStyle={{ paddingBottom: 80 }}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyText}>
-                    Scan a barcode to add items
-                  </Text>
-                </View>
-              }
-            />
-          ) : (
-            <View style={styles.emptyRow}>
-              <Text style={styles.emptyText}>
-                Ready to scan products for inventory
+          {cart.length > 0 && mode === "sell" && (
+            <Pressable onPress={clearAllCart}>
+              <Text className="text-destructive font-bold text-xs uppercase tracking-tighter">
+                Clear All
               </Text>
-            </View>
-          )}
-
-          {/* Checkout Button (Sell mode only) */}
-          {mode === "sell" && cart.length > 0 && (
-            <View style={styles.checkoutWrap}>
-              <TouchableOpacity
-                style={styles.checkoutBtn}
-                activeOpacity={0.9}
-                onPress={onCheckout}
-              >
-                <View>
-                  <Text style={styles.totalLabel}>Total Amount</Text>
-                  <Text style={styles.totalValue}>
-                    ₦{totalAmount.toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.checkoutRight}>
-                  <Text style={styles.checkoutText}>Checkout</Text>
-                  <MaterialIcons name="arrow-forward" size={20} color="#000" />
-                </View>
-              </TouchableOpacity>
-            </View>
+            </Pressable>
           )}
         </View>
 
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={MAIN_GREEN} />
-          </View>
+        {/* Cart List */}
+        <View className="max-h-60 mb-4">
+          <FlatList
+            data={cart}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <View className="flex-row items-center justify-between p-3 bg-secondary/50 rounded-2xl border border-border/50 mb-3">
+                <View className="flex-row items-center flex-1 gap-3">
+                  <View className="w-10 h-10 rounded-xl bg-background items-center justify-center">
+                    <ImageIcon size={18} className="text-muted-foreground/30" />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-sm font-black text-foreground"
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text className="text-primary font-bold text-xs mt-0.5">
+                      ₦{item.unitPrice.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-center gap-3 ml-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="w-8 h-8 rounded-lg border-border"
+                    onPress={() => changeCartQty(item.id, -1)}
+                  >
+                    <Minus size={14} color="#666" />
+                  </Button>
+                  <Text className="min-w-[20px] text-center font-black text-foreground">
+                    {item.qty}
+                  </Text>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="w-8 h-8 rounded-lg"
+                    onPress={() => changeCartQty(item.id, 1)}
+                  >
+                    <Plus size={14} color="#000" />
+                  </Button>
+                </View>
+              </View>
+            )}
+            ListEmptyComponent={
+              <View className="py-6 items-center">
+                <ShoppingCart
+                  size={32}
+                  className="text-muted-foreground/20 mb-2"
+                />
+                <Text variant="muted" className="font-bold italic">
+                  No items scanned yet
+                </Text>
+              </View>
+            }
+          />
+        </View>
+
+        {/* Checkout / Finish Bar */}
+        {mode === "sell" ? (
+          <Button
+            className="h-16 rounded-3xl flex-row items-center justify-between px-6 bg-primary shadow-xl shadow-primary/30"
+            onPress={onCheckout}
+            disabled={cart.length === 0}
+          >
+            <View>
+              <Text className="text-[10px] font-black text-primary-foreground/70 uppercase tracking-widest">
+                Total Amount
+              </Text>
+              <Text className="text-xl font-black text-primary-foreground">
+                ₦{totalAmount.toLocaleString()}
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2 bg-black/10 px-4 py-2 rounded-2xl">
+              <Text className="font-black text-primary-foreground uppercase tracking-tight">
+                Checkout
+              </Text>
+              <ArrowRight size={20} color="#000" strokeWidth={3} />
+            </View>
+          </Button>
+        ) : (
+          <Button
+            className="h-16 rounded-3xl bg-secondary border border-border"
+            onPress={() => navigation?.goBack()}
+          >
+            <Text className="font-black text-foreground uppercase tracking-widest">
+              Finish Inventory
+            </Text>
+          </Button>
         )}
       </View>
 
-      {/* --- Modals --- */}
-
-      {/* Enter Code Manual Modal */}
+      {/* Manual Entry Modal */}
       <Modal
         visible={enterModalVisible}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setEnterModalVisible(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={modalStyles.modalWrapper}
-        >
-          <View style={modalStyles.modal}>
-            <Text style={modalStyles.modalTitle}>Enter Barcode</Text>
-            <TextInput
-              style={modalStyles.modalInput}
-              placeholder="Type code here..."
-              placeholderTextColor="#9ca3af"
+        <View className="flex-1 bg-black/60 justify-center items-center p-6">
+          <Card className="w-full p-6 bg-background rounded-[32px] border border-border shadow-2xl">
+            <Text variant="h3" className="font-black text-foreground mb-6">
+              Enter Barcode
+            </Text>
+            <Input
+              placeholder="e.g. 12345678"
+              className="h-14 rounded-2xl bg-secondary border-border mb-6 text-lg font-bold"
               value={enteredCode}
               onChangeText={setEnteredCode}
               keyboardType="number-pad"
               autoFocus
             />
-            <View style={modalStyles.modalRow}>
-              <TouchableOpacity
-                style={modalStyles.modalBtnAlt}
+            <View className="flex-row gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-2xl"
                 onPress={() => setEnterModalVisible(false)}
               >
-                <Text style={modalStyles.modalBtnTextAlt}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={modalStyles.modalBtn}
+                <Text className="font-bold">Cancel</Text>
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-2xl"
                 onPress={handleEnterCodeConfirm}
               >
-                <Text style={modalStyles.modalBtnText}>Scan Code</Text>
-              </TouchableOpacity>
+                <Text className="font-black uppercase text-xs">Confirm</Text>
+              </Button>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </Card>
+        </View>
       </Modal>
 
       {/* Product Edit/Add Modal */}
@@ -737,661 +731,189 @@ export default function ScanSellScreen({
         onRequestClose={() => setProductModalVisible(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={productModalStyles.modalWrapper}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1 bg-black/60 justify-center items-center p-6"
         >
-          <View style={productModalStyles.modal}>
-            <Text style={productModalStyles.modalTitle}>
-              {isNewProduct ? "Add New Product" : "Edit Product"}
+          <Card className="w-full p-6 bg-background rounded-[32px] border border-border shadow-2xl max-h-[90%]">
+            <Text variant="h3" className="font-black text-foreground mb-2">
+              {isNewProduct ? "New Product" : "Edit Product"}
             </Text>
-
-            {/* Title */}
-            <View style={productModalStyles.field}>
-              <Text style={productModalStyles.label}>Product Name</Text>
-              <View style={productModalStyles.inputWrap}>
-                <TextInput
-                  style={productModalStyles.input}
-                  value={editTitle}
-                  onChangeText={setEditTitle}
-                  onBlur={handleRecommendCategory}
-                  placeholder="e.g. Indomie Chicken"
-                  placeholderTextColor="#6b7280"
-                />
-              </View>
+            <View className="flex-row items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-xl self-start mb-6">
+              <Barcode size={14} className="text-primary" />
+              <Text className="text-[11px] font-black text-primary uppercase">
+                {currentProduct?.barcode}
+              </Text>
             </View>
 
-            {/* Prices Row */}
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={[productModalStyles.field, { flex: 1 }]}>
-                <Text style={productModalStyles.label}>Selling Price</Text>
-                <View style={productModalStyles.inputWrap}>
-                  <Text style={productModalStyles.prefix}>₦</Text>
-                  <TextInput
-                    style={[
-                      productModalStyles.input,
-                      productModalStyles.inputWithPrefix,
-                    ]}
-                    value={editPrice}
-                    onChangeText={setEditPrice}
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#6b7280"
-                  />
+            <FlatList
+              data={[1]}
+              keyExtractor={() => "form"}
+              showsVerticalScrollIndicator={false}
+              renderItem={() => (
+                <View className="gap-5 pb-4">
+                  {/* Title Field */}
+                  <View>
+                    <View className="flex-row justify-between items-center mb-2 px-1">
+                      <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                        Product Name
+                      </Text>
+                      {isNewProduct && (
+                        <Pressable
+                          className="flex-row items-center gap-1"
+                          onPress={handleRecommendCategory}
+                        >
+                          <Sparkles size={12} className="text-primary" />
+                          <Text className="text-[10px] font-bold text-primary">
+                            Suggest Category
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                    <Input
+                      className="h-14 rounded-2xl bg-secondary border-border text-base font-bold"
+                      placeholder="e.g. Coca-Cola 50cl"
+                      value={editTitle}
+                      onChangeText={setEditTitle}
+                    />
+                  </View>
+
+                  {/* Price Row */}
+                  <View className="flex-row gap-4">
+                    <View className="flex-1">
+                      <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 px-1">
+                        Selling Price
+                      </Text>
+                      <View className="relative">
+                        <Text className="absolute left-4 top-[17px] z-10 text-base font-bold text-foreground">
+                          ₦
+                        </Text>
+                        <Input
+                          className="h-14 rounded-2xl bg-secondary border-border pl-8 text-base font-bold"
+                          keyboardType="numeric"
+                          value={editPrice}
+                          onChangeText={setEditPrice}
+                        />
+                      </View>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 px-1">
+                        Cost Price
+                      </Text>
+                      <View className="relative">
+                        <Text className="absolute left-4 top-[17px] z-10 text-base font-bold text-muted-foreground">
+                          ₦
+                        </Text>
+                        <Input
+                          className="h-14 rounded-2xl bg-secondary border-border pl-8 text-base font-bold text-muted-foreground"
+                          keyboardType="numeric"
+                          value={editCostPrice}
+                          onChangeText={setEditCostPrice}
+                        />
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Category Selection */}
+                  <View>
+                    <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 px-1">
+                      Category
+                    </Text>
+                    <View className="h-14 rounded-2xl bg-secondary border border-border justify-center px-4 overflow-hidden relative">
+                      <RNPickerSelect
+                        onValueChange={(v) => setEditCategory(v)}
+                        items={categories.map((c) => ({ label: c, value: c }))}
+                        value={editCategory}
+                        style={{
+                          inputIOS: {
+                            color: "white",
+                            fontSize: 16,
+                            fontWeight: "700",
+                          },
+                          inputAndroid: {
+                            color: "white",
+                            fontSize: 16,
+                            fontWeight: "700",
+                          },
+                          placeholder: { color: "#666" },
+                        }}
+                        useNativeAndroidPickerStyle={false}
+                        Icon={() => (
+                          <ChevronDown
+                            size={18}
+                            className="text-muted-foreground absolute right-4 top-1"
+                          />
+                        )}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Quantity Stepper */}
+                  <View>
+                    <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 px-1">
+                      Current Stock
+                    </Text>
+                    <View className="flex-row items-center justify-between bg-secondary p-3 rounded-2xl border border-border">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="w-12 h-12 rounded-xl bg-background border border-border shadow-sm"
+                        onPress={() => setEditQty((q) => Math.max(0, q - 1))}
+                      >
+                        <Minus size={20} color="white" />
+                      </Button>
+                      <View className="items-center">
+                        <Text className="text-2xl font-black text-foreground">
+                          {editQty}
+                        </Text>
+                        <Text className="text-[9px] font-bold text-muted-foreground uppercase">
+                          Units in store
+                        </Text>
+                      </View>
+                      <Button
+                        className="w-12 h-12 rounded-xl bg-primary shadow-sm"
+                        size="icon"
+                        onPress={() => setEditQty((q) => q + 1)}
+                      >
+                        <Plus size={20} color="#000" />
+                      </Button>
+                    </View>
+                  </View>
                 </View>
-              </View>
+              )}
+            />
 
-              <View style={[productModalStyles.field, { flex: 1 }]}>
-                <Text style={productModalStyles.label}>Cost Price</Text>
-                <View style={productModalStyles.inputWrap}>
-                  <Text style={productModalStyles.prefix}>₦</Text>
-                  <TextInput
-                    style={[
-                      productModalStyles.input,
-                      productModalStyles.inputWithPrefix,
-                    ]}
-                    value={editCostPrice}
-                    onChangeText={setEditCostPrice}
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#6b7280"
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Category */}
-            {isRecommendingCategory ? (
-              <View
-                style={[
-                  productModalStyles.input,
-                  { justifyContent: "center", alignItems: "center" },
-                ]}
-              >
-                <ActivityIndicator color={MAIN_GREEN} />
-              </View>
-            ) : (
-              <RNPickerSelect
-                onValueChange={(value) => value && setEditCategory(value)}
-                items={categories.map((cat) => ({
-                  label: cat,
-                  value: cat,
-                }))}
-                style={{
-                  inputIOS: productModalStyles.input,
-                  inputAndroid: productModalStyles.input,
-                  placeholder: {
-                    color: "#6b7280",
-                  },
-                }}
-                value={editCategory}
-                placeholder={{
-                  label: "Select a category...",
-                  value: null,
-                  color: "#6b7280",
-                }}
-              />
-            )}
-
-            {/* Quantity */}
-            <View style={productModalStyles.field}>
-              <Text style={productModalStyles.label}>Stock Quantity</Text>
-              <View style={productModalStyles.qtyWrap}>
-                <TouchableOpacity
-                  style={productModalStyles.qtyBtn}
-                  onPress={() => setEditQty((q) => Math.max(0, q - 1))}
-                >
-                  <MaterialIcons name="remove" size={24} color="#111" />
-                </TouchableOpacity>
-                <View style={productModalStyles.qtyDisplay}>
-                  <Text style={productModalStyles.qtyText}>{editQty}</Text>
-                  <Text style={productModalStyles.qtyUnit}>Units</Text>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    productModalStyles.qtyBtn,
-                    productModalStyles.qtyBtnAdd,
-                  ]}
-                  onPress={() => setEditQty((q) => q + 1)}
-                >
-                  <MaterialIcons name="add" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Actions */}
-            <View style={productModalStyles.modalRow}>
-              <TouchableOpacity
-                style={productModalStyles.modalBtnAlt}
+            <View className="flex-row gap-3 mt-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-14 rounded-2xl"
                 onPress={() => setProductModalVisible(false)}
               >
-                <Text style={productModalStyles.modalBtnTextAlt}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={productModalStyles.modalBtn}
+                <Text className="font-bold">Cancel</Text>
+              </Button>
+              <Button
+                className="flex-2 h-14 rounded-2xl bg-primary"
                 onPress={handleProductConfirm}
               >
-                <Text style={productModalStyles.modalBtnText}>
-                  {isNewProduct ? "Create Product" : "Save Changes"}
+                <Text className="font-black uppercase tracking-tight text-primary-foreground">
+                  {isNewProduct ? "Add Product" : "Save Changes"}
                 </Text>
-              </TouchableOpacity>
+              </Button>
             </View>
-          </View>
+          </Card>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <View className="absolute inset-0 bg-black/40 justify-center items-center z-[100]">
+          <View className="bg-background p-6 rounded-3xl border border-border items-center">
+            <ActivityIndicator size="large" color="#36e27b" />
+            <Text className="mt-4 font-black text-xs uppercase tracking-widest">
+              Processing...
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  container: {
-    flex: 1,
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  camera: {
-    flex: 1,
-  },
-  topControls: {
-    position: "absolute",
-    top: Platform.OS === "android" ? 40 : 60,
-    left: 16,
-    right: 16,
-    zIndex: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  circleBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modeToggle: {
-    flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 4,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  modePill: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-  },
-  modeActive: {
-    backgroundColor: MAIN_GREEN,
-  },
-  modeText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  modeActiveText: {
-    color: "#000",
-    fontWeight: "700",
-  },
-  rightTopActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  cameraShortcuts: {
-    position: "absolute",
-    top: Platform.OS === "android" ? 110 : 130,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    gap: 40,
-  },
-  shortcut: {
-    alignItems: "center",
-  },
-  circleBtnSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  shortcutText: {
-    color: "#fff",
-    fontSize: 12,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowRadius: 4,
-  },
-
-  centerArea: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: height * 0.3, // approximate center above bottom sheet
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 5,
-  },
-  scanBox: {
-    borderWidth: 0,
-    borderColor: "rgba(255,255,255,0.3)",
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    elevation: 10,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  corner: {
-    position: "absolute",
-    width: 32,
-    height: 32,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: MAIN_GREEN,
-    borderRadius: 8,
-  },
-  tl: {
-    left: 0,
-    top: 0,
-    transform: [{ rotate: "0deg" }],
-  },
-  tr: {
-    right: 0,
-    top: 0,
-    transform: [{ rotate: "90deg" }],
-  },
-  bl: {
-    left: 0,
-    bottom: 0,
-    transform: [{ rotate: "-90deg" }],
-  },
-  br: {
-    right: 0,
-    bottom: 0,
-    transform: [{ rotate: "180deg" }],
-  },
-  scanLine: {
-    position: "absolute",
-    height: 3,
-    backgroundColor: MAIN_GREEN,
-    opacity: 0.8,
-    shadowColor: MAIN_GREEN,
-    shadowRadius: 10,
-    shadowOpacity: 1,
-  },
-  alignHint: {
-    marginTop: 20,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  alignText: {
-    color: "#fff",
-    marginLeft: 0,
-    fontWeight: "600",
-  },
-
-  bottomSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    elevation: 20,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#e5e7eb",
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: 16,
-  },
-  sheetTitle: {
-    color: "#111",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  sheetSub: {
-    color: "#6b7280",
-    fontSize: 13,
-  },
-  clearText: {
-    color: "#ef4444",
-    fontWeight: "600",
-  },
-  cartList: {
-    marginTop: 0,
-    maxHeight: 300,
-  },
-  cartRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 12,
-    backgroundColor: "#f9fafb",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    marginBottom: 10,
-  },
-  highlightRow: {
-    backgroundColor: "#f0fdf4",
-    borderColor: "#bbf7d0",
-  },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  itemThumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#e5e7eb",
-  },
-  itemImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  itemPlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemTitle: {
-    color: "#111",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  itemPrice: {
-    color: MAIN_GREEN,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  qtyWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  qtyBtnAdd: {
-    backgroundColor: MAIN_GREEN,
-    borderColor: MAIN_GREEN,
-  },
-  qtyText: {
-    color: "#111",
-    minWidth: 16,
-    textAlign: "center",
-    fontWeight: "700",
-  },
-  emptyRow: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#9ca3af",
-  },
-  checkoutWrap: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: Platform.OS === "ios" ? 34 : 20,
-  },
-  checkoutBtn: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "#111",
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    elevation: 4,
-  },
-  totalLabel: {
-    color: "#9ca3af",
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  totalValue: {
-    color: MAIN_GREEN,
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  checkoutRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fff",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  checkoutText: {
-    fontWeight: "700",
-    color: "#000",
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 999,
-  },
-});
-
-const modalStyles = StyleSheet.create({
-  modalWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-  },
-  modal: {
-    width: "85%",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 16,
-    color: "#111",
-  },
-  modalInput: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    fontSize: 16,
-  },
-  modalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-  },
-  modalBtn: {
-    backgroundColor: "#000",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  modalBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  modalBtnAlt: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  modalBtnTextAlt: {
-    color: "#6b7280",
-    fontWeight: "600",
-  },
-});
-
-const productModalStyles = StyleSheet.create({
-  modalWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-  },
-  modal: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 20,
-    color: "#111",
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    color: "#4b5563",
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  inputWrap: {
-    position: "relative",
-  },
-  input: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f9fafb",
-    paddingHorizontal: 16,
-    color: "#111",
-    fontSize: 16,
-  },
-  prefix: {
-    position: "absolute",
-    left: 16,
-    top: 14,
-    zIndex: 1,
-    color: "#9ca3af",
-    fontSize: 16,
-  },
-  inputWithPrefix: {
-    paddingLeft: 32,
-  },
-  qtyWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f9fafb",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    padding: 6,
-  },
-  qtyBtn: {
-    width: 44,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    elevation: 1,
-  },
-  qtyBtnAdd: {
-    backgroundColor: MAIN_GREEN,
-  },
-  qtyDisplay: {
-    alignItems: "center",
-  },
-  qtyText: {
-    color: "#111",
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  qtyUnit: {
-    color: "#6b7280",
-    fontSize: 10,
-    marginTop: -2,
-  },
-  modalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 8,
-  },
-  modalBtn: {
-    backgroundColor: "#000",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  modalBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  modalBtnAlt: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  modalBtnTextAlt: {
-    color: "#6b7280",
-    fontWeight: "600",
-  },
-});

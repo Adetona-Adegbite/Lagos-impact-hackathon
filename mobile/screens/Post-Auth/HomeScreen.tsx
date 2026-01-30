@@ -1,35 +1,47 @@
-// src/screens/RetailHomeScreen.tsx
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { productService } from "../../services/productService";
-import { authStorage } from "../../services/authStorage";
 import {
-  SafeAreaView,
   View,
-  Text,
-  StyleSheet,
   Image,
   ScrollView,
   FlatList,
-  TouchableOpacity,
   Dimensions,
   StatusBar,
+  Pressable,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
-import { t } from "../../utils/localization";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Bell,
+  TrendingUp,
+  CreditCard,
+  AlertTriangle,
+  Package,
+  ShoppingCart,
+  History,
+  Sparkles,
+  ArrowRight,
+  Landmark,
+  BadgePercent,
+  ChevronRight,
+} from "lucide-react-native";
+import { productService } from "../../services/productService";
+import { authStorage } from "../../services/authStorage";
 import { syncEngine } from "../../services/sync/SyncEngine";
+import { t } from "../../utils/localization";
+import { Text } from "../../components/ui/text";
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
+import { cn } from "../../lib/utils";
 
 const { width } = Dimensions.get("window");
-const MAIN_GREEN = "#36e27b";
 const CARD_WIDTH = Math.round(width * 0.62);
 
 type StatCard = {
   id: string;
   title: string;
   value: string;
-  icon: string;
-  accent?: string;
+  icon: any;
+  color: string;
   hint?: string;
 };
 
@@ -41,45 +53,44 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
     totalItems: 0,
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
+
   const ACTIONS = [
     {
       id: "a1",
       title: t("newSale"),
       subtitle: t("recordTransaction"),
-      icon: "point-of-sale",
+      icon: ShoppingCart,
       primary: true,
     },
     {
       id: "a2",
       title: t("inventory"),
       subtitle: t("manageStock"),
-      icon: "inventory",
+      icon: Package,
     },
-
     {
       id: "a3",
       title: t("aiInsights"),
       subtitle: t("smartPredictions"),
-      icon: "auto-awesome",
+      icon: Sparkles,
     },
-
     {
       id: "a4",
       title: t("allSales"),
       subtitle: t("viewSalesHistory"),
-      icon: "history",
+      icon: History,
     },
     {
       id: "a5",
       title: t("aiCreditScore"),
       subtitle: t("loanReadyInsights"),
-      icon: "insights",
+      icon: CreditCard,
     },
     {
       id: "a6",
       title: t("taxInsights"),
       subtitle: t("quickTaxReports"),
-      icon: "account-balance",
+      icon: Landmark,
     },
   ];
 
@@ -116,442 +127,266 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
       id: "s1",
       title: t("todaysSales"),
       value: `₦${stats.todaySales.toLocaleString()}`,
-      icon: "payments",
-      accent: MAIN_GREEN,
+      icon: CreditCard,
+      color: "text-primary",
+      hint: "+12%",
     },
     {
       id: "s2",
       title: t("lowStock"),
       value: `${stats.lowStock} ${t("items")}`,
-      icon: "warning",
-      accent: "#F97316",
+      icon: AlertTriangle,
+      color: "text-orange-500",
     },
     {
       id: "s3",
       title: t("totalItems"),
       value: `${stats.totalItems}`,
-      icon: "inventory",
-      accent: "#60A5FA",
+      icon: Package,
+      color: "text-blue-400",
     },
   ];
 
   const onActionPress = (id: string) => {
-    // console.log("action", id);
-    if (id == "a1") {
-      navigation?.navigate("SalesScreen");
-    } else if (id == "a2") {
-      navigation?.navigate("InventoryScreen");
-    } else if (id == "a3") {
-      navigation?.navigate("AIInsightsScreen");
-    } else if (id == "a4") {
-      navigation?.navigate("AllSalesScreen");
-    } else if (id == "a5") {
-      navigation?.navigate("CreditProfileScreen");
-    } else if (id == "a6") {
-      navigation?.navigate("TaxInsightsScreen");
+    const routes: Record<string, string> = {
+      a1: "SalesScreen",
+      a2: "InventoryScreen",
+      a3: "AIInsightsScreen",
+      a4: "AllSalesScreen",
+      a5: "CreditProfileScreen",
+      a6: "TaxInsightsScreen",
+    };
+    if (routes[id]) {
+      navigation?.navigate(routes[id]);
     }
-    // navigation?.navigate(...) etc.
   };
 
   const renderStat = ({ item }: { item: StatCard }) => (
-    <View
-      style={[
-        styles.statCard,
-        item.accent ? { borderColor: item.accent } : undefined,
-      ]}
+    <Card
+      style={{ width: CARD_WIDTH }}
+      className="p-4 bg-secondary border-border mr-3"
     >
-      <View style={styles.statTop}>
+      <View className="flex-row justify-between items-center mb-4">
         <View
-          style={[
-            styles.statIconWrap,
-            { backgroundColor: item.accent ? `${item.accent}22` : "#fff" },
-          ]}
+          className={cn(
+            "w-11 h-11 rounded-xl items-center justify-center bg-background/50",
+          )}
         >
-          <MaterialIcons
-            name={item.icon as any}
-            size={22}
-            color={item.accent ?? "#fff"}
-          />
+          <item.icon size={22} className={item.color} />
         </View>
-        {item.hint ? (
-          <View style={styles.hintPill}>
-            <MaterialIcons
-              name="trending-up"
-              size={12}
-              color={item.accent ?? MAIN_GREEN}
-            />
-            <Text
-              style={[styles.hintText, { color: item.accent ?? MAIN_GREEN }]}
-            >
+        {item.hint && (
+          <View className="flex-row items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
+            <TrendingUp size={12} className="text-primary" />
+            <Text className="text-[10px] font-bold text-primary">
               {item.hint}
             </Text>
           </View>
-        ) : null}
+        )}
       </View>
 
       <View>
-        <Text style={styles.statLabel}>{item.title}</Text>
-        <Text style={styles.statValue}>{item.value}</Text>
+        <Text
+          variant="muted"
+          className="text-xs mb-1 uppercase font-bold tracking-wider"
+        >
+          {item.title}
+        </Text>
+        <Text className="text-2xl font-black text-foreground">
+          {item.value}
+        </Text>
       </View>
-    </View>
+    </Card>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent
-      />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatarWrap}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-5 py-4">
+        <View className="flex-row items-center gap-3">
+          <View className="relative">
+            <View className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-primary/20">
               <Image
                 source={{
                   uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDzwsRVGB3rjAn25g6b8ryrRBsEcj0ItVKYAF9o6H9bEspO_Rg3cDHDyo5zsY1wf-73mAjivKyLRWO94RGKZ1RzLKFc6i15ez5rU3C4KDS_AJ4uCmvKRW4StDnxm6V5-6w6tjBJDJrbpILDmXK_G5HTWo035_NSdLhgqFuEn2GvmE3QadfJX8BM2oGs0Tns-4TatYrMiQk9eUACHXJNmz5Zgdn7-MLM1O05ryGZZFLWqLSQnxkDIpgWkrg5Pik9VSXKYxEy-wwXpTo",
                 }}
-                style={styles.avatar}
+                className="w-full h-full"
               />
-              <View style={styles.avatarDot} />
             </View>
-            <View>
-              <Text style={styles.small}>{t("goodMorning")}</Text>
-              <Text style={styles.shopName}>{shopName}</Text>
-            </View>
+            <View className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-background" />
           </View>
-
-          <TouchableOpacity
-            style={styles.notifBtn}
-            onPress={() => console.log("notifications")}
-          >
-            <MaterialIcons name="notifications" size={22} color="#fff" />
-            <View style={styles.notifBadge} />
-          </TouchableOpacity>
+          <View>
+            <Text variant="muted" className="text-xs font-bold">
+              {t("goodMorning")}
+            </Text>
+            <Text className="text-lg font-black text-foreground">
+              {shopName}
+            </Text>
+          </View>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
+        <Button
+          variant="secondary"
+          size="icon"
+          className="rounded-2xl w-11 h-11 bg-secondary relative"
         >
-          {/* Stats scroller */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionSmall}>{t("overview")}</Text>
-            <TouchableOpacity onPress={() => console.log("view reports")}>
-              <Text style={styles.viewReports}>{t("viewReports")}</Text>
-            </TouchableOpacity>
+          <Bell size={20} color="white" />
+          <View className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-destructive" />
+        </Button>
+      </View>
+
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Stats Section */}
+        <View className="px-5 mt-4 mb-2 flex-row justify-between items-end">
+          <Text className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+            {t("overview")}
+          </Text>
+          <Pressable>
+            <Text className="text-primary text-xs font-bold">
+              {t("viewReports")}
+            </Text>
+          </Pressable>
+        </View>
+
+        <FlatList
+          horizontal
+          data={statCards}
+          keyExtractor={(i) => i.id}
+          renderItem={renderStat}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10 }}
+        />
+
+        {/* Quick Actions Grid */}
+        <View className="px-5 mt-6 mb-4">
+          <Text variant="h2" className="text-primary font-black">
+            {t("quickActions")}
+          </Text>
+        </View>
+
+        <View className="flex-row flex-wrap px-5 gap-3">
+          {ACTIONS.map((a) => (
+            <Pressable
+              key={a.id}
+              onPress={() => onActionPress(a.id)}
+              className={cn(
+                "w-[48%] aspect-square rounded-[24px] p-4 justify-between border",
+                a.primary
+                  ? "bg-primary border-primary shadow-lg shadow-primary/30"
+                  : "bg-secondary border-border",
+              )}
+            >
+              <View className="flex-row justify-between items-start">
+                <View
+                  className={cn(
+                    "w-12 h-12 rounded-2xl items-center justify-center",
+                    a.primary ? "bg-white/20" : "bg-background/40",
+                  )}
+                >
+                  <a.icon
+                    size={28}
+                    color={a.primary ? "#000" : "#fff"}
+                    strokeWidth={a.primary ? 2.5 : 2}
+                  />
+                </View>
+                <ArrowRight
+                  size={18}
+                  color={a.primary ? "#000" : "#666"}
+                  strokeWidth={3}
+                />
+              </View>
+              <View>
+                <Text
+                  className={cn(
+                    "text-lg font-black",
+                    a.primary ? "text-primary-foreground" : "text-foreground",
+                  )}
+                >
+                  {a.title}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  className={cn(
+                    "text-[11px] font-bold mt-1",
+                    a.primary
+                      ? "text-primary-foreground/70"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {a.subtitle}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Recent Activity */}
+        <View className="px-5 mt-8">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text variant="h3" className="text-foreground font-black">
+              {t("recentSales")}
+            </Text>
+            <Pressable>
+              <ChevronRight size={20} color="#666" />
+            </Pressable>
           </View>
 
-          <FlatList
-            horizontal
-            data={statCards}
-            keyExtractor={(i) => i.id}
-            renderItem={renderStat}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.statsList}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-          />
-
-          {/* Quick actions grid */}
-          <View style={styles.actionsHeader}>
-            <Text style={styles.bigTitle}>{t("quickActions")}</Text>
-          </View>
-
-          <View style={styles.actionsGrid}>
-            {ACTIONS.map((a) => (
-              <TouchableOpacity
-                key={a.id}
-                style={[
-                  styles.actionCard,
-                  a.primary ? styles.actionPrimary : null,
-                ]}
-                onPress={() => onActionPress(a.id)}
-                activeOpacity={0.85}
-              >
-                <View style={styles.actionTop}>
-                  <MaterialIcons
-                    name={a.icon as any}
-                    size={30}
-                    color={a.primary ? "#012" : "#fff"}
-                  />
-                  <MaterialIcons
-                    name="arrow-forward"
-                    size={18}
-                    color={a.primary ? "#012" : "#fff"}
-                  />
+          {recentSales.map((r) => (
+            <View
+              key={r.id}
+              className="flex-row items-center justify-between p-4 mb-3 bg-secondary/50 rounded-2xl border border-border/50"
+            >
+              <View className="flex-row items-center gap-4">
+                <View className="w-12 h-12 rounded-xl bg-background items-center justify-center">
+                  <ShoppingCart size={20} className="text-muted-foreground" />
                 </View>
                 <View>
-                  <Text
-                    style={[
-                      styles.actionTitle,
-                      a.primary ? styles.actionTitlePrimary : undefined,
-                    ]}
-                  >
-                    {a.title}
+                  <Text className="text-sm font-black text-foreground">
+                    {r.title || t("sale")}
+                    {r.itemCount > 1 && ` +${r.itemCount - 1} ${t("items")}`}
                   </Text>
-                  <Text
-                    style={
-                      a.primary
-                        ? { fontSize: 12, color: "#000", marginTop: 6 }
-                        : styles.actionSubtitle
-                    }
-                  >
-                    {a.subtitle}
+                  <Text variant="muted" className="text-xs font-bold">
+                    {new Date(r.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </Text>
                 </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Recent Activity */}
-          <View style={styles.recentSection}>
-            <Text style={styles.recentTitle}>{t("recentSales")}</Text>
-            <View style={{ height: 10 }} />
-            {recentSales.map((r) => (
-              <View key={r.id} style={styles.recentItem}>
-                <View style={styles.recentLeft}>
-                  <View style={styles.recentIcon}>
-                    <MaterialIcons
-                      name="shopping-bag"
-                      size={20}
-                      color="#9CA3AF"
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.recentName}>
-                      {r.title || t("sale")}
-                      {r.itemCount > 1
-                        ? t("plusItems").replace("{count}", r.itemCount - 1)
-                        : ""}
-                    </Text>
-                    <Text style={styles.recentTime}>
-                      {new Date(r.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                </View>
-                <Text
-                  style={styles.recentAmount}
-                >{`+ ₦${r.totalAmount.toLocaleString()}`}</Text>
               </View>
-            ))}
-          </View>
+              <Text className="text-base font-black text-primary">
+                +₦{r.totalAmount.toLocaleString()}
+              </Text>
+            </View>
+          ))}
 
-          <View style={{ height: 120 }} />
-        </ScrollView>
+          {recentSales.length === 0 && (
+            <View className="items-center py-10 bg-secondary/30 rounded-3xl border border-dashed border-border">
+              <History size={40} className="text-muted-foreground/30 mb-2" />
+              <Text variant="muted" className="font-bold">
+                No recent sales
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Floating Action Button (Alternative New Sale) */}
+      <View className="absolute bottom-8 left-5 right-5 shadow-2xl shadow-primary/40">
+        <Button
+          onPress={() => onActionPress("a1")}
+          className="h-16 rounded-full bg-primary flex-row gap-3"
+        >
+          <ShoppingCart size={24} color="#000" strokeWidth={3} />
+          <Text className="text-primary-foreground font-black text-lg uppercase tracking-tight">
+            {t("newSale")}
+          </Text>
+        </Button>
       </View>
     </SafeAreaView>
   );
 }
-
-/* Styles */
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
-  container: { flex: 1, maxWidth: 540, alignSelf: "center" },
-  header: {
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 18,
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#122117",
-    // borderBottomWidth: 0.25,
-    // borderBottomColor: "#E6E9E8",
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatarWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    overflow: "hidden",
-    marginRight: 6,
-  },
-  avatar: { width: "100%", height: "100%" },
-  avatarDot: {
-    position: "absolute",
-    right: 2,
-    bottom: 2,
-    width: 10,
-    height: 10,
-    borderRadius: 6,
-    backgroundColor: MAIN_GREEN,
-    borderWidth: 2,
-    borderColor: "#f6f8f7",
-  },
-  small: { fontSize: 13, color: "#6B7280" },
-  shopName: { fontSize: 18, fontWeight: "800", color: "#fff" },
-
-  notifBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#0b281f",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  notifBadge: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 6,
-    backgroundColor: "#FE5252",
-  },
-
-  scroll: { paddingBottom: 40 },
-
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingHorizontal: 18,
-    marginTop: 12,
-  },
-  sectionSmall: { fontSize: 12, fontWeight: "700", color: "#6B7280" },
-  viewReports: { fontSize: 12, color: MAIN_GREEN },
-
-  statsList: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 6 },
-  statCard: {
-    width: CARD_WIDTH,
-    minHeight: 108,
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: "#0f211a",
-    borderWidth: 1,
-    borderColor: "#243a2e",
-    marginRight: 8,
-  },
-  statTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  statIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  hintPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(54,226,123,0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  hintText: { fontSize: 12, fontWeight: "700" },
-  statLabel: { fontSize: 13, color: "#9CA3AF", marginBottom: 6 },
-  statValue: { fontSize: 22, fontWeight: "900", color: "#fff" },
-
-  actionsHeader: { paddingHorizontal: 18, marginTop: 18 },
-  bigTitle: { fontSize: 20, fontWeight: "900", color: "#071" },
-
-  actionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    gap: 12,
-    marginTop: 12,
-  },
-  actionCard: {
-    width: (width - 18 * 2 - 12) / 2 - 6,
-    aspectRatio: 1,
-    borderRadius: 14,
-    backgroundColor: "#0f211a",
-    padding: 12,
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#fff",
-  },
-  actionPrimary: {
-    backgroundColor: MAIN_GREEN,
-    elevation: 6,
-    borderColor: MAIN_GREEN,
-  },
-  actionTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  actionTitle: { fontSize: 16, fontWeight: "800", color: "#fff" },
-  actionTitlePrimary: { color: "#012" },
-  actionSubtitle: { fontSize: 12, color: "#9CA3AF", marginTop: 6 },
-
-  recentSection: { paddingHorizontal: 18, marginTop: 18 },
-  recentTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#071",
-    marginBottom: 6,
-  },
-  recentItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "#0f211a",
-    borderWidth: 1,
-    borderColor: "#243a2e",
-    marginBottom: 8,
-  },
-  recentLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  recentIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  recentName: { fontSize: 14, fontWeight: "800", color: "#fff" },
-  recentTime: { fontSize: 12, color: "#9CA3AF" },
-  recentAmount: { fontSize: 14, fontWeight: "900", color: MAIN_GREEN },
-
-  floatingWrap: {
-    position: "absolute",
-    bottom: 30,
-    left: 18,
-    right: 18,
-    alignItems: "center",
-  },
-  quickScanBtn: {
-    width: "100%",
-    height: 56,
-    borderRadius: 999,
-    backgroundColor: MAIN_GREEN,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    elevation: 8,
-  },
-  quickScanText: { color: "#022", fontWeight: "900", fontSize: 16 },
-
-  bottomNav: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 18,
-    paddingBottom: 18,
-    paddingTop: 10,
-    backgroundColor: "rgba(17,33,23,0.95)",
-    borderTopWidth: 0.25,
-    borderTopColor: "#243a2e",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  tabItem: { alignItems: "center", justifyContent: "center", gap: 6 },
-  tabLabel: { fontSize: 10, color: "#9CA3AF", fontWeight: "700" },
-});

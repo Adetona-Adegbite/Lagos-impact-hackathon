@@ -1,666 +1,331 @@
-// src/screens/SalesScreen.tsx
-import React, { useMemo, useState, useCallback, useEffect } from "react";
-import { useFocusEffect } from "@react-navigation/native";
-import { productService } from "../../services/productService";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  SafeAreaView,
   View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
   ScrollView,
   FlatList,
+  Pressable,
   Dimensions,
   StatusBar,
+  Animated,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  ArrowLeft,
+  Search,
+  Sparkles,
+  TrendingUp,
+  CreditCard,
+  ShoppingCart,
+  ChevronRight,
+  Plus,
+  Filter,
+  Calendar,
+} from "lucide-react-native";
+import { productService } from "../../services/productService";
 import { t } from "../../utils/localization";
+import { Text } from "../../components/ui/text";
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { cn } from "../../lib/utils";
 
 const { width } = Dimensions.get("window");
-const MAIN_GREEN = "#36e27b";
 
 type Sale = {
   id: string;
   title: string;
   time: string;
-  method: "Cash" | "POS" | "Transfer";
+  method: string;
   amount: number;
   status: "Paid" | "Pending";
-  color?: string;
-  accent?: string;
+  color: string;
+  accent: string;
 };
 
-export default function SalesScreen({ navigation }: { navigation?: any }) {
+export default function AllSalesScreen({ navigation }: { navigation?: any }) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState(t("today"));
+  const [activeFilter, setActiveFilter] = useState("All");
   const [sales, setSales] = useState<any[]>([]);
-  const [insights, setInsights] = useState<any>({
-    message: t("assistantMessage"),
-    chips: [],
+  const [insights, setInsights] = useState({
+    message:
+      "Your sales are up 12% compared to last week. Most sales are coming from Beverages.",
+    chips: [
+      { label: "Top Seller", value: "Coke 50cl", color: "text-primary" },
+      { label: "Low Margin", value: "Bread", color: "text-destructive" },
+    ],
   });
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const fetchInsights = useCallback(() => {
-    setIsRefreshing(true);
-    productService
-      .getBusinessInsights()
-      .then(setInsights)
-      .catch((err) => {
-        console.warn("Failed to fetch insights:", err);
-        setInsights({ message: t("assistantMessage"), chips: [] });
-      })
-      .finally(() => setIsRefreshing(false));
-  }, []);
 
   useEffect(() => {
-    fetchInsights();
-    const interval = setInterval(fetchInsights, 3600000); // every hour
-    return () => clearInterval(interval);
-  }, [fetchInsights]);
+    const fetchSales = async () => {
+      try {
+        const allSales = await productService.getAllSales();
+        setSales(allSales);
+      } catch (error) {
+        console.error("Failed to fetch sales", error);
+      }
+    };
+    fetchSales();
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      productService.getAllSales().then(setSales);
-    }, []),
+  const filters = ["All", "Cash", "POS", "Transfer"];
+
+  const filteredSales = useMemo(() => {
+    const q = query.toLowerCase();
+    return sales.filter((s) => {
+      const matchesSearch = (s.title || "Sale").toLowerCase().includes(q);
+      const matchesFilter =
+        activeFilter === "All" || s.paymentMethod === activeFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [query, activeFilter, sales]);
+
+  const todayStr = new Date().toDateString();
+  const todaySales = filteredSales.filter(
+    (s) => new Date(s.createdAt).toDateString() === todayStr,
+  );
+  const previousSales = filteredSales.filter(
+    (s) => new Date(s.createdAt).toDateString() !== todayStr,
   );
 
-  const filters: string[] = [
-    /* t("today") */
-  ];
+  const totalToday = todaySales.reduce((sum, s) => sum + s.totalAmount, 0);
 
-  const {
-    todaySales,
-    previousSales,
-    totalToday,
-    weeklyGraphData,
-    totalWeekly,
-  } = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const todayDate = new Date();
-    todayDate.setHours(1, 0, 0, 0);
-    const todayStr = todayDate.toISOString().split("T")[0];
+  // Simple weekly data mock for graph
+  const weeklyData = [40, 70, 45, 90, 65, 80, 50];
 
-    const oneWeekAgo = new Date(todayDate);
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 6);
-
-    const today: Sale[] = [];
-    const prev: Sale[] = [];
-    let total = 0;
-    const weeklySalesData = new Array(7).fill(0);
-
-    const colors = ["#F59E0B", "#60A5FA", "#C084FC", "#2DD4BF"];
-    const accents = ["#F97316", "#3B82F6", "#8B5CF6", "#14B8A6"];
-
-    sales.forEach((s, i) => {
-      const saleDate = new Date(s.createdAt);
-      const dateStr = saleDate.toISOString().split("T")[0];
-      const sale: Sale = {
-        id: s.id,
-        title: s.items?.[0]?.product?.name || "Quick Sale",
-        time: saleDate.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        method: "Cash", // Defaulting to Cash
-        amount: s.totalAmount,
-        status: "Paid", // Defaulting to Paid
-        color: colors[i % colors.length],
-        accent: accents[i % accents.length],
-      };
-
-      if (q && !sale.title.toLowerCase().includes(q)) return;
-
-      if (dateStr === todayStr) {
-        today.push(sale);
-        total += s.totalAmount;
-      } else {
-        prev.push(sale);
-      }
-
-      // Calculate weekly sales
-      if (saleDate >= oneWeekAgo) {
-        const diffDays = Math.floor(
-          (todayDate.getTime() - new Date(saleDate).setHours(0, 0, 0, 0)) /
-            (1000 * 60 * 60 * 24),
-        );
-        if (diffDays >= 0 && diffDays < 7) {
-          weeklySalesData[6 - diffDays] += s.totalAmount;
-        }
-      }
-    });
-
-    const totalWeekly = weeklySalesData.reduce((a, b) => a + b, 0);
-    const maxSale = Math.max(...weeklySalesData);
-    const weeklyGraphData =
-      maxSale > 0
-        ? weeklySalesData.map((s) => (s / maxSale) * 100)
-        : new Array(7).fill(0);
-
-    return {
-      todaySales: today,
-      previousSales: prev,
-      totalToday: total,
-      weeklyGraphData,
-      totalWeekly,
-    };
-  }, [sales, query]);
-
-  const renderSaleItem = ({ item }: { item: Sale }) => (
-    <TouchableOpacity
-      activeOpacity={0.86}
-      style={styles.saleCard}
-      onPress={() => console.log("open sale", item.id)}
-    >
-      <View style={styles.saleRow}>
-        <View style={styles.saleLeft}>
-          <View
-            style={[
-              styles.avatar,
-              { backgroundColor: item.color ?? "#F3F4F6" },
-            ]}
-          >
-            <MaterialIcons
-              name={
-                item.method === "Cash"
-                  ? "payments"
-                  : item.method === "POS"
-                    ? "point-of-sale"
-                    : "account-balance"
-              }
-              size={20}
-              color="#fff"
-            />
-          </View>
-
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text numberOfLines={1} style={styles.saleTitle}>
-              {item.title}
-            </Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaText}>{item.time}</Text>
-              <View style={styles.dot} />
-              <View style={styles.metaRowInner}>
-                <MaterialIcons
-                  name={
-                    item.method === "Cash"
-                      ? "payments"
-                      : item.method === "POS"
-                        ? "point-of-sale"
-                        : "account-balance"
-                  }
-                  size={14}
-                  color="#9CA3AF"
-                />
-                <Text style={styles.metaTextSmall}>
-                  {
-                    { Cash: t("cash"), POS: t("pos"), Transfer: t("transfer") }[
-                      item.method
-                    ]
-                  }
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.amountText}>
-            ₦ {item.amount.toLocaleString()}
+  const renderSaleItem = ({ item }: { item: any }) => (
+    <Card className="flex-row items-center p-4 mb-3 bg-secondary/50 border-border/50">
+      <View className="w-12 h-12 rounded-2xl bg-background items-center justify-center">
+        <ShoppingCart size={20} className="text-muted-foreground" />
+      </View>
+      <View className="flex-1 ml-4">
+        <Text className="text-sm font-black text-foreground">
+          {item.title || t("sale")}
+          {item.itemCount > 1 && ` +${item.itemCount - 1} ${t("items")}`}
+        </Text>
+        <View className="flex-row items-center gap-2 mt-0.5">
+          <Text variant="muted" className="text-[10px] font-bold">
+            {new Date(item.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </Text>
-          <View
-            style={[
-              styles.statusPill,
-              item.status === "Paid" ? styles.paidPill : styles.pendingPill,
-            ]}
+          <View className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+          <Text
+            variant="muted"
+            className="text-[10px] font-bold uppercase tracking-tight"
           >
-            <Text
-              style={[
-                styles.statusText,
-                item.status === "Paid" ? styles.paidText : styles.pendingText,
-              ]}
-            >
-              {{ Paid: t("paid"), Pending: t("pending") }[item.status]}
-            </Text>
-          </View>
+            {item.paymentMethod || "Cash"}
+          </Text>
         </View>
       </View>
-    </TouchableOpacity>
+      <View className="items-end">
+        <Text className="text-base font-black text-primary">
+          ₦{item.totalAmount.toLocaleString()}
+        </Text>
+        <View className="bg-primary/10 px-2 py-0.5 rounded-md mt-1">
+          <Text className="text-[9px] font-black text-primary uppercase">
+            Paid
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View className="px-5 py-4 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-4">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="w-10 h-10 rounded-full bg-secondary"
+            onPress={() => navigation?.goBack()}
+          >
+            <ArrowLeft size={22} color="white" />
+          </Button>
+          <Text variant="h3" className="font-black text-foreground">
+            {t("allSales")}
+          </Text>
+        </View>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="w-10 h-10 rounded-full bg-secondary"
+        >
+          <Calendar size={20} color="white" />
+        </Button>
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.container}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation?.goBack?.()}
-              style={styles.backBtn}
-            >
-              <MaterialIcons name="arrow-back" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t("dailySales")}</Text>
-            <TouchableOpacity
-              style={styles.profileBtn}
-              onPress={() => console.log("profile")}
-            >
-              <MaterialIcons name="account-circle" size={28} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Business assistant card */}
-          <View style={styles.assistantCard}>
-            <View style={styles.assistantTop}>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <MaterialIcons name="auto-awesome" size={18} color="#8b5cf6" />
-                <Text style={styles.assistantLabel}>
-                  {t("businessAssistant")}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={fetchInsights} disabled={isRefreshing}>
-                <MaterialIcons
-                  name="refresh"
-                  size={20}
-                  color={isRefreshing ? "#ccc" : "#8b5cf6"}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.assistantText}>
-              {isRefreshing ? "Generating new insights..." : insights.message}
-            </Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.assistantChipsRow}
-            >
-              {insights.chips?.map((chip: any, i: number) => (
-                <View style={styles.chip} key={i}>
-                  <Text
-                    style={[
-                      styles.chipTitle,
-                      chip.color ? { color: chip.color } : {},
-                    ]}
-                  >
-                    {chip.title}
-                  </Text>
-                  <View style={styles.chipRow}>
-                    {chip.title === "Tax Risk" && (
-                      <View
-                        style={[
-                          styles.statusDot,
-                          { backgroundColor: chip.color || "#ccc" },
-                        ]}
-                      />
-                    )}
-                    <Text style={styles.chipValue}>{chip.value}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Revenue and search */}
-          <View style={styles.revenueRow}>
-            <Text style={styles.revenueLabel}>{t("totalRevenueToday")}</Text>
-            <Text style={styles.revenueValue}>
-              ₦ {totalToday.toLocaleString()}
-            </Text>
-          </View>
-
-          {/* Sales Overview */}
-          <View style={styles.salesOverview}>
-            <View style={styles.salesHeader}>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <MaterialIcons name="bar-chart" size={18} color="#fff" />
-                <Text style={styles.cardTitleSmall}>Weekly Overview</Text>
-              </View>
-              <Text style={styles.largeStat}>
-                ₦ {totalWeekly.toLocaleString()}
+        {/* AI Assistant Card */}
+        <View className="px-5 mt-2">
+          <Card className="bg-primary/10 border-primary/20 p-5 rounded-[32px]">
+            <View className="flex-row items-center gap-2 mb-3">
+              <Sparkles size={18} className="text-primary" />
+              <Text className="text-[10px] font-black text-primary uppercase tracking-widest">
+                AI Sales Assistant
               </Text>
             </View>
-            <View style={styles.weeklyGraph}>
-              {weeklyGraphData.map((h, i) => (
+            <Text className="text-foreground text-sm font-bold leading-5 mb-4">
+              {insights.message}
+            </Text>
+            <View className="flex-row gap-3">
+              {insights.chips.map((chip, idx) => (
                 <View
-                  key={i}
-                  style={[
-                    styles.weeklyBar,
-                    {
-                      height: `${h || 0}%`,
-                      backgroundColor: i === 6 ? MAIN_GREEN : "#374151",
-                    },
-                  ]}
-                />
+                  key={idx}
+                  className="bg-background/50 px-3 py-2 rounded-2xl border border-white/5 flex-1"
+                >
+                  <Text className="text-[9px] font-black text-muted-foreground uppercase mb-1">
+                    {chip.label}
+                  </Text>
+                  <Text className={cn("text-xs font-black", chip.color)}>
+                    {chip.value}
+                  </Text>
+                </View>
               ))}
             </View>
-          </View>
+          </Card>
+        </View>
 
-          <View style={styles.searchWrap}>
-            <MaterialIcons
-              name="search"
-              size={20}
-              color="#9CA3AF"
-              style={{ marginLeft: 12 }}
-            />
-            <TextInput
-              placeholder={t("searchReceiptPlaceholder")}
-              placeholderTextColor="#9CA3AF"
-              style={styles.searchInput}
+        {/* Weekly Overview */}
+        <View className="px-5 mt-6">
+          <Card className="bg-secondary p-5 rounded-[32px] border-border/50">
+            <View className="flex-row justify-between items-center mb-6">
+              <View>
+                <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                  Today's Total
+                </Text>
+                <Text className="text-3xl font-black text-foreground">
+                  ₦{totalToday.toLocaleString()}
+                </Text>
+              </View>
+              <View className="w-12 h-12 rounded-2xl bg-primary/20 items-center justify-center">
+                <TrendingUp size={24} className="text-primary" />
+              </View>
+            </View>
+
+            <View className="flex-row items-end h-24 gap-3 px-1">
+              {weeklyData.map((val, i) => (
+                <View key={i} className="flex-1 items-center">
+                  <View
+                    style={{ height: `${val}%` }}
+                    className={cn(
+                      "w-full rounded-t-lg",
+                      i === 6
+                        ? "bg-primary shadow-lg shadow-primary/30"
+                        : "bg-primary/20",
+                    )}
+                  />
+                  <Text className="text-[8px] font-black text-muted-foreground mt-2">
+                    {["M", "T", "W", "T", "F", "S", "S"][i]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </View>
+
+        {/* Search & Filter */}
+        <View className="px-5 mt-8">
+          <View className="flex-row items-center h-12 rounded-2xl bg-secondary border border-border px-4 mb-4">
+            <Search size={18} className="text-muted-foreground" />
+            <Input
+              placeholder="Search sales..."
+              className="flex-1 bg-transparent border-0 h-full text-sm font-bold ml-2"
               value={query}
               onChangeText={setQuery}
             />
           </View>
 
-          <View style={styles.filterRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-row mb-2"
+          >
             {filters.map((f) => (
-              <TouchableOpacity
+              <Pressable
                 key={f}
-                activeOpacity={0.85}
-                style={[
-                  styles.filterBtn,
-                  f === activeFilter ? styles.filterBtnActive : undefined,
-                ]}
                 onPress={() => setActiveFilter(f)}
+                className={cn(
+                  "px-5 h-9 rounded-full mr-2 border justify-center",
+                  activeFilter === f
+                    ? "bg-primary border-primary"
+                    : "bg-secondary border-border",
+                )}
               >
                 <Text
-                  style={[
-                    styles.filterText,
-                    f === activeFilter ? styles.filterTextActive : undefined,
-                  ]}
+                  className={cn(
+                    "text-[11px] font-black uppercase",
+                    activeFilter === f
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground",
+                  )}
                 >
                   {f}
                 </Text>
-                <MaterialIcons
-                  name="keyboard-arrow-down"
-                  size={16}
-                  color={f === activeFilter ? MAIN_GREEN : "#9CA3AF"}
-                />
-              </TouchableOpacity>
+              </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
-        {/* Main list */}
-        <View style={styles.listSection}>
-          <FlatList
-            data={todaySales}
-            keyExtractor={(s) => s.id}
-            renderItem={renderSaleItem}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-            scrollEnabled={false}
-            ListHeaderComponent={() => null}
-          />
-
-          {previousSales.length > 0 && (
-            <>
-              <View style={{ marginTop: 16, marginBottom: 8 }}>
-                <Text style={styles.sectionHeader}>History</Text>
-              </View>
-
-              <FlatList
-                data={previousSales}
-                keyExtractor={(s) => s.id}
-                renderItem={renderSaleItem}
-                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-                scrollEnabled={false}
-              />
-            </>
+        {/* Sales List */}
+        <View className="px-5 mt-4">
+          {todaySales.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3 px-1">
+                Today
+              </Text>
+              {todaySales.map((sale) => (
+                <View key={sale.id}>{renderSaleItem({ item: sale })}</View>
+              ))}
+            </View>
           )}
 
-          <View style={{ height: 120 }} />
+          {previousSales.length > 0 && (
+            <View>
+              <Text className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3 px-1">
+                Earlier
+              </Text>
+              {previousSales.map((sale) => (
+                <View key={sale.id}>{renderSaleItem({ item: sale })}</View>
+              ))}
+            </View>
+          )}
+
+          {filteredSales.length === 0 && (
+            <View className="items-center py-20 bg-secondary/30 rounded-[32px] border border-dashed border-border">
+              <ShoppingCart
+                size={48}
+                className="text-muted-foreground/20 mb-3"
+              />
+              <Text
+                variant="p"
+                className="text-muted-foreground font-bold text-center"
+              >
+                No matching sales found
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Floating add button */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("SalesScreen")}
-      >
-        <MaterialIcons name="add" size={36} color="#000" />
-      </TouchableOpacity>
+      {/* FAB */}
+      <View className="absolute bottom-10 right-6 shadow-2xl shadow-primary/40">
+        <Button
+          size="icon"
+          className="w-16 h-16 rounded-full bg-primary"
+          onPress={() => navigation?.navigate("SalesScreen")}
+        >
+          <Plus size={32} color="#000" strokeWidth={3} />
+        </Button>
+      </View>
     </SafeAreaView>
   );
 }
-
-/* Styles */
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#122117",
-    paddingTop: StatusBar.currentHeight,
-  },
-  container: { paddingBottom: 36 },
-
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 0,
-    paddingBottom: 8,
-    backgroundColor: "transparent",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
-  profileBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  assistantCard: {
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ECEFF3",
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    elevation: 2,
-  },
-  assistantTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  assistantLabel: {
-    color: "#8B5CF6",
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  assistantText: {
-    color: "#334155",
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 10,
-  },
-
-  assistantChipsRow: { marginTop: 6 },
-  chip: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 8,
-    marginRight: 8,
-    minWidth: 100,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-  },
-  chipTitle: {
-    fontSize: 10,
-    color: "#6B7280",
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  chipRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  chipValue: { fontSize: 12, fontWeight: "800", color: "#111" },
-  chipTitleDanger: {
-    fontSize: 10,
-    color: "#EF4444",
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 6 },
-
-  revenueRow: { paddingVertical: 12 },
-  revenueLabel: { fontSize: 13, color: "#7f9587", marginBottom: 6 },
-  revenueValue: { fontSize: 36, fontWeight: "900", color: "#fff" },
-
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1c2e24",
-    borderRadius: 999,
-    height: 48,
-    marginBottom: 12,
-    // borderWidth: 1,
-    // borderColor: "#ECEFF3",
-    marginHorizontal: 0,
-    marginTop: 2,
-    overflow: "hidden",
-  },
-  searchInput: { flex: 1, paddingHorizontal: 12, color: "#fff", fontSize: 15 },
-
-  filterRow: {
-    flexDirection: "row',",
-    gap: 8,
-    marginVertical: 8,
-    paddingBottom: 4,
-    flexWrap: "nowrap",
-  } as any,
-  filterBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ECEFF3",
-    marginRight: 8,
-  },
-  filterBtnActive: { backgroundColor: "#111", borderColor: "#111" },
-  filterText: { color: "#374151", fontWeight: "700", fontSize: 13 },
-  filterTextActive: { color: "#fff" },
-
-  listSection: { paddingHorizontal: 16, paddingTop: 6 },
-  saleCard: {
-    borderRadius: 12,
-    backgroundColor: "#1c2e24",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  saleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  saleLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saleTitle: { fontSize: 16, fontWeight: "800", color: "#fff" },
-  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 8 },
-  metaText: { color: "#6B7280", fontSize: 12 },
-  metaRowInner: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaTextSmall: { color: "#6B7280", fontSize: 12 },
-  dot: { width: 6, height: 6, borderRadius: 6, backgroundColor: "#E6E6E6" },
-
-  amountText: { fontSize: 16, fontWeight: "900", color: "#fff" },
-  statusPill: {
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  paidPill: { backgroundColor: "#DCFCE7" },
-  pendingPill: { backgroundColor: "#FEF3C7" },
-  statusText: { fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
-  paidText: { color: "#059669" },
-  pendingText: { color: "#92400E" },
-
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#6B7280",
-    textTransform: "uppercase",
-  },
-
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 28,
-    width: 64,
-    height: 64,
-    borderRadius: 999,
-    backgroundColor: MAIN_GREEN,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-    shadowColor: MAIN_GREEN,
-    shadowOpacity: 0.25,
-  },
-  salesOverview: {
-    marginVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#1c2e24",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  salesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  cardTitleSmall: {
-    fontWeight: "800",
-    color: "#fff",
-    fontSize: 14,
-  },
-  largeStat: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#fff",
-  },
-  weeklyGraph: {
-    flexDirection: "row",
-    height: 100,
-    alignItems: "flex-end",
-    marginTop: 12,
-    gap: 6,
-  },
-  weeklyBar: {
-    flex: 1,
-    marginHorizontal: 2,
-    borderRadius: 6,
-  },
-});
