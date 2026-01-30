@@ -19,7 +19,10 @@ interface SyncSale {
   items: SyncSaleItem[];
 }
 
-export const processCheckout = async (items: CheckoutItem[]) => {
+export const processCheckout = async (
+  items: CheckoutItem[],
+  { userId }: { userId: string },
+) => {
   if (items.length === 0) {
     throw { statusCode: 400, message: "Cart cannot be empty" };
   }
@@ -76,6 +79,7 @@ export const processCheckout = async (items: CheckoutItem[]) => {
     // Create Sale Header
     const newSale = await tx.sale.create({
       data: {
+        userId,
         totalAmount,
         items: {
           createMany: {
@@ -172,7 +176,10 @@ export const getSaleById = async (id: string) => {
   return sale;
 };
 
-export const syncSales = async (sales: SyncSale[]) => {
+export const syncSales = async (
+  sales: SyncSale[],
+  { userId }: { userId: string },
+) => {
   const results = [];
 
   for (const saleData of sales) {
@@ -193,6 +200,7 @@ export const syncSales = async (sales: SyncSale[]) => {
         await tx.sale.create({
           data: {
             id: saleData.id, // Use provided ID if available
+            userId,
             totalAmount: saleData.totalAmount,
             createdAt: saleData.createdAt
               ? new Date(saleData.createdAt)
@@ -311,7 +319,7 @@ export const generateBusinessInsights = async (language = "en") => {
 
   try {
     const result = await genAI.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     const text = result.text || "";

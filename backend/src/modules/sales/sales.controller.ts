@@ -1,25 +1,34 @@
 import { Request, Response, NextFunction } from "express";
 import * as salesService from "./sales.service.js";
 import { sendSuccess } from "../../utils/responses.js";
+import { AuthRequest } from "src/middlewares/auth.js";
 
 export const checkout = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const { items } = req.body;
-    const result = await salesService.processCheckout(items);
+    const result = await salesService.processCheckout(items, {
+      userId: req.user!.userId,
+    });
     sendSuccess(res, result, "Checkout successful", 201);
   } catch (error) {
     next(error);
   }
 };
 
-export const sync = async (req: Request, res: Response, next: NextFunction) => {
+export const sync = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { sales } = req.body;
-    const result = await salesService.syncSales(sales);
+    const result = await salesService.syncSales(sales, {
+      userId: req.user!.userId,
+    });
     sendSuccess(res, result, "Sales synced successfully");
   } catch (error) {
     next(error);

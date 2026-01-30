@@ -148,6 +148,24 @@ export const inventoryApi = {
   },
 };
 
+export const syncApi = {
+  push: (data: { deviceId: string; operations: any[] }, token: string) => {
+    return request<any>("/api/v1/sync/push", {
+      method: "POST",
+      data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  pull: (since: string | undefined, token: string) => {
+    const query = since ? `?since=${encodeURIComponent(since)}` : "";
+    return request<any>(`/api/v1/sync/pull${query}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 export const insightsApi = {
   generateMainInsights: (token: string, lang: string) => {
     return request<MainInsightsOutput>(`/api/v1/insights/main?lang=${lang}`, {

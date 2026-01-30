@@ -1,6 +1,7 @@
 import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
 import { productsApi, inventoryApi, salesApi } from "./api";
 import { authStorage } from "./authStorage";
+import { syncEngine } from "./sync/SyncEngine";
 import { localizationService } from "../utils/localization";
 import cuid from "cuid";
 
@@ -82,23 +83,19 @@ export const productService = {
         [inventoryId, productId, data.quantity, now],
       );
 
-      // Fire and forget sync to backend
-      authStorage.getToken().then((token) => {
-        if (token) {
-          productsApi
-            .create({ ...data, id: productId }, token)
-            .then(() => {
-              // Also sync initial inventory
-              return inventoryApi.update(
-                { productId, quantity: data.quantity },
-                token,
-              );
-            })
-            .catch((e) =>
-              console.warn("Live product creation/inventory sync failed", e),
-            );
-        }
+      await syncEngine.recordAction("CREATE", "Product", productId, {
+        name: data.name,
+        barcode: data.barcode,
+        category: data.category,
+        sellingPrice: data.sellingPrice,
+        purchasePrice: data.purchasePrice,
       });
+
+      if (data.quantity !== 0) {
+        await syncEngine.recordAction("ADJUST_STOCK", "Product", productId, {
+          delta: data.quantity,
+        });
+      }
 
       return productId;
     } catch (error) {
@@ -153,14 +150,7 @@ export const productService = {
     const sql = `UPDATE products SET ${updates.join(", ")} WHERE id = ?`;
     await executeSql(sql, params);
 
-    // Fire and forget sync to backend
-    authStorage.getToken().then((token) => {
-      if (token) {
-        productsApi
-          .update(id, data, token)
-          .catch((e) => console.warn("Live product update failed", e));
-      }
-    });
+    await syncEngine.recordAction("UPDATE", "Product", id, data);
   },
 
   /**
@@ -173,11 +163,16 @@ export const productService = {
     const now = getCurrentTimestamp();
     // Check if inventory record exists
     const check = await executeSql(
-      "SELECT id FROM inventory WHERE productId = ?",
+      "SELECT id, quantity FROM inventory WHERE productId = ?",
       [productId],
     );
 
+    let delta = newQuantity;
+
     if (check.rows.length > 0) {
+      const currentQty = check.rows.item(0).quantity;
+      delta = newQuantity - currentQty;
+
       await executeSql(
         `UPDATE inventory SET quantity = ?, updatedAt = ?, syncStatus = 'pending' WHERE productId = ?`,
         [newQuantity, now, productId],
@@ -191,14 +186,11 @@ export const productService = {
       );
     }
 
-    // Fire and forget sync to backend
-    authStorage.getToken().then((token) => {
-      if (token) {
-        inventoryApi
-          .update({ productId, quantity: newQuantity }, token)
-          .catch((e) => console.warn("Live inventory update failed", e));
-      }
-    });
+    if (delta !== 0) {
+      await syncEngine.recordAction("ADJUST_STOCK", "Product", productId, {
+        delta,
+      });
+    }
   },
 
   /**
@@ -240,23 +232,13 @@ export const productService = {
         );
       }
 
-      // Fire and forget sync to backend
-      authStorage.getToken().then((token) => {
-        if (token) {
-          const saleData = {
-            id: saleId,
-            totalAmount,
-            createdAt: now,
-            items: items.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-              priceAtSale: i.price,
-            })),
-          };
-          salesApi
-            .sync([saleData], token)
-            .catch((e) => console.warn("Live sale sync failed", e));
-        }
+      await syncEngine.recordAction("CREATE_SALE", "Sale", saleId, {
+        totalAmount,
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          priceAtSale: i.price,
+        })),
       });
 
       return saleId;
@@ -276,14 +258,7 @@ export const productService = {
       [now, productId],
     );
 
-    // Fire and forget sync to backend
-    authStorage.getToken().then((token) => {
-      if (token) {
-        productsApi
-          .delete(productId, token)
-          .catch((e) => console.warn("Live product deletion failed", e));
-      }
-    });
+    await syncEngine.recordAction("DELETE", "Product", productId, {});
   },
 
   /**

@@ -16,7 +16,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { authApi } from "../../services/api";
 import { authStorage } from "../../services/authStorage";
-import { SyncService } from "../../services/sync";
+import { syncEngine } from "../../services/sync/SyncEngine";
 import { t } from "../../utils/localization";
 
 const MAIN_GREEN = "#36e27b";
@@ -187,9 +187,9 @@ export default function VerifyOtpScreen({
 
         await authStorage.saveAuthData(response.token, userToSave);
         // Trigger initial sync (fire and forget)
-        SyncService.syncProductsDown().catch((e) =>
-          console.log("Initial sync warning:", e),
-        );
+        syncEngine
+          .initialize()
+          .catch((e) => console.log("Initial sync warning:", e));
       }
 
       setError(null);

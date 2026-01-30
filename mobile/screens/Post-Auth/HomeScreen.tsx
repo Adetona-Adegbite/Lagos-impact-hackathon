@@ -18,6 +18,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
 import { t } from "../../utils/localization";
+import { syncEngine } from "../../services/sync/SyncEngine";
 
 const { width } = Dimensions.get("window");
 const MAIN_GREEN = "#36e27b";
@@ -84,6 +85,7 @@ export default function RetailHomeScreen({ navigation }: { navigation?: any }) {
 
   const fetchData = useCallback(async () => {
     try {
+      await syncEngine.triggerSync();
       const authData = await authStorage.getAuthData();
       if (authData?.user?.shopName) {
         setShopName(authData.user.shopName);

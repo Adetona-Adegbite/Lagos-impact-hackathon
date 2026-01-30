@@ -1,5 +1,5 @@
 import { executeSql } from "./database";
-import { SyncService } from "./sync";
+import { syncEngine } from "./sync/SyncEngine";
 
 export interface User {
   id: string;
@@ -83,7 +83,7 @@ export const authStorage = {
     try {
       try {
         // Try to sync any pending data before logging out
-        await SyncService.syncAll();
+        await syncEngine.triggerSync();
       } catch (syncError) {
         console.warn("Sync failed on logout, proceeding anyway:", syncError);
       }

@@ -8,11 +8,13 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  phoneNumber String    @unique
+  id          String      @id @default(cuid())
+  phoneNumber String      @unique
   shopName    String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime    @default(now())
   products    Product[]
+  sales       Sale[]
+  operations  Operation[]
 }
 
 model Otp {
@@ -30,7 +32,10 @@ model Product {
   category      String
   sellingPrice  Float
   purchasePrice Float
+  version       Int        @default(1)
+  deleted       Boolean    @default(false)
   createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   userId        String
   user          User       @relation(fields: [userId], references: [id])
   inventory     Inventory?
@@ -44,6 +49,7 @@ model Inventory {
   productId String   @unique
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
+  version   Int      @default(1)
   updatedAt DateTime @updatedAt
 }
 
@@ -51,6 +57,8 @@ model Sale {
   id          String     @id @default(cuid())
   totalAmount Float
   createdAt   DateTime   @default(now())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
   items       SaleItem[]
 }
 
@@ -62,4 +70,29 @@ model SaleItem {
   product     Product @relation(fields: [productId], references: [id])
   quantity    Int
   priceAtSale Float
+}
+
+enum OpType {
+  CREATE
+  UPDATE
+  DELETE
+  ADJUST_STOCK
+  CREATE_SALE
+}
+
+model Operation {
+  id              String   @id @default(cuid())
+  clientOpId      String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  deviceId        String
+  entityType      String
+  entityId        String
+  opType          OpType
+  payload         Json
+  baseVersion     Int?
+  clientTimestamp DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

@@ -42,6 +42,16 @@ export interface SaleItem {
   priceAtSale: number;
 }
 
+export interface Operation {
+  id: string;
+  op_type: string;
+  entity_type: string;
+  entity_id: string;
+  payload: string;
+  created_at: number;
+  synced: number;
+}
+
 /**
  * Polyfill for legacy SQLResultSet interface to maintain compatibility with existing code.
  * The new expo-sqlite API returns different structures for writes (SQLiteRunResult) and reads (array).
@@ -120,6 +130,19 @@ export const initDatabase = async (): Promise<void> => {
             value TEXT NOT NULL
           );`,
       );
+
+      // Operations Queue table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS operations_queue (
+            id TEXT PRIMARY KEY NOT NULL,
+            op_type TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            synced INTEGER DEFAULT 0
+          );`,
+      );
     });
     console.log("Database initialized successfully");
   } catch (error) {
@@ -181,6 +204,7 @@ export const clearDatabase = async (): Promise<void> => {
       await tx.runAsync("DROP TABLE IF EXISTS inventory;");
       await tx.runAsync("DROP TABLE IF EXISTS products;");
       await tx.runAsync("DROP TABLE IF EXISTS settings;");
+      await tx.runAsync("DROP TABLE IF EXISTS operations_queue;");
     });
   } catch (error) {
     console.error("Failed to clear database:", error);

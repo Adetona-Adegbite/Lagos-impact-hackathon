@@ -10,7 +10,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import ScanSellScreen from "./screens/Post-Auth/SalesPage";
 import { initDatabase } from "./services/database";
 import { authStorage } from "./services/authStorage";
-import { SyncService } from "./services/sync";
+import { syncEngine } from "./services/sync/SyncEngine";
 import InventoryScreen from "./screens/Post-Auth/InventoryPage";
 import AIInsightsScreen from "./screens/Post-Auth/AiInsightScreen";
 import TopSellersScreen from "./screens/Post-Auth/TopMovers";
@@ -84,8 +84,8 @@ export default function App() {
         const authData = await authStorage.getAuthData();
         if (authData?.token) {
           setInitialRoute("HomeScreen");
-          // Trigger sync in background
-          SyncService.syncAll().catch(console.warn);
+          // Initialize sync engine
+          syncEngine.initialize().catch(console.warn);
         }
       } catch (e) {
         console.error("Initialization failed", e);
