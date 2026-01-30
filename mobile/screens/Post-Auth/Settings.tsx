@@ -345,7 +345,9 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                       { color: isDarkMode ? "#fff" : "#111827" },
                     ]}
                   >
+                    {"  "}
                     {item.name}
+                    {"  "}
                   </Text>
                   {currentLanguageCode === item.code && (
                     <MaterialIcons name="check" size={24} color="#36e27b" />

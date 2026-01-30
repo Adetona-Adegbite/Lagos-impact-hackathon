@@ -123,7 +123,9 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
                       },
                     ]}
                   >
+                    {"  "}
                     {lang.label}
+                    {"  "}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -156,12 +158,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
 
             {/* Shop Name */}
             <View style={styles.field}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>{t("shopName")}</Text>
-                <View style={styles.newShopTag}>
-                  <Text style={styles.newShopText}>{t("newShopQuestion")}</Text>
-                </View>
-              </View>
+              <Text style={styles.label}>{t("shopName")}</Text>
               <View style={styles.inputRow}>
                 <TextInput
                   style={styles.input}
