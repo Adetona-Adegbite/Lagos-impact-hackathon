@@ -138,7 +138,7 @@ export default function ReportsScreen() {
           <View className="mt-4 flex-row items-center gap-2">
             <View className="relative flex-1">
               <View className="absolute left-3 top-3 z-10">
-                <Search size={18} className="text-muted-foreground" />
+                <Search size={18} color="#72777C" />
               </View>
               <Input
                 placeholder="Filter products..."
@@ -160,7 +160,7 @@ export default function ReportsScreen() {
               <CardContent className="p-5">
                 <View className="mb-4 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <Calendar size={20} className="text-primary" />
+                    <Calendar size={20} color="#36E27B" />
                   </View>
                   <Text className="text-lg font-bold text-foreground">Best Performing Day</Text>
                 </View>
@@ -183,7 +183,7 @@ export default function ReportsScreen() {
             <View className="mx-5 mb-6">
               <View className="mb-4 flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
-                  <TrendingUp size={20} className="text-green-500" />
+                  <TrendingUp size={20} color="#22C55E" />
                 </View>
                 <Text variant="h3" className="text-lg">
                   Fastest Moving Products
@@ -227,7 +227,7 @@ export default function ReportsScreen() {
             <View className="mx-5 mb-6">
               <View className="mb-4 flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                  <TrendingDown size={20} className="text-orange-500" />
+                  <TrendingDown size={20} color="#F97316" />
                 </View>
                 <Text variant="h3" className="text-lg">
                   Slowest Moving Products

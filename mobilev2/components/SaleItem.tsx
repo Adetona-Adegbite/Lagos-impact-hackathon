@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
 import { ShoppingCart } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
+import { THEME } from '@/lib/theme';
 import { useRouter } from 'expo-router';
 import { t } from '@/utils/localization';
 import { Text } from '@/components/ui/text';
@@ -21,6 +23,8 @@ interface SaleItemProps {
 
 export const SaleItem = ({ item }: SaleItemProps) => {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const mutedForeground = THEME[colorScheme ?? 'light'].mutedForeground;
 
   return (
     <Pressable
@@ -32,7 +36,7 @@ export const SaleItem = ({ item }: SaleItemProps) => {
       }>
       <Card className="mb-3 flex-row items-center border-border/50 bg-secondary/50 p-4">
         <View className="h-12 w-12 items-center justify-center rounded-2xl bg-background">
-          <ShoppingCart size={20} className="text-muted-foreground" />
+          <ShoppingCart size={20} color={mutedForeground} />
         </View>
         <View className="ml-4 flex-1">
           <Text className="text-sm font-black text-foreground">
