@@ -348,6 +348,30 @@ export const productService = {
   },
 
   /**
+   * Get a sale by ID with its items
+   */
+  getSaleById: async (saleId: string) => {
+    const saleSql = `SELECT * FROM sales WHERE id = ? LIMIT 1`;
+    const saleRes = await executeSql(saleSql, [saleId]);
+    if (saleRes.rows.length === 0) return null;
+
+    const sale = saleRes.rows.item(0);
+
+    const itemsSql = `
+      SELECT si.*, p.name as title, p.category
+      FROM sale_items si
+      JOIN products p ON si.productId = p.id
+      WHERE si.saleId = ?
+    `;
+    const itemsRes = await executeSql(itemsSql, [saleId]);
+
+    return {
+      ...sale,
+      items: itemsRes.rows._array,
+    };
+  },
+
+  /**
    * Get sales history for a specific product
    */
   getProductSales: async (productId: string) => {

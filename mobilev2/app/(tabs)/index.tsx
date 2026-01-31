@@ -1,14 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import {
-  View,
-  Image,
-  ScrollView,
-  FlatList,
-  Dimensions,
-  StatusBar,
-  Pressable,
-} from 'react-native';
+import { View, Image, ScrollView, FlatList, Dimensions, StatusBar, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -28,6 +20,7 @@ import { productService } from '@/services/productService';
 import { authStorage } from '@/services/authStorage';
 import { syncEngine } from '@/services/sync/SyncEngine';
 import { t } from '@/utils/localization';
+import { SaleItem } from '@/components/SaleItem';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -155,7 +148,7 @@ export default function RetailHomeScreen() {
   ];
 
   const renderStat = ({ item }: { item: StatCard }) => (
-    <Card style={{ width: CARD_WIDTH }} className="mr-3 bg-secondary p-4 border-border">
+    <Card style={{ width: CARD_WIDTH }} className="mr-3 border-border bg-secondary p-4">
       <View className="mb-4 flex-row items-center justify-between">
         <View className={cn('h-11 w-11 items-center justify-center rounded-xl bg-background/50')}>
           <item.icon size={22} className={item.color} />
@@ -294,36 +287,13 @@ export default function RetailHomeScreen() {
             <Text variant="h3" className="font-black text-foreground">
               {t('recentSales')}
             </Text>
-            <Pressable>
+            <Pressable onPress={() => router.push('/all-sales')}>
               <ChevronRight size={20} color="#666" />
             </Pressable>
           </View>
 
           {recentSales.map((r) => (
-            <View
-              key={r.id}
-              className="mb-3 flex-row items-center justify-between rounded-2xl border border-border/50 bg-secondary/50 p-4">
-              <View className="flex-row items-center gap-4">
-                <View className="h-12 w-12 items-center justify-center rounded-xl bg-background">
-                  <ShoppingCart size={20} className="text-muted-foreground" />
-                </View>
-                <View>
-                  <Text className="text-sm font-black text-foreground">
-                    {r.title || t('sale')}
-                    {r.itemCount > 1 && ` +${r.itemCount - 1} ${t('items')}`}
-                  </Text>
-                  <Text variant="muted" className="text-xs font-bold">
-                    {new Date(r.createdAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
-              </View>
-              <Text className="text-base font-black text-primary">
-                +₦{r.totalAmount.toLocaleString()}
-              </Text>
-            </View>
+            <SaleItem key={r.id} item={r} />
           ))}
 
           {recentSales.length === 0 && (
@@ -341,7 +311,7 @@ export default function RetailHomeScreen() {
       <View className="absolute bottom-8 left-5 right-5 shadow-2xl shadow-primary/40">
         <Button
           onPress={() => router.push('/sales')}
-          className="flex-row gap-3 h-16 rounded-full bg-primary">
+          className="h-16 flex-row gap-3 rounded-full bg-primary">
           <ShoppingCart size={24} color="#000" strokeWidth={3} />
           <Text className="text-lg font-black uppercase tracking-tight text-primary-foreground">
             {t('newSale')}
