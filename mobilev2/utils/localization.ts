@@ -128,6 +128,26 @@ export interface Translation {
   // sellscan Screen
   scannedItems: string;
   cart: string;
+  productDetails: string;
+  category: string;
+  price: string;
+  stockStatus: string;
+  salesAnalysis: string;
+  sellingPrice: string;
+  costPrice: string;
+  currentStock: string;
+  totalSold: string;
+  revenue: string;
+  salesHistory: string;
+  editProduct: string;
+  saveChanges: string;
+  suggest: string;
+  units: string;
+  week: string;
+  month: string;
+  all: string;
+  productNotFound: string;
+  goBack: string;
 }
 
 // Define the available languages and their translations
@@ -253,6 +273,26 @@ const translations: { [key: string]: Translation } = {
     // Sellscan Screen
     scannedItems: 'Scanned Items',
     cart: 'Cart',
+    productDetails: 'Product Details',
+    category: 'Category',
+    price: 'Price',
+    stockStatus: 'Stock Status',
+    salesAnalysis: 'Sales Analysis',
+    sellingPrice: 'Selling Price',
+    costPrice: 'Cost Price',
+    currentStock: 'Current Stock',
+    totalSold: 'Total Sold',
+    revenue: 'Revenue',
+    salesHistory: 'Sales History',
+    editProduct: 'Edit Product',
+    saveChanges: 'Save Changes',
+    suggest: 'Suggest',
+    units: 'Units',
+    week: 'Week',
+    month: 'Month',
+    all: 'All',
+    productNotFound: 'Product Not Found',
+    goBack: 'Go Back',
   },
   pcm: {
     welcome: 'Welcome to Supamart',
@@ -372,6 +412,26 @@ const translations: { [key: string]: Translation } = {
     exportSalesData: 'Export Sales Data',
     exportSalesDataSubtitle: 'Download Excel / PDF report',
     appVersion: 'App Version {version} (Build {build})',
+    productDetails: 'Product Details',
+    category: 'Category',
+    price: 'Price',
+    stockStatus: 'Stock Status',
+    salesAnalysis: 'Sales Analysis',
+    sellingPrice: 'Selling Price',
+    costPrice: 'Cost Price',
+    currentStock: 'Current Stock',
+    totalSold: 'Total Sold',
+    revenue: 'Revenue',
+    salesHistory: 'Sales History',
+    editProduct: 'Edit Product',
+    saveChanges: 'Save Changes',
+    suggest: 'Suggest',
+    units: 'Units',
+    week: 'Week',
+    month: 'Month',
+    all: 'All',
+    productNotFound: 'Product Not Found',
+    goBack: 'Go Back',
   },
   hausa: {
     welcome: 'Barka da zuwa Supamart',
@@ -491,6 +551,26 @@ const translations: { [key: string]: Translation } = {
     exportSalesData: 'Fitar da Bayanan Tallace-tallace',
     exportSalesDataSubtitle: 'Zazzage rahoton Excel / PDF',
     appVersion: 'Sigar App {version} (Gina {build})',
+    productDetails: 'Bayanin Samfura',
+    category: 'Kashi',
+    price: 'Farashi',
+    stockStatus: 'Matsayin Kaya',
+    salesAnalysis: 'Binciken Tallace-tallace',
+    sellingPrice: 'Farashin Siyarwa',
+    costPrice: 'Farashin Sayayya',
+    currentStock: 'Hannun Jari na Yanzu',
+    totalSold: 'Jimlar da aka Sayar',
+    revenue: 'Kudin Shiga',
+    salesHistory: 'Tarihin Tallace-tallace',
+    editProduct: 'Gyara Samfura',
+    saveChanges: 'Ajiye Canje-canje',
+    suggest: 'Ba da Shawara',
+    units: "Raka'a",
+    week: 'Mako',
+    month: 'Wata',
+    all: 'Duka',
+    productNotFound: 'Ba a Sami Samfur ba',
+    goBack: 'Koma Baya',
   },
   yoruba: {
     welcome: 'Kaabo si Supamart',
@@ -609,6 +689,26 @@ const translations: { [key: string]: Translation } = {
     exportSalesData: 'Jade Awọn Data Tita',
     exportSalesDataSubtitle: 'Ṣe igbasilẹ ijabọ Excel / PDF',
     appVersion: 'Ẹya App {version} (Kọ {build})',
+    productDetails: 'Awọn alaye ọja',
+    category: 'Ẹka',
+    price: 'Iye',
+    stockStatus: 'Ipo Ọja',
+    salesAnalysis: 'Itupalẹ Tita',
+    sellingPrice: 'Iye Tita',
+    costPrice: 'Iye rira',
+    currentStock: 'Ọja ti o wa lọwọ',
+    totalSold: 'Lapapọ tita',
+    revenue: 'Owo-wiwọle',
+    salesHistory: 'Itan-akọọlẹ Tita',
+    editProduct: 'Ṣatunṣe Ọja',
+    saveChanges: 'Fi Awọn Iyipada Pamọ',
+    suggest: 'Daba',
+    units: 'Awọn ohun kan',
+    week: 'Ọsẹ',
+    month: 'Oṣu',
+    all: 'Gbogbo rẹ',
+    productNotFound: 'A ko ri ọja',
+    goBack: 'Pada sẹhin',
   },
   igbo: {
     welcome: 'Nnọọ na Supamart',
@@ -727,6 +827,26 @@ const translations: { [key: string]: Translation } = {
     exportSalesData: 'Mbupu Data Ahịa',
     exportSalesDataSubtitle: 'Budata akụkọ Excel / PDF',
     appVersion: 'Ụdị Ngwa {version} (Wuo {build})',
+    productDetails: 'Nkọwa Ngwaahịa',
+    category: 'Ụdị',
+    price: 'Ọnụ ego',
+    stockStatus: 'Ọnọdụ Ngwaahịa',
+    salesAnalysis: 'Ntụle Ahịa',
+    sellingPrice: 'Ọnụ Ahịa Ọrịre',
+    costPrice: 'Ọnụ Ahịa Ịzụ Ahịa',
+    currentStock: 'Ngwaahịa Dị Ugbu A',
+    totalSold: 'Ngụkọta Erere',
+    revenue: 'Ego a nwetara',
+    salesHistory: 'Akụkọ Ahịa',
+    editProduct: 'Dezie Ngwaahịa',
+    saveChanges: 'Chekwaa Mgbanwe',
+    suggest: 'Tụọ aro',
+    units: 'Ihe',
+    week: 'Izu',
+    month: 'Ọnwa',
+    all: 'Niile',
+    productNotFound: 'Achọtaghị Ngwaahịa',
+    goBack: 'Gaa azụ',
   },
 };
 

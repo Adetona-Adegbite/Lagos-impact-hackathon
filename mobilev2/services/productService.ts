@@ -1,9 +1,9 @@
-import { executeSql, Product, Inventory, Sale, SaleItem } from "./database";
-import { productsApi, inventoryApi, salesApi } from "./api";
-import { authStorage } from "./authStorage";
-import { syncEngine } from "./sync/SyncEngine";
-import { localizationService } from "../utils/localization";
-import cuid from "cuid";
+import { executeSql, Product, Inventory, Sale, SaleItem } from './database';
+import { productsApi, inventoryApi, salesApi } from './api';
+import { authStorage } from './authStorage';
+import { syncEngine } from './sync/SyncEngine';
+import { localizationService } from '../utils/localization';
+import cuid from 'cuid';
 
 // Helper to generate IDs
 const generateId = cuid;
@@ -30,7 +30,7 @@ export const productService = {
    * Find a product by barcode
    */
   getProductByBarcode: async (
-    barcode: string,
+    barcode: string
   ): Promise<(Product & { quantity: number }) | null> => {
     const sql = `
       SELECT p.*, i.quantity
@@ -40,6 +40,24 @@ export const productService = {
       LIMIT 1;
     `;
     const result = await executeSql(sql, [barcode]);
+    if (result.rows.length > 0) {
+      return result.rows.item(0);
+    }
+    return null;
+  },
+
+  /**
+   * Get a product by ID
+   */
+  getProductById: async (id: string): Promise<(Product & { quantity: number }) | null> => {
+    const sql = `
+      SELECT p.*, i.quantity
+      FROM products p
+      LEFT JOIN inventory i ON p.id = i.productId
+      WHERE p.id = ? AND p.deleted = 0
+      LIMIT 1;
+    `;
+    const result = await executeSql(sql, [id]);
     if (result.rows.length > 0) {
       return result.rows.item(0);
     }
@@ -74,16 +92,16 @@ export const productService = {
           data.purchasePrice,
           now,
           now,
-        ],
+        ]
       );
 
       await executeSql(
         `INSERT INTO inventory (id, productId, quantity, updatedAt, syncStatus)
              VALUES (?, ?, ?, ?, 'pending')`,
-        [inventoryId, productId, data.quantity, now],
+        [inventoryId, productId, data.quantity, now]
       );
 
-      await syncEngine.recordAction("CREATE", "Product", productId, {
+      await syncEngine.recordAction('CREATE', 'Product', productId, {
         name: data.name,
         barcode: data.barcode,
         category: data.category,
@@ -92,14 +110,14 @@ export const productService = {
       });
 
       if (data.quantity !== 0) {
-        await syncEngine.recordAction("ADJUST_STOCK", "Product", productId, {
+        await syncEngine.recordAction('ADJUST_STOCK', 'Product', productId, {
           delta: data.quantity,
         });
       }
 
       return productId;
     } catch (error) {
-      console.error("Error creating product:", error);
+      console.error('Error creating product:', error);
       throw error;
     }
   },
@@ -109,63 +127,57 @@ export const productService = {
    */
   updateProduct: async (
     id: string,
-    data: Partial<
-      Omit<Product, "id" | "createdAt" | "updatedAt" | "deleted" | "syncStatus">
-    >,
+    data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'deleted' | 'syncStatus'>>
   ): Promise<void> => {
     const now = getCurrentTimestamp();
     const updates: string[] = [];
     const params: any[] = [];
 
     if (data.name !== undefined) {
-      updates.push("name = ?");
+      updates.push('name = ?');
       params.push(data.name);
     }
     if (data.barcode !== undefined) {
-      updates.push("barcode = ?");
+      updates.push('barcode = ?');
       params.push(data.barcode);
     }
     if (data.category !== undefined) {
-      updates.push("category = ?");
+      updates.push('category = ?');
       params.push(data.category);
     }
     if (data.sellingPrice !== undefined) {
-      updates.push("sellingPrice = ?");
+      updates.push('sellingPrice = ?');
       params.push(data.sellingPrice);
     }
     if (data.purchasePrice !== undefined) {
-      updates.push("purchasePrice = ?");
+      updates.push('purchasePrice = ?');
       params.push(data.purchasePrice);
     }
 
     if (updates.length === 0) return;
 
-    updates.push("updatedAt = ?");
+    updates.push('updatedAt = ?');
     params.push(now);
-    updates.push("syncStatus = ?");
-    params.push("pending");
+    updates.push('syncStatus = ?');
+    params.push('pending');
 
     params.push(id);
 
-    const sql = `UPDATE products SET ${updates.join(", ")} WHERE id = ?`;
+    const sql = `UPDATE products SET ${updates.join(', ')} WHERE id = ?`;
     await executeSql(sql, params);
 
-    await syncEngine.recordAction("UPDATE", "Product", id, data);
+    await syncEngine.recordAction('UPDATE', 'Product', id, data);
   },
 
   /**
    * Update inventory quantity for a product
    */
-  updateInventory: async (
-    productId: string,
-    newQuantity: number,
-  ): Promise<void> => {
+  updateInventory: async (productId: string, newQuantity: number): Promise<void> => {
     const now = getCurrentTimestamp();
     // Check if inventory record exists
-    const check = await executeSql(
-      "SELECT id, quantity FROM inventory WHERE productId = ?",
-      [productId],
-    );
+    const check = await executeSql('SELECT id, quantity FROM inventory WHERE productId = ?', [
+      productId,
+    ]);
 
     let delta = newQuantity;
 
@@ -175,19 +187,19 @@ export const productService = {
 
       await executeSql(
         `UPDATE inventory SET quantity = ?, updatedAt = ?, syncStatus = 'pending' WHERE productId = ?`,
-        [newQuantity, now, productId],
+        [newQuantity, now, productId]
       );
     } else {
       const inventoryId = generateId();
       await executeSql(
         `INSERT INTO inventory (id, productId, quantity, updatedAt, syncStatus)
              VALUES (?, ?, ?, ?, 'pending')`,
-        [inventoryId, productId, newQuantity, now],
+        [inventoryId, productId, newQuantity, now]
       );
     }
 
     if (delta !== 0) {
-      await syncEngine.recordAction("ADJUST_STOCK", "Product", productId, {
+      await syncEngine.recordAction('ADJUST_STOCK', 'Product', productId, {
         delta,
       });
     }
@@ -197,20 +209,17 @@ export const productService = {
    * Process a sale: create sale record, create sale items, update inventory
    */
   processSale: async (
-    items: { productId: string; quantity: number; price: number }[],
+    items: { productId: string; quantity: number; price: number }[]
   ): Promise<string> => {
     const saleId = generateId();
     const now = getCurrentTimestamp();
-    const totalAmount = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
+    const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     try {
       // 1. Create Sale
       await executeSql(
         `INSERT INTO sales (id, totalAmount, createdAt, syncStatus) VALUES (?, ?, ?, 'pending')`,
-        [saleId, totalAmount, now],
+        [saleId, totalAmount, now]
       );
 
       // 2. Process items
@@ -220,7 +229,7 @@ export const productService = {
         await executeSql(
           `INSERT INTO sale_items (id, saleId, productId, quantity, priceAtSale)
                  VALUES (?, ?, ?, ?, ?)`,
-          [itemId, saleId, item.productId, item.quantity, item.price],
+          [itemId, saleId, item.productId, item.quantity, item.price]
         );
 
         // Update Inventory (decrement)
@@ -228,11 +237,11 @@ export const productService = {
           `UPDATE inventory
                  SET quantity = quantity - ?, updatedAt = ?, syncStatus = 'pending'
                  WHERE productId = ?`,
-          [item.quantity, now, item.productId],
+          [item.quantity, now, item.productId]
         );
       }
 
-      await syncEngine.recordAction("CREATE_SALE", "Sale", saleId, {
+      await syncEngine.recordAction('CREATE_SALE', 'Sale', saleId, {
         totalAmount,
         items: items.map((i) => ({
           productId: i.productId,
@@ -243,7 +252,7 @@ export const productService = {
 
       return saleId;
     } catch (error) {
-      console.error("Error processing sale:", error);
+      console.error('Error processing sale:', error);
       throw error;
     }
   },
@@ -255,17 +264,17 @@ export const productService = {
     const now = getCurrentTimestamp();
     await executeSql(
       `UPDATE products SET deleted = 1, updatedAt = ?, syncStatus = 'pending' WHERE id = ?`,
-      [now, productId],
+      [now, productId]
     );
 
-    await syncEngine.recordAction("DELETE", "Product", productId, {});
+    await syncEngine.recordAction('DELETE', 'Product', productId, {});
   },
 
   /**
    * Get dashboard statistics
    */
   getDashboardStats: async () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split('T')[0];
 
     // 1. Today's Sales
     const salesSql = `
@@ -339,11 +348,30 @@ export const productService = {
   },
 
   /**
+   * Get sales history for a specific product
+   */
+  getProductSales: async (productId: string) => {
+    const sql = `
+      SELECT
+        s.id as saleId,
+        s.createdAt,
+        si.quantity,
+        si.priceAtSale
+      FROM sale_items si
+      JOIN sales s ON si.saleId = s.id
+      WHERE si.productId = ?
+      ORDER BY s.createdAt DESC
+    `;
+    const result = await executeSql(sql, [productId]);
+    return result.rows._array;
+  },
+
+  /**
    * Get all product categories
    */
   getCategories: async (): Promise<string[]> => {
     const token = await authStorage.getToken();
-    if (!token) throw new Error("Not authenticated");
+    if (!token) throw new Error('Not authenticated');
     return productsApi.getCategories(token);
   },
 
@@ -352,7 +380,7 @@ export const productService = {
    */
   recommendCategory: async (name: string): Promise<{ category: string }> => {
     const token = await authStorage.getToken();
-    if (!token) throw new Error("Not authenticated");
+    if (!token) throw new Error('Not authenticated');
     return productsApi.recommendCategory(name, token);
   },
 
@@ -361,8 +389,8 @@ export const productService = {
    */
   getBusinessInsights: async () => {
     const token = await authStorage.getToken();
-    if (!token) throw new Error("Not authenticated");
-    const lang = localizationService.getCurrentLanguage() || "en";
+    if (!token) throw new Error('Not authenticated');
+    const lang = localizationService.getCurrentLanguage() || 'en';
     return salesApi.getInsights(token, lang);
   },
 };
