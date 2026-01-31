@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { t, localizationService } from '@/utils/localization';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '@/components/ui/button';
 import { authStorage } from '@/services/authStorage';
 import { clearDatabase, initDatabase } from '@/services/database';
 import { useColorScheme } from 'nativewind';
@@ -90,35 +92,18 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView
       edges={['top']}
-      style={[
-        styles.container,
-        { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' },
-      ]}
-    >
+      style={[styles.container, { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' }]}>
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' },
-        ]}
-      >
+      <View style={[styles.header, { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <MaterialIcons
-              name="arrow-back"
-              size={24}
-              color={isDarkMode ? '#9ca3af' : '#4b5563'}
-            />
-          </TouchableOpacity>
-          <Text
-            style={[
-              styles.headerTitle,
-              { color: isDarkMode ? '#fff' : '#111827' },
-            ]}
-          >
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-secondary"
+            onPress={() => router.back()}>
+            <ArrowLeft size={22} color="white" />
+          </Button>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#111827' }]}>
             {t('settings')}
           </Text>
         </View>
@@ -138,26 +123,14 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View>
-            <Text
-              style={[
-                styles.shopName,
-                { color: isDarkMode ? '#fff' : '#111827' },
-              ]}
-            >
+            <Text style={[styles.shopName, { color: isDarkMode ? '#fff' : '#111827' }]}>
               {shopName}
             </Text>
-            <Text
-              style={[
-                styles.planText,
-                { color: isDarkMode ? '#9ca3af' : '#6b7280' },
-              ]}
-            >
+            <Text style={[styles.planText, { color: isDarkMode ? '#9ca3af' : '#6b7280' }]}>
               {t('standardPlan')}
             </Text>
             <TouchableOpacity>
-              <Text style={[styles.editProfile, { color: '#36e27b' }]}>
-                {t('editProfile')}
-              </Text>
+              <Text style={[styles.editProfile, { color: '#36e27b' }]}>{t('editProfile')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -193,14 +166,8 @@ export default function ProfileScreen() {
               subtitle: t('appThemeSubtitle'),
               rightContent: (
                 <View style={styles.themeTag}>
-                  <Text style={styles.themeTagText}>
-                    {isDarkMode ? t('dark') : t('light')}
-                  </Text>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <Text style={styles.themeTagText}>{isDarkMode ? t('dark') : t('light')}</Text>
+                  <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
                 </View>
               ),
             },
@@ -213,17 +180,9 @@ export default function ProfileScreen() {
               rightContent: (
                 <View style={styles.themeTag}>
                   <Text style={styles.themeTagText}>
-                    {
-                      languageOptions.find(
-                        (lang) => lang.code === currentLanguageCode
-                      )?.name
-                    }
+                    {languageOptions.find((lang) => lang.code === currentLanguageCode)?.name}
                   </Text>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
                 </View>
               ),
             },
@@ -254,9 +213,7 @@ export default function ProfileScreen() {
               iconBg: '#ECFEFF',
               label: t('exportSalesData'),
               subtitle: t('exportSalesDataSubtitle'),
-              rightContent: (
-                <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
-              ),
+              rightContent: <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />,
             },
           ]}
           isDarkMode={isDarkMode}
@@ -265,30 +222,15 @@ export default function ProfileScreen() {
         {/* Logout */}
         <View style={{ marginVertical: 16 }}>
           <TouchableOpacity
-            style={[
-              styles.logoutButton,
-              { backgroundColor: isDarkMode ? '#3f2d2d' : '#fee2e2' },
-            ]}
-            onPress={handleLogout}
-          >
-            <MaterialIcons
-              name="logout"
-              size={20}
-              color={isDarkMode ? '#fca5a5' : '#b91c1c'}
-            />
-            <Text
-              style={[
-                styles.logoutText,
-                { color: isDarkMode ? '#fca5a5' : '#b91c1c' },
-              ]}
-            >
+            style={[styles.logoutButton, { backgroundColor: isDarkMode ? '#3f2d2d' : '#fee2e2' }]}
+            onPress={handleLogout}>
+            <MaterialIcons name="logout" size={20} color={isDarkMode ? '#fca5a5' : '#b91c1c'} />
+            <Text style={[styles.logoutText, { color: isDarkMode ? '#fca5a5' : '#b91c1c' }]}>
               {t('logOut')}
             </Text>
           </TouchableOpacity>
           <Text style={[styles.versionText, { color: '#9ca3af' }]}>
-            {t('appVersion')
-              .replace('{version}', '2.4.1')
-              .replace('{build}', '204')}
+            {t('appVersion').replace('{version}', '2.4.1').replace('{build}', '204')}
           </Text>
         </View>
       </ScrollView>
@@ -298,30 +240,15 @@ export default function ProfileScreen() {
         animationType="slide"
         transparent={true}
         visible={showLanguageModal}
-        onRequestClose={() => setShowLanguageModal(false)}
-      >
+        onRequestClose={() => setShowLanguageModal(false)}>
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' },
-            ]}
-          >
+          <View style={[styles.modalContent, { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' }]}>
             <View style={styles.modalHeader}>
-              <Text
-                style={[
-                  styles.modalTitle,
-                  { color: isDarkMode ? '#fff' : '#111827' },
-                ]}
-              >
+              <Text style={[styles.modalTitle, { color: isDarkMode ? '#fff' : '#111827' }]}>
                 {t('selectLanguage')}
               </Text>
               <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
-                <MaterialIcons
-                  name="close"
-                  size={24}
-                  color={isDarkMode ? '#9ca3af' : '#4b5563'}
-                />
+                <MaterialIcons name="close" size={24} color={isDarkMode ? '#9ca3af' : '#4b5563'} />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -330,14 +257,9 @@ export default function ProfileScreen() {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.languageOption}
-                  onPress={() => handleLanguageChange(item.code)}
-                >
+                  onPress={() => handleLanguageChange(item.code)}>
                   <Text
-                    style={[
-                      styles.languageOptionText,
-                      { color: isDarkMode ? '#fff' : '#111827' },
-                    ]}
-                  >
+                    style={[styles.languageOptionText, { color: isDarkMode ? '#fff' : '#111827' }]}>
                     {'  '}
                     {item.name}
                     {'  '}
@@ -349,10 +271,7 @@ export default function ProfileScreen() {
               )}
               ItemSeparatorComponent={() => (
                 <View
-                  style={[
-                    styles.divider,
-                    { backgroundColor: isDarkMode ? '#253b30' : '#e5e7eb' },
-                  ]}
+                  style={[styles.divider, { backgroundColor: isDarkMode ? '#253b30' : '#e5e7eb' }]}
                 />
               )}
             />
@@ -383,29 +302,14 @@ function SettingsSection({
 }) {
   return (
     <View style={{ marginVertical: 8 }}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          { color: isDarkMode ? '#9ca3af' : '#6b7280' },
-        ]}
-      >
+      <Text style={[styles.sectionTitle, { color: isDarkMode ? '#9ca3af' : '#6b7280' }]}>
         {title}
       </Text>
-      <View
-        style={[
-          styles.sectionCard,
-          { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' },
-        ]}
-      >
+      <View style={[styles.sectionCard, { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' }]}>
         {items.map((item, index) => (
           <React.Fragment key={index}>
-            <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={item.onPress}
-            >
-              <View
-                style={[styles.iconWrapper, { backgroundColor: item.iconBg }]}
-              >
+            <TouchableOpacity style={styles.settingsButton} onPress={item.onPress}>
+              <View style={[styles.iconWrapper, { backgroundColor: item.iconBg }]}>
                 <MaterialIcons
                   name={item.icon as any}
                   size={24}
@@ -413,20 +317,11 @@ function SettingsSection({
                 />
               </View>
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text
-                  style={[
-                    styles.settingsLabel,
-                    { color: isDarkMode ? '#fff' : '#111827' },
-                  ]}
-                >
+                <Text style={[styles.settingsLabel, { color: isDarkMode ? '#fff' : '#111827' }]}>
                   {item.label}
                 </Text>
                 <Text
-                  style={[
-                    styles.settingsSubtitle,
-                    { color: isDarkMode ? '#9ca3af' : '#6b7280' },
-                  ]}
-                >
+                  style={[styles.settingsSubtitle, { color: isDarkMode ? '#9ca3af' : '#6b7280' }]}>
                   {item.subtitle}
                 </Text>
               </View>
@@ -436,10 +331,7 @@ function SettingsSection({
             </TouchableOpacity>
             {index < items.length - 1 && (
               <View
-                style={[
-                  styles.divider,
-                  { backgroundColor: isDarkMode ? '#253b30' : '#e5e7eb' },
-                ]}
+                style={[styles.divider, { backgroundColor: isDarkMode ? '#253b30' : '#e5e7eb' }]}
               />
             )}
           </React.Fragment>
@@ -453,13 +345,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingVertical: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
   profileSection: {

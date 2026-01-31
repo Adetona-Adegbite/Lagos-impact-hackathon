@@ -189,18 +189,16 @@ export default function VerifyOtpScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1">
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <View className="flex-1 px-5 pt-2">
           {/* Header */}
           <View className="mb-5 flex-row items-center justify-between">
             <Button
               variant="secondary"
               size="icon"
-              className="h-11 w-11 rounded-full bg-secondary"
+              className="h-10 w-10 rounded-full bg-secondary"
               onPress={() => router.back()}>
-              <ArrowLeft size={20} color="white" />
+              <ArrowLeft size={22} color="white" />
             </Button>
             <Text variant="h3" className="font-extrabold text-foreground">
               {t('verifyCodeTitle')}

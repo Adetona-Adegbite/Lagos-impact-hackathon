@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
 
 const { width } = Dimensions.get('window');
 const PRIMARY = '#36e27b';
@@ -58,11 +59,13 @@ export default function SalesReceiptScreen() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       {/* Top bar */}
       <View style={[styles.topBar, isDarkMode && styles.topBarDark]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.topBtn, isDarkMode && styles.topBtnDark]}>
-          <ArrowLeft size={22} color={isDarkMode ? '#fff' : '#111'} />
-        </TouchableOpacity>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-secondary"
+          onPress={() => router.back()}>
+          <ArrowLeft size={22} color="white" />
+        </Button>
         <Text style={[styles.title, isDarkMode && styles.textWhite]}>Receipt #1024</Text>
         <View style={{ width: 44 }} />
       </View>

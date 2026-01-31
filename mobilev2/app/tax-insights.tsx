@@ -16,6 +16,8 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
+import { Button } from '@/components/ui/button';
 
 const { width } = Dimensions.get('window');
 const PRIMARY = '#36e27b';
@@ -43,9 +45,7 @@ export default function TaxInsightsScreen() {
   const exportCSV = async () => {
     try {
       const header = ['id', 'date', 'method', 'total', 'vat'].join(',');
-      const rows = SAMPLE_RECEIPTS.map((r) =>
-        [r.id, r.date, r.method, r.total, r.vat].join(',')
-      );
+      const rows = SAMPLE_RECEIPTS.map((r) => [r.id, r.date, r.method, r.total, r.vat].join(','));
       const csv = [header, ...rows].join('\n');
 
       const filename = `tax-export-${period.replace(/\s+/g, '-')}.csv`;
@@ -171,9 +171,13 @@ export default function TaxInsightsScreen() {
       <StatusBar barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <MaterialIcons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-secondary"
+          onPress={() => router.back()}>
+          <ArrowLeft size={22} color="white" />
+        </Button>
 
         <Text style={styles.headerTitle}>Tax Export</Text>
 
@@ -197,12 +201,7 @@ export default function TaxInsightsScreen() {
               style={{ marginRight: 8 }}
             />
             <Text style={styles.periodText}>{period}</Text>
-            <MaterialIcons
-              name="expand-more"
-              size={18}
-              color="#6b7280"
-              style={{ marginLeft: 8 }}
-            />
+            <MaterialIcons name="expand-more" size={18} color="#6b7280" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         </View>
 

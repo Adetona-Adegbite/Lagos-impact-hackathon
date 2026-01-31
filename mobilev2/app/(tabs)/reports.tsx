@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
+import { Button } from '@/components/ui/button';
 import { authStorage } from '@/services/authStorage';
 import { localizationService, t } from '@/utils/localization';
 import { MainInsightsOutput } from '@/types/insights';
@@ -59,10 +61,7 @@ export default function ReportsScreen() {
           return;
         }
 
-        const result = await insightsApi.generateMainInsights(
-          authData.token,
-          currentLanguage
-        );
+        const result = await insightsApi.generateMainInsights(authData.token, currentLanguage);
         setInsights(result);
       } catch (e: any) {
         setError(e.message || 'Failed to fetch insights.');
@@ -88,9 +87,13 @@ export default function ReportsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.menuIcon} onPress={() => router.back()}>
-            <MaterialIcons name="arrow-back" size={20} color="#111" />
-          </TouchableOpacity>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-secondary"
+            onPress={() => router.back()}>
+            <ArrowLeft size={22} color="white" />
+          </Button>
           <View>
             <Text style={styles.welcomeText}>{t('welcomeBack')}</Text>
             <Text style={styles.userName}>{shopName}</Text>
@@ -229,7 +232,9 @@ export default function ReportsScreen() {
                     <Text style={styles.cardTitleSmall}>Risk Alerts</Text>
                   </View>
                   {insights.risk_alerts.map((alert, index) => (
-                    <Text key={index} style={[styles.smallNote, { marginTop: 4, color: '#7f1d1d' }]}>
+                    <Text
+                      key={index}
+                      style={[styles.smallNote, { marginTop: 4, color: '#7f1d1d' }]}>
                       - {alert}
                     </Text>
                   ))}
@@ -290,14 +295,6 @@ const styles = StyleSheet.create({
     borderColor: '#e6e9e8',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   welcomeText: { fontSize: 12, color: '#9eb7a8' },
   userName: { fontSize: 16, fontWeight: '800', color: '#fff' },
   scanButton: {

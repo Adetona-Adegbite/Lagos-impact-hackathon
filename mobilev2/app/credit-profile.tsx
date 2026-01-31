@@ -16,6 +16,8 @@ import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
+import { Button } from '@/components/ui/button';
 
 const { width } = Dimensions.get('window');
 const PRIMARY = '#36e27b';
@@ -182,9 +184,13 @@ export default function CreditProfileScreen() {
       <StatusBar barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <MaterialIcons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-secondary"
+          onPress={() => router.back()}>
+          <ArrowLeft size={22} color="white" />
+        </Button>
 
         <Text style={styles.headerTitle}>My Credit Profile</Text>
 

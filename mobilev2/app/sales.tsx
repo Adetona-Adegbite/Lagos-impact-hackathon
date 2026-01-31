@@ -462,7 +462,7 @@ export default function ScanSellScreen() {
           <Button
             variant="secondary"
             size="icon"
-            className="h-11 w-11 rounded-full border border-white/20 bg-black/40"
+            className="h-10 w-10 rounded-full bg-secondary"
             onPress={() => router.back()}>
             <ArrowLeft size={22} color="white" />
           </Button>
@@ -802,7 +802,7 @@ export default function ScanSellScreen() {
                         Icon={() => (
                           <ChevronDown
                             size={18}
-                            className="absolute right-4 top-1 text-muted-foreground"
+                            className="absolute right-4 top-1/2 translate-y-[-50%] text-muted-foreground"
                           />
                         )}
                       />
@@ -821,8 +821,16 @@ export default function ScanSellScreen() {
                         onPress={() => setEditQty((q) => Math.max(0, q - 1))}>
                         <Minus size={20} color="white" />
                       </Button>
-                      <View className="items-center">
-                        <Text className="text-2xl font-black text-foreground">{editQty}</Text>
+                      <View className="flex-1 items-center">
+                        <Input
+                          className="h-10 w-full border-0 bg-transparent text-center text-2xl font-black text-foreground"
+                          keyboardType="numeric"
+                          value={editQty.toString()}
+                          onChangeText={(v) => {
+                            const clean = v.replace(/[^0-9]/g, '');
+                            setEditQty(clean ? parseInt(clean, 10) : 0);
+                          }}
+                        />
                         <Text className="text-[9px] font-bold uppercase text-muted-foreground">
                           Units in store
                         </Text>

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
 
 type TopBar = {
   name: string;
@@ -82,11 +83,13 @@ export default function TopSellers() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.iconBtn, isDarkMode && styles.iconBtnDark]}
+        <Button
+          variant="secondary"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-secondary"
           onPress={() => router.back()}>
-          <ArrowLeft size={22} color={isDarkMode ? '#fff' : '#1f2937'} />
-        </TouchableOpacity>
+          <ArrowLeft size={22} color="white" />
+        </Button>
         <Text style={[styles.headerTitle, isDarkMode && styles.textWhite]}>Top Sellers</Text>
         <TouchableOpacity style={[styles.iconBtn, isDarkMode && styles.iconBtnDark]}>
           <Calendar size={22} color={isDarkMode ? '#fff' : '#1f2937'} />

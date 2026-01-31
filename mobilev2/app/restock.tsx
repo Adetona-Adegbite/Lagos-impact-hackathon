@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Filter, AlertTriangle, AlertCircle, Lightbulb } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
 
 type Item = {
   id: number;
@@ -61,11 +62,13 @@ export default function SlowMovingProducts() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={[styles.backBtn, isDarkMode && styles.backBtnDark]}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-secondary"
             onPress={() => router.back()}>
-            <ArrowLeft size={20} color={isDarkMode ? '#fff' : '#111827'} />
-          </TouchableOpacity>
+            <ArrowLeft size={22} color="white" />
+          </Button>
           <View>
             <Text style={[styles.headerTitle, isDarkMode && styles.textWhite]}>
               Items Stuck on Shelf

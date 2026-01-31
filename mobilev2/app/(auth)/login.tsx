@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -9,39 +9,31 @@ import {
   Alert,
   ActivityIndicator,
   Pressable,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Smartphone,
-  Store,
-  Store as StoreIcon,
-} from "lucide-react-native";
-import { authApi } from "@/services/api";
-import { t, localizationService } from "@/utils/localization";
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, ArrowRight, Smartphone, Store, Store as StoreIcon } from 'lucide-react-native';
+import { authApi } from '@/services/api';
+import { t, localizationService } from '@/utils/localization';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 const LANGUAGES = [
-  { label: "english", code: "en" },
-  { label: "hausa", code: "hausa" },
-  { label: "yoruba", code: "yoruba" },
-  { label: "igbo", code: "igbo" },
-  { label: "pidgin", code: "pcm" },
+  { label: 'english', code: 'en' },
+  { label: 'hausa', code: 'hausa' },
+  { label: 'yoruba', code: 'yoruba' },
+  { label: 'igbo', code: 'igbo' },
+  { label: 'pidgin', code: 'pcm' },
 ];
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
-  const [shopName, setShopName] = useState("");
+  const [phone, setPhone] = useState('');
+  const [shopName, setShopName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState(
-    localizationService.getCurrentLanguage(),
-  );
+  const [language, setLanguage] = useState(localizationService.getCurrentLanguage());
 
   const handleSetLanguage = async (lang: string) => {
     await localizationService.setLanguage(lang);
@@ -50,99 +42,82 @@ export default function LoginScreen() {
 
   const handleGetCode = async () => {
     if (!phone) {
-      Alert.alert(t("requiredTitle"), t("phoneNumberRequired"));
+      Alert.alert(t('requiredTitle'), t('phoneNumberRequired'));
       return;
     }
     setIsLoading(true);
     try {
       await authApi.requestOtp(phone);
       router.push({
-        pathname: "/(auth)/verify-otp",
-        params: { phone, shopName }
+        pathname: '/(auth)/verify-otp',
+        params: { phone, shopName },
       });
     } catch (error: any) {
-      Alert.alert(t("errorTitle"), error.message);
+      Alert.alert(t('errorTitle'), error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const openLink = (url: string) =>
-    Linking.openURL(url).catch((e) => console.warn(e));
+  const openLink = (url: string) => Linking.openURL(url).catch((e) => console.warn(e));
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="transparent"
-        translucent
-      />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <ScrollView
           contentContainerStyle={{ paddingBottom: 40 }}
           className="flex-1 px-5 pt-2"
-          keyboardShouldPersistTaps="handled"
-        >
+          keyboardShouldPersistTaps="handled">
           {/* Top Bar */}
-          <View className="flex-row items-center justify-between mb-4">
+          <View className="mb-4 flex-row items-center justify-between">
             <Button
               variant="secondary"
               size="icon"
-              className="w-11 h-11 rounded-full bg-secondary"
-              onPress={() => router.back()}
-            >
-              <ArrowLeft size={20} color="white" />
+              className="h-10 w-10 rounded-full bg-secondary"
+              onPress={() => router.back()}>
+              <ArrowLeft size={22} color="white" />
             </Button>
 
-            <View className="flex-row gap-1.5 items-center">
-              <View className="w-2 h-2 rounded-full bg-primary" />
-              <View className="w-2 h-2 rounded-full bg-primary/30" />
-              <View className="w-2 h-2 rounded-full bg-primary/30" />
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-2 w-2 rounded-full bg-primary" />
+              <View className="h-2 w-2 rounded-full bg-primary/30" />
+              <View className="h-2 w-2 rounded-full bg-primary/30" />
             </View>
           </View>
 
           {/* Hero Section */}
-          <View className="py-2 px-0.5 mb-6">
-            <View className="w-14 h-14 rounded-full bg-primary items-center justify-center mb-4 shadow-lg shadow-primary/20">
+          <View className="mb-6 px-0.5 py-2">
+            <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
               <StoreIcon size={28} color="#122117" strokeWidth={2.5} />
             </View>
             <Text variant="h1" className="mb-2">
-              {t("welcomeOga")}
+              {t('welcomeOga')}
             </Text>
-            <Text
-              variant="p"
-              className="text-muted-foreground leading-relaxed max-w-[520px]"
-            >
-              {t("loginSubtitle")}
+            <Text variant="p" className="max-w-[520px] leading-relaxed text-muted-foreground">
+              {t('loginSubtitle')}
             </Text>
           </View>
 
           {/* Language Selector */}
           <View className="mb-6">
-            <Text className="text-sm font-bold mb-3 text-foreground">
-              {t("selectLanguage")}
-            </Text>
+            <Text className="mb-3 text-sm font-bold text-foreground">{t('selectLanguage')}</Text>
             <View className="flex-row flex-wrap gap-2">
               {LANGUAGES.map((lang) => (
                 <Pressable
                   key={lang.code}
                   onPress={() => handleSetLanguage(lang.code)}
                   className={cn(
-                    "px-4 py-2 rounded-xl bg-secondary border border-transparent",
-                    language === lang.code && "bg-primary border-primary/20",
-                  )}
-                >
+                    'rounded-xl border border-transparent bg-secondary px-4 py-2',
+                    language === lang.code && 'border-primary/20 bg-primary'
+                  )}>
                   <Text
                     className={cn(
-                      "text-sm font-medium",
+                      'text-sm font-medium',
                       language === lang.code
-                        ? "text-primary-foreground font-bold"
-                        : "text-foreground",
-                    )}
-                  >
+                        ? 'font-bold text-primary-foreground'
+                        : 'text-foreground'
+                    )}>
                     {t(lang.label)}
                   </Text>
                 </Pressable>
@@ -154,18 +129,14 @@ export default function LoginScreen() {
           <View className="gap-5">
             {/* Phone Number Field */}
             <View>
-              <Text className="text-sm font-bold mb-2 text-foreground">
-                {t("phoneNumber")}
-              </Text>
-              <View className="flex-row items-center h-14 rounded-full bg-secondary border border-border overflow-hidden">
-                <View className="flex-row items-center pl-4 pr-3 border-r border-border h-full bg-secondary">
-                  <Text className="text-lg mr-2">🇳🇬</Text>
-                  <Text className="text-base text-foreground font-semibold">
-                    +234
-                  </Text>
+              <Text className="mb-2 text-sm font-bold text-foreground">{t('phoneNumber')}</Text>
+              <View className="h-14 flex-row items-center overflow-hidden rounded-full border border-border bg-secondary">
+                <View className="h-full flex-row items-center border-r border-border bg-secondary pl-4 pr-3">
+                  <Text className="mr-2 text-lg">🇳🇬</Text>
+                  <Text className="text-base font-semibold text-foreground">+234</Text>
                 </View>
                 <Input
-                  className="flex-1 bg-transparent border-0 h-full text-lg px-4"
+                  className="h-full flex-1 border-0 bg-transparent px-4 text-lg"
                   placeholder="8012345678"
                   placeholderTextColor="#9AA0A6"
                   keyboardType="phone-pad"
@@ -180,12 +151,10 @@ export default function LoginScreen() {
 
             {/* Shop Name Field */}
             <View>
-              <Text className="text-sm font-bold mb-2 text-foreground">
-                {t("shopName")}
-              </Text>
-              <View className="flex-row items-center h-14 rounded-full bg-secondary border border-border overflow-hidden">
+              <Text className="mb-2 text-sm font-bold text-foreground">{t('shopName')}</Text>
+              <View className="h-14 flex-row items-center overflow-hidden rounded-full border border-border bg-secondary">
                 <Input
-                  className="flex-1 bg-transparent border-0 h-full text-lg px-4"
+                  className="h-full flex-1 border-0 bg-transparent px-4 text-lg"
                   placeholder="e.g. Mama Nkechi Store"
                   placeholderTextColor="#9AA0A6"
                   value={shopName}
@@ -202,16 +171,15 @@ export default function LoginScreen() {
               onPress={handleGetCode}
               disabled={isLoading}
               className={cn(
-                "h-14 rounded-full bg-primary mt-2 shadow-lg shadow-primary/20",
-                isLoading && "opacity-70",
-              )}
-            >
+                'mt-2 h-14 rounded-full bg-primary shadow-lg shadow-primary/20',
+                isLoading && 'opacity-70'
+              )}>
               {isLoading ? (
                 <ActivityIndicator color="#062" />
               ) : (
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-primary-foreground font-black text-base uppercase tracking-tight">
-                    {t("getCode")}
+                  <Text className="text-base font-black uppercase tracking-tight text-primary-foreground">
+                    {t('getCode')}
                   </Text>
                   <ArrowRight size={18} color="#062" strokeWidth={3} />
                 </View>
@@ -221,20 +189,18 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View className="mt-8 items-center px-4">
-            <Text className="text-muted-foreground text-center text-xs leading-5">
-              {t("termsAgreement")}{" "}
+            <Text className="text-center text-xs leading-5 text-muted-foreground">
+              {t('termsAgreement')}{' '}
               <Text
-                className="text-primary font-bold"
-                onPress={() => openLink("https://example.com/terms")}
-              >
-                {t("terms")}
-              </Text>{" "}
-              and{" "}
+                className="font-bold text-primary"
+                onPress={() => openLink('https://example.com/terms')}>
+                {t('terms')}
+              </Text>{' '}
+              and{' '}
               <Text
-                className="text-primary font-bold"
-                onPress={() => openLink("https://example.com/privacy")}
-              >
-                {t("privacyPolicy")}
+                className="font-bold text-primary"
+                onPress={() => openLink('https://example.com/privacy')}>
+                {t('privacyPolicy')}
               </Text>
               .
             </Text>
