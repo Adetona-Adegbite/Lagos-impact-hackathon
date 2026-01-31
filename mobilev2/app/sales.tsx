@@ -26,15 +26,12 @@ import {
   Package,
   ArrowRight,
   Scan,
-  Barcode,
-  Sparkles,
-  ChevronDown,
   ArrowLeft,
   ImageIcon,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { productService } from '@/services/productService';
-import RNPickerSelect from 'react-native-picker-select';
+import { ProductFormModal, ProductFormData } from '@/components/ProductFormModal';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
@@ -81,24 +78,12 @@ export default function ScanSellScreen() {
   const [enteredCode, setEnteredCode] = useState('');
 
   const [productModalVisible, setProductModalVisible] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<{
-    id?: string;
-    barcode: string;
-    title: string;
-    price: number;
-    qty: number;
-    category: string;
-    costPrice: number;
-  } | null>(null);
+  const [currentProduct, setCurrentProduct] = useState<
+    (Partial<ProductFormData> & { id?: string }) | null
+  >(null);
 
   const [isNewProduct, setIsNewProduct] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editPrice, setEditPrice] = useState('');
-  const [editCostPrice, setEditCostPrice] = useState('');
-  const [editCategory, setEditCategory] = useState('General');
-  const [editQty, setEditQty] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
-  const [isRecommendingCategory, setIsRecommendingCategory] = useState(false);
   const [isScannerPaused, setIsScannerPaused] = useState(false);
 
   useEffect(() => {
@@ -125,15 +110,20 @@ export default function ScanSellScreen() {
     ).start();
   }, [scanY, scanBoxSize]);
 
-  useEffect(() => {
-    if (productModalVisible && currentProduct) {
-      setEditTitle(currentProduct.title);
-      setEditPrice(currentProduct.price.toString());
-      setEditCostPrice(currentProduct.costPrice.toString());
-      setEditCategory(currentProduct.category);
-      setEditQty(currentProduct.qty);
-    }
-  }, [productModalVisible, currentProduct]);
+  const initialFormData = useMemo(
+    () =>
+      currentProduct
+        ? {
+            name: currentProduct.name,
+            barcode: currentProduct.barcode,
+            sellingPrice: currentProduct.sellingPrice,
+            purchasePrice: currentProduct.purchasePrice,
+            category: currentProduct.category,
+            quantity: currentProduct.quantity,
+          }
+        : undefined,
+    [currentProduct]
+  );
 
   const totalAmount = useMemo(() => cart.reduce((s, it) => s + it.qty * it.unitPrice, 0), [cart]);
 
@@ -142,30 +132,20 @@ export default function ScanSellScreen() {
       try {
         const fetchedCategories = await productService.getCategories();
         setCategories(fetchedCategories);
-        if (fetchedCategories.length > 0 && editCategory === 'General') {
-          setEditCategory(fetchedCategories[0]);
-        }
       } catch (error) {
         setCategories(['General', 'Snacks', 'Beverages']);
       }
     };
     fetchCategories();
-  }, [editCategory]);
+  }, []);
 
-  const handleRecommendCategory = async () => {
-    if (!editTitle.trim()) return;
-    setIsRecommendingCategory(true);
+  const handleRecommendCategory = async (name: string) => {
     try {
-      const { category: recommendedCategory } = await productService.recommendCategory(
-        editTitle.trim()
-      );
-      if (recommendedCategory && categories.includes(recommendedCategory)) {
-        setEditCategory(recommendedCategory);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsRecommendingCategory(false);
+      const res = await productService.recommendCategory(name);
+      return res.category;
+    } catch (e) {
+      console.log('Category suggestion failed', e);
+      return undefined;
     }
   };
 
@@ -276,24 +256,25 @@ export default function ScanSellScreen() {
           setCurrentProduct({
             id: product.id,
             barcode: product.barcode,
-            title: product.name,
-            price: product.sellingPrice,
-            qty: product.quantity || 0,
+            name: product.name,
+            sellingPrice: product.sellingPrice,
+            quantity: product.quantity || 0,
             category: product.category,
-            costPrice: product.purchasePrice,
+            purchasePrice: product.purchasePrice,
           });
           setIsNewProduct(false);
         } else {
           setCurrentProduct({
             barcode: barcode,
-            title: '',
-            price: 0,
-            qty: 1,
-            category: 'General',
-            costPrice: 0,
+            name: '',
+            sellingPrice: 0,
+            quantity: 1,
+            category: categories[0] || 'General',
+            purchasePrice: 0,
           });
           setIsNewProduct(true);
         }
+        setIsScannerPaused(true);
         setProductModalVisible(true);
       } else {
         if (product) {
@@ -330,11 +311,11 @@ export default function ScanSellScreen() {
                 onPress: () => {
                   setCurrentProduct({
                     barcode: barcode,
-                    title: '',
-                    price: 0,
-                    qty: 1,
-                    category: 'General',
-                    costPrice: 0,
+                    name: '',
+                    sellingPrice: 0,
+                    quantity: 1,
+                    category: categories[0] || 'General',
+                    purchasePrice: 0,
                   });
                   setIsNewProduct(true);
                   setProductModalVisible(true);
@@ -353,15 +334,10 @@ export default function ScanSellScreen() {
     }
   };
 
-  const handleProductConfirm = async () => {
+  const handleProductConfirm = async (data: ProductFormData) => {
     if (!currentProduct) return;
 
-    const title = editTitle.trim();
-    const price = parseFloat(editPrice) || 0;
-    const cost = parseFloat(editCostPrice) || 0;
-    const qty = editQty;
-
-    if (!title) {
+    if (!data.name.trim()) {
       Alert.alert('Error', 'Product name is required.');
       return;
     }
@@ -370,12 +346,12 @@ export default function ScanSellScreen() {
       setLoading(true);
       if (isNewProduct) {
         const newId = await productService.createProduct({
-          name: title,
-          barcode: currentProduct.barcode,
-          category: editCategory,
-          sellingPrice: price,
-          purchasePrice: cost,
-          quantity: qty,
+          name: data.name,
+          barcode: currentProduct.barcode!,
+          category: data.category,
+          sellingPrice: data.sellingPrice,
+          purchasePrice: data.purchasePrice,
+          quantity: data.quantity,
         });
 
         if (mode === 'sell') {
@@ -384,8 +360,8 @@ export default function ScanSellScreen() {
             {
               id: Date.now().toString(),
               productId: newId,
-              title: title,
-              unitPrice: price,
+              title: data.name,
+              unitPrice: data.sellingPrice,
               qty: 1,
               image: null,
             },
@@ -393,29 +369,35 @@ export default function ScanSellScreen() {
         }
       } else if (currentProduct.id) {
         await productService.updateProduct(currentProduct.id, {
-          name: title,
-          sellingPrice: price,
-          purchasePrice: cost,
-          category: editCategory,
+          name: data.name,
+          sellingPrice: data.sellingPrice,
+          purchasePrice: data.purchasePrice,
+          category: data.category,
         });
-        await productService.updateInventory(currentProduct.id, qty);
+        await productService.updateInventory(currentProduct.id, data.quantity);
 
         if (mode === 'sell') {
           setCart((prev) =>
             prev.map((item) =>
               item.productId === currentProduct.id
-                ? { ...item, title: title, unitPrice: price }
+                ? { ...item, title: data.name, unitPrice: data.sellingPrice }
                 : item
             )
           );
         }
       }
       setProductModalVisible(false);
+      setIsScannerPaused(false);
     } catch (e) {
       Alert.alert('Error', 'Failed to save product.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setProductModalVisible(false);
+    setIsScannerPaused(false);
   };
 
   const onBarcodeScanned = (result: BarcodeScanningResult) => {
@@ -692,177 +674,15 @@ export default function ScanSellScreen() {
         </View>
       </Modal>
 
-      <Modal
+      <ProductFormModal
         visible={productModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setProductModalVisible(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 items-center justify-center bg-black/60 p-6">
-          <Card className="max-h-[90%] w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
-            <Text variant="h3" className="mb-2 font-black text-foreground">
-              {isNewProduct ? 'New Product' : 'Edit Product'}
-            </Text>
-            <View className="mb-6 flex-row items-center gap-2 self-start rounded-xl bg-primary/10 px-3 py-1.5">
-              <Barcode size={14} className="text-primary" />
-              <Text className="text-[11px] font-black uppercase text-primary">
-                {currentProduct?.barcode}
-              </Text>
-            </View>
-
-            <FlatList
-              data={[1]}
-              keyExtractor={() => 'form'}
-              showsVerticalScrollIndicator={false}
-              renderItem={() => (
-                <View className="gap-5 pb-4">
-                  <View>
-                    <View className="mb-2 flex-row items-center justify-between px-1">
-                      <Text className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Product Name
-                      </Text>
-                      {isNewProduct && (
-                        <Pressable
-                          className="flex-row items-center gap-1"
-                          onPress={handleRecommendCategory}>
-                          <Sparkles size={12} color="white" />
-                          <Text className="text-[10px] font-bold text-primary">
-                            Suggest Category
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                    <Input
-                      className="h-14 rounded-2xl border-border bg-secondary text-base font-bold"
-                      placeholder="e.g. Coca-Cola 50cl"
-                      value={editTitle}
-                      onChangeText={setEditTitle}
-                    />
-                  </View>
-
-                  <View className="flex-row gap-4">
-                    <View className="flex-1">
-                      <Text className="mb-2 px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Selling Price
-                      </Text>
-                      <View className="relative">
-                        <Text className="absolute left-3 top-1/2 z-10 translate-y-[-50%] text-base font-bold text-foreground">
-                          ₦
-                        </Text>
-                        <Input
-                          className="h-14 rounded-2xl border-border bg-secondary pl-8 text-base font-bold"
-                          keyboardType="numeric"
-                          value={editPrice}
-                          onChangeText={setEditPrice}
-                        />
-                      </View>
-                    </View>
-                    <View className="flex-1">
-                      <Text className="mb-2 px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Cost Price
-                      </Text>
-                      <View className="relative">
-                        <Text className="absolute left-3 top-1/2 z-10 translate-y-[-50%] text-base font-bold text-foreground">
-                          ₦
-                        </Text>
-                        <Input
-                          className="h-14 rounded-2xl border-border bg-secondary pl-8 text-base font-bold text-muted-foreground"
-                          keyboardType="numeric"
-                          value={editCostPrice}
-                          onChangeText={setEditCostPrice}
-                        />
-                      </View>
-                    </View>
-                  </View>
-
-                  <View>
-                    <Text className="mb-2 px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Category
-                    </Text>
-                    <View className="relative h-14 justify-center overflow-hidden rounded-2xl border border-border bg-secondary px-4">
-                      <RNPickerSelect
-                        onValueChange={(v) => setEditCategory(v)}
-                        items={categories.map((c) => ({ label: c, value: c }))}
-                        value={editCategory}
-                        style={{
-                          inputIOS: {
-                            color: 'white',
-                            fontSize: 16,
-                            fontWeight: '700',
-                          },
-                          inputAndroid: {
-                            color: 'white',
-                            fontSize: 16,
-                            fontWeight: '700',
-                          },
-                          placeholder: { color: '#666' },
-                        }}
-                        useNativeAndroidPickerStyle={false}
-                        Icon={() => (
-                          <ChevronDown
-                            size={18}
-                            className="absolute right-4 top-1/2 translate-y-[-50%] text-muted-foreground"
-                          />
-                        )}
-                      />
-                    </View>
-                  </View>
-
-                  <View>
-                    <Text className="mb-2 px-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Current Stock
-                    </Text>
-                    <View className="flex-row items-center justify-between rounded-2xl border border-border bg-secondary p-3">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-12 w-12 rounded-xl border border-border bg-background shadow-sm"
-                        onPress={() => setEditQty((q) => Math.max(0, q - 1))}>
-                        <Minus size={20} color="white" />
-                      </Button>
-                      <View className="flex-1 items-center">
-                        <Input
-                          className="h-10 w-full border-0 bg-transparent text-center text-2xl font-black text-foreground"
-                          keyboardType="numeric"
-                          value={editQty.toString()}
-                          onChangeText={(v) => {
-                            const clean = v.replace(/[^0-9]/g, '');
-                            setEditQty(clean ? parseInt(clean, 10) : 0);
-                          }}
-                        />
-                        <Text className="text-[9px] font-bold uppercase text-muted-foreground">
-                          Units in store
-                        </Text>
-                      </View>
-                      <Button
-                        className="h-12 w-12 rounded-xl bg-primary shadow-sm"
-                        size="icon"
-                        onPress={() => setEditQty((q) => q + 1)}>
-                        <Plus size={20} color="#000" />
-                      </Button>
-                    </View>
-                  </View>
-                </View>
-              )}
-            />
-
-            <View className="mt-4 flex-row gap-3">
-              <Button
-                variant="outline"
-                className="h-14 flex-1 rounded-2xl"
-                onPress={() => setProductModalVisible(false)}>
-                <Text className="font-bold">Cancel</Text>
-              </Button>
-              <Button className="flex-2 h-14 rounded-2xl bg-primary" onPress={handleProductConfirm}>
-                <Text className="font-black uppercase tracking-tight text-primary-foreground">
-                  {isNewProduct ? 'Add Product' : 'Save Changes'}
-                </Text>
-              </Button>
-            </View>
-          </Card>
-        </KeyboardAvoidingView>
-      </Modal>
+        onClose={handleCloseModal}
+        onConfirm={handleProductConfirm}
+        initialData={initialFormData}
+        isNewProduct={isNewProduct}
+        categories={categories}
+        onRecommendCategory={handleRecommendCategory}
+      />
 
       {loading && (
         <View className="absolute inset-0 z-[100] items-center justify-center bg-black/40">
