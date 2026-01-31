@@ -409,6 +409,81 @@ export const productService = {
   },
 
   /**
+   * Get report statistics
+   */
+  getReportStats: async (range: 'month' | 'ytd' = 'month') => {
+    const startDate = new Date();
+
+    if (range === 'month') {
+      startDate.setDate(1); // First day of current month
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      startDate.setMonth(0, 1); // First day of current year
+      startDate.setHours(0, 0, 0, 0);
+    }
+    const startDateStr = startDate.toISOString();
+
+    // 1. Fastest Moving Products
+    const fastestSql = `
+      SELECT p.name, SUM(si.quantity) as totalQuantity, SUM(si.quantity * si.priceAtSale) as totalRevenue
+      FROM sale_items si
+      JOIN products p ON si.productId = p.id
+      JOIN sales s ON si.saleId = s.id
+      WHERE s.createdAt >= ?
+      GROUP BY p.id
+      ORDER BY totalQuantity DESC
+      LIMIT 5
+    `;
+    const fastestRes = await executeSql(fastestSql, [startDateStr]);
+
+    // 2. Slowest Moving Products
+    const slowestSql = `
+        SELECT p.name, COALESCE(SUM(sub.quantity), 0) as totalQuantity
+        FROM products p
+        LEFT JOIN (
+            SELECT si.productId, si.quantity
+            FROM sale_items si
+            JOIN sales s ON si.saleId = s.id
+            WHERE s.createdAt >= ?
+        ) sub ON p.id = sub.productId
+        WHERE p.deleted = 0
+        GROUP BY p.id
+        ORDER BY totalQuantity ASC
+        LIMIT 5
+    `;
+    const slowestRes = await executeSql(slowestSql, [startDateStr]);
+
+    // 3. Most Profitable Day of Week
+    const profitableDaySql = `
+      SELECT strftime('%w', createdAt) as dayOfWeek, SUM(totalAmount) as totalSales
+      FROM sales
+      WHERE createdAt >= ?
+      GROUP BY dayOfWeek
+      ORDER BY totalSales DESC
+      LIMIT 1
+    `;
+    const profitableDayRes = await executeSql(profitableDaySql, [startDateStr]);
+
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    let bestDay = 'N/A';
+    let bestDayTotal = 0;
+
+    if (profitableDayRes.rows.length > 0) {
+      const dayIndex = parseInt(profitableDayRes.rows.item(0).dayOfWeek);
+      if (!isNaN(dayIndex)) {
+        bestDay = days[dayIndex];
+        bestDayTotal = profitableDayRes.rows.item(0).totalSales;
+      }
+    }
+
+    return {
+      fastestMoving: fastestRes.rows._array,
+      slowestMoving: slowestRes.rows._array,
+      mostProfitableDay: { day: bestDay, total: bestDayTotal },
+    };
+  },
+
+  /**
    * Get business insights from the backend
    */
   getBusinessInsights: async () => {

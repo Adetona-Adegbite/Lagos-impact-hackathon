@@ -66,9 +66,9 @@ export default function RetailHomeScreen() {
     },
     {
       id: 'a3',
-      title: t('aiInsights'),
-      subtitle: t('smartPredictions'),
-      icon: Sparkles,
+      title: t('report'),
+      subtitle: t('businessAnalytics'),
+      icon: TrendingUp,
       route: '/(tabs)/reports' as const,
     },
     {
@@ -78,20 +78,20 @@ export default function RetailHomeScreen() {
       icon: History,
       route: '/all-sales' as const,
     },
-    {
-      id: 'a5',
-      title: t('aiCreditScore'),
-      subtitle: t('loanReadyInsights'),
-      icon: CreditCard,
-      route: '/credit-profile' as const,
-    },
-    {
-      id: 'a6',
-      title: t('taxInsights'),
-      subtitle: t('quickTaxReports'),
-      icon: Landmark,
-      route: '/tax-insights' as const,
-    },
+    // {
+    //   id: 'a5',
+    //   title: t('aiCreditScore'),
+    //   subtitle: t('loanReadyInsights'),
+    //   icon: CreditCard,
+    //   route: '/credit-profile' as const,
+    // },
+    // {
+    //   id: 'a6',
+    //   title: t('taxInsights'),
+    //   subtitle: t('quickTaxReports'),
+    //   icon: Landmark,
+    //   route: '/tax-insights' as const,
+    // },
   ];
 
   const fetchData = useCallback(async () => {

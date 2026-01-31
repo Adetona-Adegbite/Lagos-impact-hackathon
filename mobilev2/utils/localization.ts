@@ -66,6 +66,8 @@ export interface Translation {
   quickTaxReports: string;
   sale: string;
   plusItems: string;
+  report: string;
+  businessAnalytics: string;
 
   // Inventory Screen
   searchPlaceholder: string;
@@ -214,6 +216,9 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: 'Quick tax reports',
     sale: 'Sale',
     plusItems: ' + {count} items',
+    report: 'Report',
+    businessAnalytics: 'Business Analytics',
+
     // Inventory Screen
     searchPlaceholder: 'Search products (e.g., Indomie)...',
     noProductsFound: 'No products found',
