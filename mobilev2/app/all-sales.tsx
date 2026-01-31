@@ -66,8 +66,33 @@ export default function AllSalesScreen() {
 
   const totalToday = todaySales.reduce((sum, s) => sum + s.totalAmount, 0);
 
-  // Simple weekly data mock for graph
-  const weeklyData = [40, 70, 45, 90, 65, 80, 50];
+  // Dynamic weekly data for graph
+  const weeklyData = useMemo(() => {
+    const salesByDate: Record<string, number> = {};
+    sales.forEach((s) => {
+      const dateStr = new Date(s.createdAt).toDateString();
+      salesByDate[dateStr] = (salesByDate[dateStr] || 0) + (s.totalAmount || 0);
+    });
+
+    const data = [];
+    const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const dateStr = d.toDateString();
+      const label = dayLabels[d.getDay()];
+      const dayTotal = salesByDate[dateStr] || 0;
+
+      data.push({ label, total: dayTotal });
+    }
+
+    const maxTotal = Math.max(...data.map((d) => d.total), 0);
+    return data.map((d) => ({
+      ...d,
+      height: maxTotal > 0 ? Math.max((d.total / maxTotal) * 100, 5) : 5,
+    }));
+  }, [sales]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -141,17 +166,17 @@ export default function AllSalesScreen() {
             </View>
 
             <View className="h-24 flex-row items-end gap-3 px-1">
-              {weeklyData.map((val, i) => (
+              {weeklyData.map((item, i) => (
                 <View key={i} className="flex-1 items-center">
                   <View
-                    style={{ height: `${val}%` }}
+                    style={{ height: `${item.height}%` }}
                     className={cn(
                       'w-full rounded-t-lg',
                       i === 6 ? 'bg-primary shadow-lg shadow-primary/30' : 'bg-primary/20'
                     )}
                   />
                   <Text className="mt-2 text-[8px] font-black text-muted-foreground">
-                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
+                    {item.label}
                   </Text>
                 </View>
               ))}
