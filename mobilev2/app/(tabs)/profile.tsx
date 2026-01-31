@@ -136,7 +136,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* General Section */}
-        <SettingsSection
+        {/*<SettingsSection
           title={t('general')}
           items={[
             {
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
             },
           ]}
           isDarkMode={isDarkMode}
-        />
+        />*/}
 
         {/* App Preferences */}
         <SettingsSection
@@ -192,12 +192,7 @@ export default function ProfileScreen() {
               label: t('notifications'),
               subtitle: t('notificationsSubtitle'),
               rightContent: (
-                <Switch
-                  value={true}
-                  onValueChange={() => {}}
-                  thumbColor="#fff"
-                  trackColor={{ false: '#e5e7eb', true: '#36e27b' }}
-                />
+                <Switch thumbColor="#fff" trackColor={{ false: '#e5e7eb', true: '#36e27b' }} />
               ),
             },
           ]}
@@ -205,7 +200,7 @@ export default function ProfileScreen() {
         />
 
         {/* Data Management */}
-        <SettingsSection
+        {/*<SettingsSection
           title={t('dataManagement')}
           items={[
             {
@@ -217,7 +212,7 @@ export default function ProfileScreen() {
             },
           ]}
           isDarkMode={isDarkMode}
-        />
+        />*/}
 
         {/* Logout */}
         <View style={{ marginVertical: 16 }}>
@@ -230,7 +225,7 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
           <Text style={[styles.versionText, { color: '#9ca3af' }]}>
-            {t('appVersion').replace('{version}', '2.4.1').replace('{build}', '204')}
+            {t('appVersion').replace('{version}', '0.1.0').replace('{build}', '204')}
           </Text>
         </View>
       </ScrollView>

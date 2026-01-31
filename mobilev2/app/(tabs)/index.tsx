@@ -181,7 +181,7 @@ export default function RetailHomeScreen() {
             <View className="h-12 w-12 overflow-hidden rounded-2xl border-2 border-primary/20">
               <Image
                 source={{
-                  uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDzwsRVGB3rjAn25g6b8ryrRBsEcj0ItVKYAF9o6H9bEspO_Rg3cDHDyo5zsY1wf-73mAjivKyLRWO94RGKZ1RzLKFc6i15ez5rU3C4KDS_AJ4uCmvKRW4StDnxm6V5-6w6tjBJDJrbpILDmXK_G5HTWo035_NSdLhgqFuEn2GvmE3QadfJX8BM2oGs0Tns-4TatYrMiQk9eUACHXJNmz5Zgdn7-MLM1O05ryGZZFLWqLSQnxkDIpgWkrg5Pik9VSXKYxEy-wwXpTo',
+                  uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB550YN3lKxry9QOC4oNfn0aeV1_1TIjXV7PtMxqTBp_uJQvFNPrSWF9gmqQ3jqpv8T1u44drXmEY4x3UPXpm4SwD2zSqyW2OYhSz1naNXMHb9M18RzshGRIPXbsYl6TOPzluRLQPbJ_vucMcPrPY0Ud4GKXVfIOUiFr8yn8f4HmNKjJ1Edqt4pXFgTpK0-P2UtbkbSGS4-PHJEAoP_66lMleAIMSkc6OpPuT4z2fCMRknEgSCE_lh2kvU8W3zyXkdp40CsdUgceu8',
                 }}
                 className="h-full w-full"
               />
