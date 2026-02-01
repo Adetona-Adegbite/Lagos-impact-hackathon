@@ -1,39 +1,37 @@
-import { Platform } from "react-native";
-import Constants from "expo-constants";
-import { MainInsightsInput, MainInsightsOutput } from "../src/types/insights";
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import { MainInsightsInput, MainInsightsOutput } from '../src/types/insights';
 
 // Use 10.0.2.2 for Android Emulator to access host machine's localhost
 // Use localhost for iOS Simulator
 // Replace with your machine's local IP address if testing on physical device
 const hostUri = Constants.expoConfig?.hostUri;
-const ipAddress = hostUri?.split(":")[0];
+const ipAddress = hostUri?.split(':')[0];
 
 const DEV_API_URL = ipAddress
   ? `http://${ipAddress}:3000`
   : Platform.select({
       // Fallback for when not running in Expo Go or with a dev client,
       // or for physical device testing.
-      android: "http://192.168.101.6:3000",
-      ios: "http://localhost:3000",
-      default: "http://localhost:3000",
+      android: 'http://192.168.101.6:3000',
+      ios: 'http://localhost:3000',
+      default: 'http://localhost:3000',
     });
 
 export const BASE_URL = DEV_API_URL;
 
 interface RequestConfig extends RequestInit {
   data?: any;
+  unwrap?: boolean;
 }
 
-async function request<T>(
-  endpoint: string,
-  config: RequestConfig = {},
-): Promise<T> {
-  const { data, headers, ...customConfig } = config;
+async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+  const { data, unwrap = true, headers, ...customConfig } = config;
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method: config.method || "GET",
+    method: config.method || 'GET',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...headers,
     },
     body: data ? JSON.stringify(data) : undefined,
@@ -43,11 +41,13 @@ async function request<T>(
   const responseData = await response.json();
 
   if (!response.ok) {
-    const error: any = new Error(
-      responseData.message || "Something went wrong",
-    );
+    const error: any = new Error(responseData.message || 'Something went wrong');
     error.status = response.status;
     throw error;
+  }
+
+  if (unwrap === false) {
+    return responseData;
   }
 
   return responseData.data || responseData;
@@ -55,15 +55,15 @@ async function request<T>(
 
 export const authApi = {
   requestOtp: (phoneNumber: string) => {
-    return request<{ message: string }>("/api/v1/auth/request-otp", {
-      method: "POST",
+    return request<{ message: string }>('/api/v1/auth/request-otp', {
+      method: 'POST',
       data: { phoneNumber },
     });
   },
 
   verifyOtp: (phoneNumber: string, code: string, shopName?: string) => {
-    return request<{ user: any; token: string }>("/api/v1/auth/verify-otp", {
-      method: "POST",
+    return request<{ user: any; token: string }>('/api/v1/auth/verify-otp', {
+      method: 'POST',
       data: { phoneNumber, code, shopName },
     });
   },
@@ -71,8 +71,8 @@ export const authApi = {
 
 export const productsApi = {
   create: (data: any, token: string) => {
-    return request<any>("/api/v1/products", {
-      method: "POST",
+    return request<any>('/api/v1/products', {
+      method: 'POST',
       data,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -80,7 +80,7 @@ export const productsApi = {
 
   update: (id: string, data: any, token: string) => {
     return request<any>(`/api/v1/products/${id}`, {
-      method: "PATCH",
+      method: 'PATCH',
       data,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -88,7 +88,7 @@ export const productsApi = {
 
   delete: (id: string, token: string) => {
     return request<any>(`/api/v1/products/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
   },
@@ -100,7 +100,7 @@ export const productsApi = {
   },
 
   getCategories: (token: string) => {
-    return request<string[]>("/api/v1/products/categories", {
+    return request<string[]>('/api/v1/products/categories', {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
@@ -110,15 +110,15 @@ export const productsApi = {
       `/api/v1/products/recommend-category?name=${encodeURIComponent(name)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
-      },
+      }
     );
   },
 };
 
 export const salesApi = {
   sync: (sales: any[], token: string) => {
-    return request<any>("/api/v1/sales/sync", {
-      method: "POST",
+    return request<any>('/api/v1/sales/sync', {
+      method: 'POST',
       data: { sales },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -140,8 +140,8 @@ export const salesApi = {
 export const inventoryApi = {
   update: (data: { productId: string; quantity: number }, token: string) => {
     // This endpoint should set the quantity for a product, not increment it.
-    return request<any>("/api/v1/inventory/set-quantity", {
-      method: "POST",
+    return request<any>('/api/v1/inventory/set-quantity', {
+      method: 'POST',
       data,
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -150,18 +150,20 @@ export const inventoryApi = {
 
 export const syncApi = {
   push: (data: { deviceId: string; operations: any[] }, token: string) => {
-    return request<any>("/api/v1/sync/push", {
-      method: "POST",
+    return request<any>('/api/v1/sync/push', {
+      method: 'POST',
       data,
       headers: { Authorization: `Bearer ${token}` },
+      unwrap: false,
     });
   },
 
   pull: (since: string | undefined, token: string) => {
-    const query = since ? `?since=${encodeURIComponent(since)}` : "";
+    const query = since ? `?since=${encodeURIComponent(since)}` : '';
     return request<any>(`/api/v1/sync/pull${query}`, {
-      method: "GET",
+      method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
+      unwrap: false,
     });
   },
 };
@@ -169,7 +171,7 @@ export const syncApi = {
 export const insightsApi = {
   generateMainInsights: (token: string, lang: string) => {
     return request<MainInsightsOutput>(`/api/v1/insights/main?lang=${lang}`, {
-      method: "GET",
+      method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });
   },

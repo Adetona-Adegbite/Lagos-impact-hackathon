@@ -1,14 +1,9 @@
-import cuid from "cuid";
-import { executeSql } from "../database";
-import { syncApi } from "../api";
+import cuid from 'cuid';
+import { executeSql } from '../database';
+import { syncApi } from '../api';
 
 // Types
-export type OpType =
-  | "CREATE"
-  | "UPDATE"
-  | "DELETE"
-  | "ADJUST_STOCK"
-  | "CREATE_SALE";
+export type OpType = 'CREATE' | 'UPDATE' | 'DELETE' | 'ADJUST_STOCK' | 'CREATE_SALE';
 
 export interface Operation {
   id: string; // clientOpId
@@ -35,26 +30,21 @@ export class SyncEngine {
   }
 
   private async getOrCreateDeviceId() {
-    const res = await executeSql(
-      "SELECT value FROM settings WHERE key = ?",
-      ["deviceId"]
-    );
+    const res = await executeSql('SELECT value FROM settings WHERE key = ?', ['deviceId']);
     if (res.rows.length > 0) {
       this.deviceId = res.rows.item(0).value;
     } else {
       this.deviceId = cuid();
-      await executeSql(
-        "INSERT INTO settings (key, value) VALUES (?, ?)",
-        ["deviceId", this.deviceId]
-      );
+      await executeSql('INSERT INTO settings (key, value) VALUES (?, ?)', [
+        'deviceId',
+        this.deviceId,
+      ]);
     }
-    console.log("[SyncEngine] Device ID:", this.deviceId);
+    console.log('[SyncEngine] Device ID:', this.deviceId);
   }
 
   private async getToken(): Promise<string | null> {
-    const result = await executeSql("SELECT value FROM settings WHERE key = ?", [
-      "token",
-    ]);
+    const result = await executeSql('SELECT value FROM settings WHERE key = ?', ['token']);
     if (result.rows.length > 0) {
       return result.rows.item(0).value;
     }
@@ -74,9 +64,7 @@ export class SyncEngine {
     const timestamp = Date.now();
     const payloadStr = JSON.stringify(payload);
 
-    console.log(
-      `[SyncEngine] Recording ${opType} on ${entityType}:${entityId}`
-    );
+    console.log(`[SyncEngine] Recording ${opType} on ${entityType}:${entityId}`);
 
     try {
       await executeSql(
@@ -90,14 +78,14 @@ export class SyncEngine {
       // We don't await this so UI doesn't block
       this.triggerSync();
     } catch (error) {
-      console.error("[SyncEngine] Failed to record action:", error);
+      console.error('[SyncEngine] Failed to record action:', error);
       throw error;
     }
   }
 
   startLoop() {
     if (this.syncInterval) return;
-    console.log("[SyncEngine] Starting sync loop");
+    console.log('[SyncEngine] Starting sync loop');
     this.syncInterval = setInterval(() => {
       this.triggerSync();
     }, SYNC_INTERVAL_MS);
@@ -131,7 +119,7 @@ export class SyncEngine {
       // 2. Pull Phase
       await this.pullPhase(token);
     } catch (error) {
-      console.error("[SyncEngine] Sync failed:", error);
+      console.error('[SyncEngine] Sync failed:', error);
     } finally {
       this.isSyncing = false;
     }
@@ -140,7 +128,7 @@ export class SyncEngine {
   private async pushPhase(token: string) {
     // 1. Get unsynced ops
     const res = await executeSql(
-      "SELECT * FROM operations_queue WHERE synced = 0 ORDER BY created_at ASC LIMIT 50"
+      'SELECT * FROM operations_queue WHERE synced = 0 ORDER BY created_at ASC LIMIT 50'
     );
 
     if (res.rows.length === 0) return;
@@ -174,24 +162,22 @@ export class SyncEngine {
       if (response.success) {
         // Mark successes as synced
         const successfulIds = response.data
-          .filter((r: any) => r.status !== "failed")
+          .filter((r: any) => r.status !== 'failed')
           .map((r: any) => r.clientOpId);
 
         if (successfulIds.length > 0) {
-          const placeholders = successfulIds.map(() => "?").join(",");
+          const placeholders = successfulIds.map(() => '?').join(',');
           await executeSql(
             `UPDATE operations_queue SET synced = 1 WHERE id IN (${placeholders})`,
             successfulIds
           );
-          console.log(
-            `[SyncEngine] Marked ${successfulIds.length} ops as synced`
-          );
+          console.log(`[SyncEngine] Marked ${successfulIds.length} ops as synced`);
         }
 
         // Handle failures? (currently just retry next time)
       }
     } catch (error) {
-      console.error("[SyncEngine] Push error:", error);
+      console.error('[SyncEngine] Push error:', error);
       throw error;
     }
   }
@@ -199,15 +185,12 @@ export class SyncEngine {
   private async pullPhase(token: string) {
     // 1. Get last sync timestamp
     let lastSync: string | undefined;
-    const res = await executeSql(
-      "SELECT value FROM settings WHERE key = ?",
-      ["lastSyncTimestamp"]
-    );
+    const res = await executeSql('SELECT value FROM settings WHERE key = ?', ['lastSyncTimestamp']);
     if (res.rows.length > 0) {
       lastSync = res.rows.item(0).value;
     }
 
-    console.log(`[SyncEngine] Pulling since ${lastSync || "beginning"}`);
+    console.log(`[SyncEngine] Pulling since ${lastSync || 'beginning'}`);
 
     try {
       const response = await syncApi.pull(lastSync, token);
@@ -216,22 +199,20 @@ export class SyncEngine {
         const { operations, lastSyncTimestamp } = response.data;
 
         if (operations && operations.length > 0) {
-          console.log(
-            `[SyncEngine] Applying ${operations.length} remote operations`
-          );
+          console.log(`[SyncEngine] Applying ${operations.length} remote operations`);
           await this.applyRemoteOperations(operations);
         } else {
-            console.log("[SyncEngine] No new operations");
+          console.log('[SyncEngine] No new operations');
         }
 
         // Update timestamp
-        await executeSql(
-          "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-          ["lastSyncTimestamp", lastSyncTimestamp]
-        );
+        await executeSql('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [
+          'lastSyncTimestamp',
+          lastSyncTimestamp,
+        ]);
       }
     } catch (error) {
-      console.error("[SyncEngine] Pull error:", error);
+      console.error('[SyncEngine] Pull error:', error);
       throw error;
     }
   }
@@ -247,22 +228,18 @@ export class SyncEngine {
       try {
         await this.applySingleOperation(op);
       } catch (e) {
-        console.error(
-          `[SyncEngine] Failed to apply remote op ${op.clientOpId}`,
-          e
-        );
+        console.error(`[SyncEngine] Failed to apply remote op ${op.clientOpId}`, e);
         // Continue to next op? Yes, best effort.
       }
     }
   }
 
   private async applySingleOperation(op: any) {
-    const payload =
-      typeof op.payload === "string" ? JSON.parse(op.payload) : op.payload;
+    const payload = typeof op.payload === 'string' ? JSON.parse(op.payload) : op.payload;
 
     switch (op.opType) {
-      case "CREATE":
-        if (op.entityType === "Product") {
+      case 'CREATE':
+        if (op.entityType === 'Product') {
           await executeSql(
             `INSERT OR REPLACE INTO products
               (id, name, barcode, category, sellingPrice, purchasePrice, createdAt, updatedAt, deleted, syncStatus)
@@ -288,19 +265,19 @@ export class SyncEngine {
         }
         break;
 
-      case "UPDATE":
-        if (op.entityType === "Product") {
+      case 'UPDATE':
+        if (op.entityType === 'Product') {
           // Construct dynamic update
           const fields = [];
           const values = [];
           for (const [key, value] of Object.entries(payload)) {
             // Safe-guard columns
-            if (["id", "userId", "createdAt", "updatedAt"].includes(key)) continue;
+            if (['id', 'userId', 'createdAt', 'updatedAt'].includes(key)) continue;
             fields.push(`${key} = ?`);
             values.push(value);
           }
 
-          fields.push("updatedAt = ?");
+          fields.push('updatedAt = ?');
           values.push(new Date().toISOString());
 
           fields.push("syncStatus = 'synced'");
@@ -308,24 +285,20 @@ export class SyncEngine {
           values.push(op.entityId);
 
           if (fields.length > 2) {
-            await executeSql(
-              `UPDATE products SET ${fields.join(", ")} WHERE id = ?`,
-              values
-            );
+            await executeSql(`UPDATE products SET ${fields.join(', ')} WHERE id = ?`, values);
           }
         }
         break;
 
-      case "DELETE":
-        if (op.entityType === "Product") {
-          await executeSql(
-            "UPDATE products SET deleted = 1, syncStatus = 'synced' WHERE id = ?",
-            [op.entityId]
-          );
+      case 'DELETE':
+        if (op.entityType === 'Product') {
+          await executeSql("UPDATE products SET deleted = 1, syncStatus = 'synced' WHERE id = ?", [
+            op.entityId,
+          ]);
         }
         break;
 
-      case "ADJUST_STOCK":
+      case 'ADJUST_STOCK':
         // Payload: { delta: number }
         if (payload.delta) {
           await executeSql(
@@ -335,7 +308,7 @@ export class SyncEngine {
         }
         break;
 
-      case "CREATE_SALE":
+      case 'CREATE_SALE':
         // Payload: { totalAmount, items: [...] }
         const createdAt = op.clientTimestamp || new Date().toISOString();
 
@@ -350,13 +323,7 @@ export class SyncEngine {
             // Insert Item
             await executeSql(
               `INSERT INTO sale_items (id, saleId, productId, quantity, priceAtSale) VALUES (?, ?, ?, ?, ?)`,
-              [
-                itemId,
-                op.entityId,
-                item.productId,
-                item.quantity,
-                item.priceAtSale,
-              ]
+              [itemId, op.entityId, item.productId, item.quantity, item.priceAtSale]
             );
 
             // Replicate Side-Effect: Decrement Stock
