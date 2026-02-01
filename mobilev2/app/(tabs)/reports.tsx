@@ -29,7 +29,9 @@ export default function ReportsScreen() {
   const [shopName, setShopName] = useState('My Shop');
 
   const [stats, setStats] = useState<ReportStats | null>(null);
+  const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -42,19 +44,24 @@ export default function ReportsScreen() {
   }, []);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await productService.getReportStats(range);
-        setStats(data);
+        setSelectedIndex(null);
+        const [statsData, salesData] = await Promise.all([
+          productService.getReportStats(range),
+          productService.getAllSales(),
+        ]);
+        setStats(statsData);
+        setSales(salesData);
       } catch (e) {
-        console.error('Failed to fetch report stats:', e);
+        console.error('Failed to fetch report data:', e);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, [range]);
 
   const filteredStats = useMemo(() => {
@@ -81,6 +88,51 @@ export default function ReportsScreen() {
     };
   }, [stats, query]);
 
+  const monthlyTrendData = useMemo(() => {
+    const salesByMonth: Record<string, number> = {};
+    sales.forEach((s) => {
+      const date = new Date(s.createdAt);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      salesByMonth[monthKey] = (salesByMonth[monthKey] || 0) + (s.totalAmount || 0);
+    });
+
+    const data = [];
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+      const label = monthLabels[d.getMonth()];
+      const total = salesByMonth[monthKey] || 0;
+      data.push({ label, total });
+    }
+
+    const maxTotal = Math.max(...data.map((d) => d.total), 0);
+    return data.map((d, i) => ({
+      ...d,
+      height: maxTotal > 0 ? Math.max((d.total / maxTotal) * 100, 5) : 5,
+      isCurrent: i === 5,
+    }));
+  }, [sales]);
+
+  const totalPeriodRevenue = useMemo(() => {
+    return monthlyTrendData.reduce((sum, d) => sum + d.total, 0);
+  }, [monthlyTrendData]);
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <StatusBar barStyle="light-content" />
@@ -91,8 +143,61 @@ export default function ReportsScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}>
+        {/* Monthly Revenue Graph */}
+        <View className="mt-4 px-5">
+          <Card className="rounded-[32px] border-border/50 bg-secondary p-5">
+            <View className="mb-6 flex-row items-center justify-between">
+              <View>
+                <Text className="mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  {selectedIndex !== null
+                    ? `${monthlyTrendData[selectedIndex].label} Revenue`
+                    : 'Revenue Trend (6m)'}
+                </Text>
+                <Text className="text-3xl font-black text-foreground">
+                  ₦
+                  {(selectedIndex !== null
+                    ? monthlyTrendData[selectedIndex].total
+                    : totalPeriodRevenue
+                  ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </Text>
+              </View>
+              <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary/20">
+                <TrendingUp size={24} className="text-primary" />
+              </View>
+            </View>
+
+            <View className="h-24 flex-row items-end gap-3 px-1">
+              {monthlyTrendData.map((item, i) => (
+                <TouchableOpacity
+                  key={i}
+                  className="flex-1 items-center"
+                  onPress={() => setSelectedIndex(selectedIndex === i ? null : i)}>
+                  <View
+                    style={{ height: `${item.height}%` }}
+                    className={cn(
+                      'w-full rounded-t-lg',
+                      selectedIndex === i
+                        ? 'bg-primary shadow-lg shadow-primary/50'
+                        : item.isCurrent && selectedIndex === null
+                          ? 'bg-primary shadow-lg shadow-primary/30'
+                          : 'bg-primary/20'
+                    )}
+                  />
+                  <Text
+                    className={cn(
+                      'mt-2 text-[8px] font-black',
+                      selectedIndex === i ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card>
+        </View>
+
         {/* Date range toggle */}
-        <View className="mb-4 px-5">
+        <View className="mb-4 mt-6 px-5">
           <View className="flex-row rounded-xl bg-secondary p-1">
             <TouchableOpacity
               className={cn(
