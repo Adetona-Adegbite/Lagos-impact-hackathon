@@ -78,19 +78,27 @@ export default function InventoryScreen() {
     }, [fetchProducts])
   );
 
-  const filters = useMemo(
-    () => [
-      { key: 'All Items', label: t('allItems') },
-      { key: 'Low Stock', label: t('lowStock') },
-      { key: 'Beverages', label: t('beverages') },
-      { key: 'Pantry', label: t('pantry') },
-      { key: 'Snacks', label: t('snacks') },
-    ],
-    []
-  );
-
   const lowStockCount = useMemo(() => {
     return products.filter((p) => p.lowStock).length;
+  }, [products]);
+
+  const filters = useMemo(() => {
+    const categories = Array.from(new Set(products.map((p) => p.category))).sort();
+    return [
+      { key: 'All Items', label: t('allItems') },
+      { key: 'Low Stock', label: t('lowStock') },
+      ...categories.map((cat) => {
+        const key = cat
+          .replace(/ & /g, ' And ')
+          .replace(/\//g, ' ')
+          .replace(/[(),]/g, '')
+          .split(/\s+/)
+          .map((w, i) => (i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)))
+          .join('');
+        const label = t(key as any);
+        return { key: cat, label: label === key ? cat : label };
+      }),
+    ];
   }, [products]);
 
   const filtered = useMemo(() => {
@@ -202,7 +210,7 @@ export default function InventoryScreen() {
                   <Text
                     className={cn(
                       'text-xs font-black',
-                      active ? 'uppercase text-primary-foreground' : 'text-muted-foreground'
+                      active ? 'text-primary-foreground' : 'text-muted-foreground'
                     )}>
                     {item.label}
                   </Text>

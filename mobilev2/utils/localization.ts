@@ -154,6 +154,107 @@ export interface Translation {
   all: string;
   productNotFound: string;
   goBack: string;
+
+  // Categories
+  softDrinks?: string;
+  bottledWater?: string;
+  alcoholicDrinks?: string;
+  energyDrinks?: string;
+  juices?: string;
+  milkAndDairy?: string;
+  yogurt?: string;
+  teaAndCoffee?: string;
+  biscuits?: string;
+  chocolates?: string;
+  candy?: string;
+  noodlesAndPasta?: string;
+  riceAndGrains?: string;
+  flour?: string;
+  sugar?: string;
+  cookingOil?: string;
+  cannedFoods?: string;
+  breakfastCereals?: string;
+  spicesAndSeasoning?: string;
+  frozenFoods?: string;
+  breadAndBakery?: string;
+  eggs?: string;
+  fruits?: string;
+  vegetables?: string;
+  meat?: string;
+  fish?: string;
+  condiments?: string;
+  sauces?: string;
+  instantFoods?: string;
+  babyFood?: string;
+  babyCare?: string;
+  cleaningSupplies?: string;
+  laundryDetergent?: string;
+  dishwashingLiquid?: string;
+  disinfectants?: string;
+  airFresheners?: string;
+  toiletries?: string;
+  soap?: string;
+  shampoo?: string;
+  toothpaste?: string;
+  toiletPaper?: string;
+  sanitaryProducts?: string;
+  maleGrooming?: string;
+  skincare?: string;
+  hairCare?: string;
+  cosmetics?: string;
+  stationery?: string;
+  batteries?: string;
+  electronicsAccessories?: string;
+  phoneAccessories?: string;
+  lightBulbs?: string;
+  cookingGasAccessories?: string;
+  kitchenware?: string;
+  plastics?: string;
+  utensils?: string;
+  potsAndPans?: string;
+  homeStorage?: string;
+  petFood?: string;
+  petCare?: string;
+  medicinesOTC?: string;
+  vitaminsAndSupplements?: string;
+  firstAid?: string;
+  herbalProducts?: string;
+  insecticides?: string;
+  pestControl?: string;
+  carAccessories?: string;
+  automotiveFluids?: string;
+  buildingMaterialsSmall?: string;
+  toolsAndHardware?: string;
+  gardenSupplies?: string;
+  seedsAndFertilizer?: string;
+  smallAppliances?: string;
+  clothingEssentials?: string;
+  footwear?: string;
+  underwear?: string;
+  socks?: string;
+  bags?: string;
+  schoolSupplies?: string;
+  toys?: string;
+  games?: string;
+  giftItems?: string;
+  religiousItems?: string;
+  candlesAndMatches?: string;
+  partySupplies?: string;
+  decorations?: string;
+  seasonalItems?: string;
+  iceCream?: string;
+  chilledDrinks?: string;
+  powderedMilk?: string;
+  grainsAndLegumes?: string;
+  snailLocalProteins?: string;
+  beautyFragrances?: string;
+  sportsDrinks?: string;
+  healthDrinks?: string;
+  cigarettes?: string;
+  matchesAndLighters?: string;
+  rechargeCards?: string;
+  posFintechItems?: string;
+  others?: string;
 }
 
 // Define the available languages and their translations
@@ -308,6 +409,107 @@ const translations: { [key: string]: Translation } = {
     all: 'All',
     productNotFound: 'Product Not Found',
     goBack: 'Go Back',
+
+    // Categories
+    softDrinks: 'Soft Drinks',
+    bottledWater: 'Bottled Water',
+    alcoholicDrinks: 'Alcoholic Drinks',
+    energyDrinks: 'Energy Drinks',
+    juices: 'Juices',
+    milkAndDairy: 'Milk & Dairy',
+    yogurt: 'Yogurt',
+    teaAndCoffee: 'Tea & Coffee',
+    biscuits: 'Biscuits',
+    chocolates: 'Chocolates',
+    candy: 'Candy',
+    noodlesAndPasta: 'Noodles & Pasta',
+    riceAndGrains: 'Rice & Grains',
+    flour: 'Flour',
+    sugar: 'Sugar',
+    cookingOil: 'Cooking Oil',
+    cannedFoods: 'Canned Foods',
+    breakfastCereals: 'Breakfast Cereals',
+    spicesAndSeasoning: 'Spices & Seasoning',
+    frozenFoods: 'Frozen Foods',
+    breadAndBakery: 'Bread & Bakery',
+    eggs: 'Eggs',
+    fruits: 'Fruits',
+    vegetables: 'Vegetables',
+    meat: 'Meat',
+    fish: 'Fish',
+    condiments: 'Condiments',
+    sauces: 'Sauces',
+    instantFoods: 'Instant Foods',
+    babyFood: 'Baby Food',
+    babyCare: 'Baby Care',
+    cleaningSupplies: 'Cleaning Supplies',
+    laundryDetergent: 'Laundry Detergent',
+    dishwashingLiquid: 'Dishwashing Liquid',
+    disinfectants: 'Disinfectants',
+    airFresheners: 'Air Fresheners',
+    toiletries: 'Toiletries',
+    soap: 'Soap',
+    shampoo: 'Shampoo',
+    toothpaste: 'Toothpaste',
+    toiletPaper: 'Toilet Paper',
+    sanitaryProducts: 'Sanitary Products',
+    maleGrooming: 'Male Grooming',
+    skincare: 'Skincare',
+    hairCare: 'Hair Care',
+    cosmetics: 'Cosmetics',
+    stationery: 'Stationery',
+    batteries: 'Batteries',
+    electronicsAccessories: 'Electronics Accessories',
+    phoneAccessories: 'Phone Accessories',
+    lightBulbs: 'Light Bulbs',
+    cookingGasAccessories: 'Cooking Gas Accessories',
+    kitchenware: 'Kitchenware',
+    plastics: 'Plastics',
+    utensils: 'Utensils',
+    potsAndPans: 'Pots & Pans',
+    homeStorage: 'Home Storage',
+    petFood: 'Pet Food',
+    petCare: 'Pet Care',
+    medicinesOTC: 'Medicines (OTC)',
+    vitaminsAndSupplements: 'Vitamins & Supplements',
+    firstAid: 'First Aid',
+    herbalProducts: 'Herbal Products',
+    insecticides: 'Insecticides',
+    pestControl: 'Pest Control',
+    carAccessories: 'Car Accessories',
+    automotiveFluids: 'Automotive Fluids',
+    buildingMaterialsSmall: 'Building Materials (Small)',
+    toolsAndHardware: 'Tools & Hardware',
+    gardenSupplies: 'Garden Supplies',
+    seedsAndFertilizer: 'Seeds & Fertilizer',
+    smallAppliances: 'Small Appliances',
+    clothingEssentials: 'Clothing Essentials',
+    footwear: 'Footwear',
+    underwear: 'Underwear',
+    socks: 'Socks',
+    bags: 'Bags',
+    schoolSupplies: 'School Supplies',
+    toys: 'Toys',
+    games: 'Games',
+    giftItems: 'Gift Items',
+    religiousItems: 'Religious Items',
+    candlesAndMatches: 'Candles & Matches',
+    partySupplies: 'Party Supplies',
+    decorations: 'Decorations',
+    seasonalItems: 'Seasonal Items',
+    iceCream: 'Ice Cream',
+    chilledDrinks: 'Chilled Drinks',
+    powderedMilk: 'Powdered Milk',
+    grainsAndLegumes: 'Grains & Legumes',
+    snailLocalProteins: 'Snail / Local Proteins',
+    beautyFragrances: 'Beauty Fragrances',
+    sportsDrinks: 'Sports Drinks',
+    healthDrinks: 'Health Drinks',
+    cigarettes: 'Cigarettes',
+    matchesAndLighters: 'Matches & Lighters',
+    rechargeCards: 'Recharge Cards',
+    posFintechItems: 'POS/Fintech Items',
+    others: 'Others',
   },
   pcm: {
     welcome: 'Welcome to Supamart',

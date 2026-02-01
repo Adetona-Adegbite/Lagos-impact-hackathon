@@ -1,3 +1,5 @@
+// NOTE: If you update these categories, please also update the translation files in
+// mobilev2/utils/localization.ts to ensure they are properly localized.
 export const PRODUCT_CATEGORIES = [
   "Beverages",
   "Soft Drinks",
@@ -99,4 +101,5 @@ export const PRODUCT_CATEGORIES = [
   "Matches & Lighters",
   "Recharge Cards",
   "POS/Fintech Items",
+  "Others",
 ];
