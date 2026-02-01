@@ -18,7 +18,7 @@ const DEV_API_URL = ipAddress
       default: 'http://localhost:3000',
     });
 
-export const BASE_URL = DEV_API_URL;
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEV_API_URL;
 
 interface RequestConfig extends RequestInit {
   data?: any;

@@ -33,6 +33,7 @@
     "expo": "~54.0.29",
     "expo-camera": "^17.0.10",
     "expo-constants": "~18.0.12",
+    "expo-dev-client": "~6.0.20",
     "expo-file-system": "^19.0.21",
     "expo-linking": "~8.0.10",
     "expo-print": "^15.0.8",

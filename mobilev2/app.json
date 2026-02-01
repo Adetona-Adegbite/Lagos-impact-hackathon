@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mobilev2",
-    "slug": "mobilev2",
+    "slug": "supamart",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -24,7 +24,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.tobshubltdsorganization.supamart"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8a6fe306-4e48-40cd-a0ae-630706b7613d"
+      }
+    },
+    "owner": "tobshub-ltds-organization"
   }
 }
