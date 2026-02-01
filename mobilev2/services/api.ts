@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { MainInsightsInput, MainInsightsOutput } from '../src/types/insights';
+import { MainInsightsInput, MainInsightsOutput } from '../types/insights';
 
 // Use 10.0.2.2 for Android Emulator to access host machine's localhost
 // Use localhost for iOS Simulator

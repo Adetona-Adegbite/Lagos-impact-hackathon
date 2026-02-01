@@ -80,6 +80,8 @@ export interface Translation {
   addItem: string;
   productDetails: string;
   noSalesFound: string;
+  inStock: string;
+  sold: string;
 
   // All Sales Screen
   dailySales: string;
@@ -101,6 +103,7 @@ export interface Translation {
   cash: string;
   pos: string;
   transfer: string;
+  sell: string;
 
   // Settings Screen
   logOut: string;
@@ -231,6 +234,9 @@ const translations: { [key: string]: Translation } = {
     addItem: 'Add Item',
     productDetails: 'Product details',
     noSalesFound: 'No sales found',
+    inStock: 'In Stock',
+    sold: 'Sold',
+
     // All Sales Screen
     dailySales: 'Daily Sales',
     businessAssistant: 'Business Assistant',
@@ -252,6 +258,8 @@ const translations: { [key: string]: Translation } = {
     cash: 'Cash',
     pos: 'POS',
     transfer: 'Transfer',
+    sell: 'Sell',
+
     // Settings Screen
     logOut: 'Log Out',
     logOutConfirmation: 'Are you sure you want to log out?',
