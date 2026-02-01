@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { Audio } from 'expo-av';
 import {
   Zap,
   ZapOff,
@@ -69,6 +70,7 @@ export default function ScanSellScreen() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound>();
 
   const scanY = useRef(new Animated.Value(0)).current;
   const scanBoxSize = Math.min(width * 0.65, 320);
@@ -92,6 +94,26 @@ export default function ScanSellScreen() {
       requestPermission();
     }
   }, [permission]);
+
+  useEffect(() => {
+    async function loadSound() {
+      try {
+        const { sound } = await Audio.Sound.createAsync(require('../assets/scan-sound.mp3'));
+        setSound(sound);
+      } catch (e) {
+        console.log('Error loading sound', e);
+      }
+    }
+    loadSound();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
 
   useEffect(() => {
     Animated.loop(
@@ -246,6 +268,14 @@ export default function ScanSellScreen() {
     const now = Date.now();
     if (now - lastScanTs.current < SCAN_COOLDOWN_MS) return;
     lastScanTs.current = now;
+
+    try {
+      if (sound) {
+        await sound.replayAsync();
+      }
+    } catch (error) {
+      console.log('Error playing sound', error);
+    }
 
     try {
       setLoading(true);
