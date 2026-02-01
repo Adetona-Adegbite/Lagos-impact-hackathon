@@ -2,15 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, ScrollView, FlatList, Pressable, Dimensions, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import {
-  ArrowLeft,
-  Search,
-  Sparkles,
-  TrendingUp,
-  ShoppingCart,
-  Plus,
-  Calendar,
-} from 'lucide-react-native';
+import { Search, Sparkles, TrendingUp, ShoppingCart, Plus, Calendar } from 'lucide-react-native';
 import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
 import { SaleItem } from '@/components/SaleItem';
@@ -19,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ScreenHeader } from '@/components/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -98,24 +91,15 @@ export default function AllSalesScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-5 py-4">
-        <View className="flex-row items-center gap-4">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
+      <ScreenHeader
+        title={t('allSales')}
+        className="border-b-0 px-5 py-4"
+        rightAdornment={
+          <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
+            <Calendar size={20} color="white" />
           </Button>
-          <Text variant="h3" className="font-black text-foreground">
-            {t('allSales')}
-          </Text>
-        </View>
-        <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
-          <Calendar size={20} color="white" />
-        </Button>
-      </View>
+        }
+      />
 
       <ScrollView
         className="flex-1"

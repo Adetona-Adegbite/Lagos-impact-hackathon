@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import {
-  ArrowLeft,
   Search,
   SlidersHorizontal,
   Bell,
@@ -29,6 +28,7 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { ScreenHeader } from '@/components/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -157,26 +157,15 @@ export default function InventoryScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between border-b border-border/10 px-5 py-3">
-        <View className="flex-row items-center gap-4">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
+      <ScreenHeader
+        title={t('inventory')}
+        rightAdornment={
+          <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
+            <Bell size={20} color="white" />
+            <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
           </Button>
-          <Text variant="h3" className="font-black text-foreground">
-            {t('inventory')}
-          </Text>
-        </View>
-
-        <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
-          <Bell size={20} color="white" />
-          <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
-        </Button>
-      </View>
+        }
+      />
 
       {/* Search & Filter */}
       <View className="gap-4 px-5 pt-4">

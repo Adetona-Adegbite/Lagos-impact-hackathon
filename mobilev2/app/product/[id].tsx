@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  ArrowLeft,
   Edit3,
   Package,
   History,
@@ -26,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ProductFormModal, ProductFormData } from '@/components/ProductFormModal';
+import { ScreenHeader } from '@/components/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -190,29 +190,18 @@ export default function ProductDetailsScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between border-b border-border/10 px-5 py-3">
-        <View className="flex-row items-center gap-4">
+      <ScreenHeader
+        title={t('productDetails')}
+        rightAdornment={
           <Button
             variant="secondary"
             size="icon"
             className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
+            onPress={() => setEditModalVisible(true)}>
+            <Edit3 size={20} color="white" />
           </Button>
-          <Text variant="h3" className="font-black text-foreground" numberOfLines={1}>
-            {t('productDetails')}
-          </Text>
-        </View>
-
-        <Button
-          variant="secondary"
-          size="icon"
-          className="h-10 w-10 rounded-full bg-secondary"
-          onPress={() => setEditModalVisible(true)}>
-          <Edit3 size={20} color="white" />
-        </Button>
-      </View>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40 }}

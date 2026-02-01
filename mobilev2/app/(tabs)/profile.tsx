@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { authStorage } from '@/services/authStorage';
 import { clearDatabase, initDatabase } from '@/services/database';
 import { useColorScheme } from 'nativewind';
+import { ScreenHeader } from '@/components/ScreenHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -93,21 +94,7 @@ export default function ProfileScreen() {
     <SafeAreaView
       edges={['top']}
       style={[styles.container, { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' }]}>
-        <View style={styles.headerLeft}>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
-          </Button>
-          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#111827' }]}>
-            {t('settings')}
-          </Text>
-        </View>
-      </View>
+      <ScreenHeader title={t('settings')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Section */}

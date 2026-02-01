@@ -3,7 +3,6 @@ import { View, ScrollView, ActivityIndicator, StatusBar, Pressable } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
-  ArrowLeft,
   Check,
   Banknote,
   // Sparkles,
@@ -19,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
 import { cn } from '@/lib/utils';
+import { ScreenHeader } from '@/components/ScreenHeader';
 
 type SaleItemDetail = {
   id: string;
@@ -95,22 +95,7 @@ export default function SalesReceiptScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between border-b border-border/10 px-5 py-3">
-        <View className="flex-row items-center gap-4">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
-          </Button>
-          <Text variant="h3" className="font-black text-foreground">
-            Receipt #{sale.id.slice(-4).toUpperCase()}
-          </Text>
-        </View>
-        <View className="w-10" />
-      </View>
+      <ScreenHeader title={`Receipt #${sale.id.slice(-4).toUpperCase()}`} />
 
       <ScrollView
         className="flex-1"
