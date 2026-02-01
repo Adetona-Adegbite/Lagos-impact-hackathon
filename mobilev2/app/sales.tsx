@@ -494,7 +494,7 @@ export default function ScanSellScreen() {
         <View className="pointer-events-none absolute inset-0 z-0 items-center justify-center">
           <View
             style={{ width: scanBoxSize, height: scanBoxSize }}
-            className="overflow-hidden rounded-[32px] border-2 border-white/30 bg-white/5">
+            className="overflow-hidden rounded-2xl border-2 border-white/30 bg-white/5">
             <View className="absolute left-0 top-0 h-10 w-10 rounded-tl-2xl border-l-4 border-t-4 border-primary" />
             <View className="absolute right-0 top-0 h-10 w-10 rounded-tr-2xl border-r-4 border-t-4 border-primary" />
             <View className="absolute bottom-0 left-0 h-10 w-10 rounded-bl-2xl border-b-4 border-l-4 border-primary" />
