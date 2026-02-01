@@ -78,6 +78,8 @@ export interface Translation {
   snacks: string;
   quantity: string;
   addItem: string;
+  productDetails: string;
+  noSalesFound: string;
 
   // All Sales Screen
   dailySales: string;
@@ -130,7 +132,6 @@ export interface Translation {
   // sellscan Screen
   scannedItems: string;
   cart: string;
-  productDetails: string;
   category: string;
   price: string;
   stockStatus: string;
@@ -228,6 +229,8 @@ const translations: { [key: string]: Translation } = {
     snacks: 'Snacks',
     quantity: 'Qty',
     addItem: 'Add Item',
+    productDetails: 'Product details',
+    noSalesFound: 'No sales found',
     // All Sales Screen
     dailySales: 'Daily Sales',
     businessAssistant: 'Business Assistant',
@@ -278,7 +281,6 @@ const translations: { [key: string]: Translation } = {
     // Sellscan Screen
     scannedItems: 'Scanned Items',
     cart: 'Cart',
-    productDetails: 'Product Details',
     category: 'Category',
     price: 'Price',
     stockStatus: 'Stock Status',

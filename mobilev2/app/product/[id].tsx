@@ -201,7 +201,7 @@ export default function ProductDetailsScreen() {
             <ArrowLeft size={22} color="white" />
           </Button>
           <Text variant="h3" className="font-black text-foreground" numberOfLines={1}>
-            {product.name}
+            {t('productDetails')}
           </Text>
         </View>
 
@@ -333,7 +333,7 @@ export default function ProductDetailsScreen() {
             <View className="items-center rounded-3xl border border-dashed border-border bg-secondary/10 py-12">
               <TrendingUp size={32} className="mb-2 text-muted-foreground/20" />
               <Text className="text-sm font-bold italic text-muted-foreground">
-                {t('noSalesFound')}
+                {t('noSalesFound')}{' '}
               </Text>
             </View>
           ) : (
