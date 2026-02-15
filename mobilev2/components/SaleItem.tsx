@@ -26,6 +26,18 @@ export const SaleItem = ({ item }: SaleItemProps) => {
   const { colorScheme } = useColorScheme();
   const mutedForeground = THEME[colorScheme ?? 'light'].mutedForeground;
 
+  const createdAt = new Date(item.createdAt);
+  const isToday = createdAt.toDateString() === new Date().toDateString();
+  const dateDisplay = isToday
+    ? createdAt.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : createdAt.toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric',
+      });
+
   return (
     <Pressable
       onPress={() =>
@@ -45,10 +57,7 @@ export const SaleItem = ({ item }: SaleItemProps) => {
           </Text>
           <View className="mt-0.5 flex-row items-center gap-2">
             <Text variant="muted" className="text-[10px] font-bold">
-              {new Date(item.createdAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {dateDisplay}
             </Text>
             <View className="h-1 w-1 rounded-full bg-muted-foreground/30" />
             <Text variant="muted" className="text-[10px] font-bold uppercase tracking-tight">
