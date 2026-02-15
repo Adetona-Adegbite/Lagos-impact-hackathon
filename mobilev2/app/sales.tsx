@@ -52,6 +52,11 @@ type CartItem = {
   productId: string;
 };
 
+// TODO(tobani):
+// update the checkout flow to ask if the sale has been paid for
+// if it hasnt it should have a special section on the sales ui,
+// i'd like to add special support for 'credit' where you can specify their details to keep track of what they owe
+
 export default function ScanSellScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ initialMode: string }>();
