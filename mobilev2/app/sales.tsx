@@ -1,22 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
-  Image,
-  FlatList,
   Animated,
   Dimensions,
   StatusBar,
   Alert,
   Modal,
-  Platform,
-  KeyboardAvoidingView,
   ActivityIndicator,
   Pressable,
+  FlatList,
 } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { Audio } from 'expo-av';
+import { CameraView, BarcodeScanningResult } from 'expo-camera';
 import {
   Zap,
   ZapOff,
@@ -41,244 +37,116 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { t } from '@/utils/localization';
+import { CartItem } from '@/types/cart';
+
+// Hooks
+import { useCarts } from '@/hooks/sales/useCarts';
+import { useScanner } from '@/hooks/sales/useScanner';
+import { useProductManagement } from '@/hooks/sales/useProductManagement';
+import { useCheckout } from '@/hooks/sales/useCheckout';
+import { useSound } from '@/hooks/sales/useSound';
 
 const { width } = Dimensions.get('window');
-const SCAN_COOLDOWN_MS = 1500;
-
-type CartItem = {
-  id: string;
-  title: string;
-  unitPrice: number;
-  qty: number;
-  image?: string | null;
-  productId: string;
-};
-
-type Cart = {
-  id: string;
-  items: CartItem[];
-};
 
 export default function ScanSellScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ initialMode: string }>();
-  const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView | null>(null);
-  const [facing, setFacing] = useState<'back' | 'front'>('back');
-  const [torch, setTorch] = useState(false);
+  const params = useLocalSearchParams();
   const { colorScheme } = useColorScheme();
 
-  const [mode, setMode] = useState<'sell' | 'stock'>((params.initialMode as any) || 'sell');
-
-  useEffect(() => {
-    if (params.initialMode) {
-      const targetMode = params.initialMode as any;
-      setMode(targetMode);
-      if (targetMode === 'stock') {
-        setActiveCartId('inventory');
-      } else if (targetMode === 'sell') {
-        setActiveCartId((prev) => (prev === 'inventory' ? carts[0].id : prev));
-      }
-    }
-  }, [params.initialMode]);
-
-  const [carts, setCarts] = useState<Cart[]>([
-    { id: Math.random().toString(36).substring(7), items: [] },
-    { id: 'inventory', items: [] },
-  ]);
-  const [activeCartId, setActiveCartId] = useState<string>(
-    params.initialMode === 'stock' ? 'inventory' : carts[0].id
+  const [mode, setMode] = useState<'sell' | 'stock'>(
+    params.initialMode === 'stock' ? 'stock' : 'sell'
   );
-
-  const activeCart = useMemo(
-    () => carts.find((c) => c.id === activeCartId) || carts[0],
-    [carts, activeCartId]
-  );
-  const cart = activeCart.items;
-  const activeCartIndex = useMemo(
-    () => carts.findIndex((c) => c.id === activeCartId),
-    [carts, activeCartId]
-  );
-
-  const setCart = useCallback(
-    (newItems: CartItem[] | ((prev: CartItem[]) => CartItem[])) => {
-      setCarts((prevCarts) =>
-        prevCarts.map((c) => {
-          if (c.id !== activeCartId) return c;
-          return {
-            ...c,
-            items: typeof newItems === 'function' ? newItems(c.items) : newItems,
-          };
-        })
-      );
-    },
-    [activeCartId]
-  );
-
-  const addNewCart = () => {
-    const newId = Math.random().toString(36).substring(7);
-    setCarts([...carts, { id: newId, items: [] }]);
-    setActiveCartId(newId);
-  };
-
-  const removeCart = (id: string) => {
-    if (id === 'inventory') return;
-
-    const salesCarts = carts.filter((c) => c.id !== 'inventory');
-    if (salesCarts.length <= 1) {
-      setCart([]);
-      return;
-    }
-    const newCarts = carts.filter((c) => c.id !== id);
-    setCarts(newCarts);
-    if (activeCartId === id) {
-      // If we removed the active cart, switch to another sales cart if possible
-      const remainingSales = newCarts.filter((c) => c.id !== 'inventory');
-      if (remainingSales.length > 0) {
-        setActiveCartId(remainingSales[remainingSales.length - 1].id);
-      } else {
-        setActiveCartId('inventory');
-      }
-    }
-  };
   const [loading, setLoading] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound>();
 
-  const scanY = useRef(new Animated.Value(0)).current;
-  const scanBoxSize = Math.min(width * 0.65, 320);
   const lastScanTs = useRef<number>(0);
+  const SCAN_COOLDOWN_MS = 1000;
 
-  const [enterModalVisible, setEnterModalVisible] = useState(false);
-  const [enteredCode, setEnteredCode] = useState('');
+  // Custom Hooks
+  const {
+    carts,
+    setCarts,
+    activeCartId,
+    setActiveCartId,
+    activeCartItems,
+    setActiveCartItems,
+    addNewCart,
+    removeCart,
+    changeCartQty,
+    clearActiveCart,
+  } = useCarts(params.initialMode === 'stock' ? 'stock' : 'sell');
 
-  const [productModalVisible, setProductModalVisible] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<
-    (Partial<ProductFormData> & { id?: string }) | null
-  >(null);
+  const {
+    permission,
+    requestPermission,
+    cameraRef,
+    facing,
+    torch,
+    setTorch,
+    isScannerPaused,
+    setIsScannerPaused,
+    toggleTorch,
+    toggleCameraType,
+  } = useScanner();
 
-  const [isNewProduct, setIsNewProduct] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [isScannerPaused, setIsScannerPaused] = useState(false);
+  const {
+    productModalVisible,
+    setProductModalVisible,
+    currentProduct,
+    setCurrentProduct,
+    isNewProduct,
+    setIsNewProduct,
+    categories,
+    fetchCategories,
+    handleRecommendCategory,
+    enterModalVisible,
+    setEnterModalVisible,
+    enteredCode,
+    setEnteredCode,
+  } = useProductManagement();
+
+  const { playSound } = useSound();
+
+  // Animation
+  const scanY = useRef(new Animated.Value(0)).current;
+  const scanBoxSize = width * 0.7;
 
   useEffect(() => {
-    if (permission === null) return;
-    if (!permission.granted) {
-      requestPermission();
-    }
-  }, [permission]);
-
-  useEffect(() => {
-    async function loadSound() {
-      try {
-        const { sound } = await Audio.Sound.createAsync(require('../assets/scan-sound.mp3'));
-        setSound(sound);
-      } catch (e) {
-        console.log('Error loading sound', e);
-      }
-    }
-    loadSound();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  useEffect(() => {
-    Animated.loop(
+    const animate = () => {
       Animated.sequence([
         Animated.timing(scanY, {
-          toValue: -scanBoxSize / 2 + 10,
-          duration: 0,
+          toValue: scanBoxSize,
+          duration: 1500,
           useNativeDriver: true,
         }),
         Animated.timing(scanY, {
-          toValue: scanBoxSize / 2 - 10,
-          duration: 1800,
+          toValue: 0,
+          duration: 1500,
           useNativeDriver: true,
         }),
-      ])
-    ).start();
+      ]).start(() => animate());
+    };
+    animate();
   }, [scanY, scanBoxSize]);
 
-  const initialFormData = useMemo(
-    () =>
-      currentProduct
-        ? {
-            name: currentProduct.name,
-            barcode: currentProduct.barcode,
-            sellingPrice: currentProduct.sellingPrice,
-            purchasePrice: currentProduct.purchasePrice,
-            category: currentProduct.category,
-            quantity: currentProduct.quantity,
-          }
-        : undefined,
-    [currentProduct]
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const totalAmount = useMemo(
+    () => activeCartItems.reduce((sum, item) => sum + item.unitPrice * item.qty, 0),
+    [activeCartItems]
   );
 
-  const totalAmount = useMemo(() => cart.reduce((s, it) => s + it.qty * it.unitPrice, 0), [cart]);
+  const { onCheckout } = useCheckout({
+    cart: activeCartItems,
+    totalAmount,
+    activeCartId,
+    setCarts,
+    setIsScannerPaused,
+    setLoading,
+  });
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const fetchedCategories = await productService.getCategories();
-        setCategories(fetchedCategories);
-      } catch (error) {
-        setCategories(['General', 'Snacks', 'Beverages']);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  const handleRecommendCategory = async (name: string) => {
-    try {
-      const res = await productService.recommendCategory(name);
-      return res.category;
-    } catch (e) {
-      console.log('Category suggestion failed', e);
-      return undefined;
-    }
-  };
-
-  const handleEditCartItem = async (item: CartItem) => {
-    try {
-      setLoading(true);
-      const product = await productService.getProductById(item.productId);
-
-      if (product) {
-        setCurrentProduct({
-          id: product.id,
-          barcode: product.barcode,
-          name: product.name,
-          sellingPrice: product.sellingPrice,
-          quantity: item.qty,
-          category: product.category,
-          purchasePrice: product.purchasePrice,
-        });
-        setIsNewProduct(false);
-        setProductModalVisible(true);
-      } else {
-        Alert.alert('Error', 'Product not found');
-      }
-    } catch (error) {
-      console.log('Error loading product for edit', error);
-      Alert.alert('Error', 'Failed to load product details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const changeCartQty = (id: string, delta: number) =>
-    setCart((prev) =>
-      prev
-        .map((it) => (it.id === id ? { ...it, qty: Math.max(0, it.qty + delta) } : it))
-        .filter((it) => it.qty > 0)
-    );
-
-  const clearAllCart = () => {
+  const handleClearCart = () => {
     setIsScannerPaused(true);
     Alert.alert(
       'Clear cart',
@@ -293,7 +161,7 @@ export default function ScanSellScreen() {
           text: 'Clear',
           style: 'destructive',
           onPress: () => {
-            setCart([]);
+            clearActiveCart();
             setIsScannerPaused(false);
           },
         },
@@ -302,91 +170,34 @@ export default function ScanSellScreen() {
     );
   };
 
-  const onCheckout = async () => {
-    if (cart.length === 0) return;
-
+  const handleEditCartItem = async (item: CartItem) => {
     setIsScannerPaused(true);
-    Alert.alert(
-      'Checkout',
-      `Total: ₦${totalAmount.toLocaleString()}`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => setIsScannerPaused(false),
-        },
-        {
-          text: 'Pay',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const itemsToProcess = cart.map((item) => ({
-                productId: item.productId,
-                quantity: item.qty,
-                price: item.unitPrice,
-              }));
-              await productService.processSale(itemsToProcess);
-
-              setCarts((prevCarts) =>
-                prevCarts.map((c) => {
-                  if (c.id === activeCartId) {
-                    return { ...c, items: [] };
-                  }
-                  if (c.id === 'inventory') {
-                    return {
-                      ...c,
-                      items: c.items.map((invItem) => {
-                        const soldItem = itemsToProcess.find(
-                          (sold) => sold.productId === invItem.productId
-                        );
-                        if (soldItem) {
-                          return {
-                            ...invItem,
-                            qty: Math.max(0, invItem.qty - soldItem.quantity),
-                          };
-                        }
-                        return invItem;
-                      }),
-                    };
-                  }
-                  return c;
-                })
-              );
-
-              Alert.alert(
-                'Success',
-                'Sale recorded successfully!',
-                [{ text: 'OK', onPress: () => setIsScannerPaused(false) }],
-                { onDismiss: () => setIsScannerPaused(false) }
-              );
-            } catch (error) {
-              Alert.alert(
-                'Error',
-                'Failed to process sale.',
-                [{ text: 'OK', onPress: () => setIsScannerPaused(false) }],
-                { onDismiss: () => setIsScannerPaused(false) }
-              );
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ],
-      { onDismiss: () => setIsScannerPaused(false) }
-    );
-  };
-
-  const toggleTorch = () => setTorch((prev) => !prev);
-  const toggleCameraType = () => setFacing((t) => (t === 'back' ? 'front' : 'back'));
-
-  const handleEnterCodeConfirm = () => {
-    if (!enteredCode.trim()) {
-      Alert.alert('Enter code', 'Please enter a code.');
-      return;
+    setLoading(true);
+    try {
+      const product = await productService.getProductById(item.productId);
+      if (product) {
+        setCurrentProduct({
+          id: product.id,
+          barcode: product.barcode,
+          name: product.name,
+          sellingPrice: product.sellingPrice,
+          quantity: product.quantity || 0,
+          category: product.category,
+          purchasePrice: product.purchasePrice,
+        });
+        setIsNewProduct(false);
+        setProductModalVisible(true);
+      } else {
+        Alert.alert('Error', 'Product details not found.');
+        setIsScannerPaused(false);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Failed to load product details.');
+      setIsScannerPaused(false);
+    } finally {
+      setLoading(false);
     }
-    handleScannedCode(enteredCode.trim());
-    setEnteredCode('');
-    setEnterModalVisible(false);
   };
 
   const handleScannedCode = async (barcode: string) => {
@@ -394,13 +205,7 @@ export default function ScanSellScreen() {
     if (now - lastScanTs.current < SCAN_COOLDOWN_MS) return;
     lastScanTs.current = now;
 
-    try {
-      if (sound) {
-        await sound.replayAsync();
-      }
-    } catch (error) {
-      console.log('Error playing sound', error);
-    }
+    playSound();
 
     try {
       setLoading(true);
@@ -435,7 +240,7 @@ export default function ScanSellScreen() {
         }
       } else {
         if (product) {
-          setCart((prev) => {
+          setActiveCartItems((prev) => {
             const found = prev.find((p) => p.productId === product.id);
             if (found) {
               return prev.map((p) => (p.productId === product.id ? { ...p, qty: p.qty + 1 } : p));
@@ -512,7 +317,7 @@ export default function ScanSellScreen() {
         });
 
         if (mode === 'sell') {
-          setCart((prev) => [
+          setActiveCartItems((prev) => [
             ...prev,
             {
               id: Date.now().toString(),
@@ -524,7 +329,7 @@ export default function ScanSellScreen() {
             },
           ]);
         } else if (mode === 'stock') {
-          setCart((prev) => [
+          setActiveCartItems((prev) => [
             ...prev,
             {
               id: Date.now().toString(),
@@ -545,42 +350,22 @@ export default function ScanSellScreen() {
         });
         await productService.updateInventory(currentProduct.id, data.quantity);
 
-        if (mode === 'sell') {
-          setCart((prev) =>
-            prev.map((item) =>
-              item.productId === currentProduct.id
-                ? { ...item, title: data.name, unitPrice: data.sellingPrice }
-                : item
-            )
-          );
-        } else if (mode === 'stock') {
-          setCart((prev) => {
-            const found = prev.find((p) => p.productId === currentProduct.id);
-            if (found) {
-              return prev.map((p) =>
-                p.productId === currentProduct.id
-                  ? {
-                      ...p,
-                      qty: data.quantity,
-                      title: data.name,
-                      unitPrice: data.sellingPrice,
-                    }
-                  : p
-              );
-            }
-            return [
-              ...prev,
-              {
-                id: Date.now().toString(),
-                productId: currentProduct.id!,
-                title: data.name,
-                unitPrice: data.sellingPrice,
-                qty: data.quantity,
-                image: null,
-              },
-            ];
-          });
-        }
+        setCarts((prevCarts) =>
+          prevCarts.map((c) => ({
+            ...c,
+            items: c.items.map((item) => {
+              if (item.productId === currentProduct.id) {
+                return {
+                  ...item,
+                  title: data.name,
+                  unitPrice: data.sellingPrice,
+                  qty: mode === 'stock' && c.id === 'inventory' ? data.quantity : item.qty,
+                };
+              }
+              return item;
+            }),
+          }))
+        );
       }
       setProductModalVisible(false);
       setIsScannerPaused(false);
@@ -591,6 +376,16 @@ export default function ScanSellScreen() {
     }
   };
 
+  const handleEnterCodeConfirm = () => {
+    if (!enteredCode.trim()) {
+      Alert.alert('Enter code', 'Please enter a code.');
+      return;
+    }
+    handleScannedCode(enteredCode.trim());
+    setEnteredCode('');
+    setEnterModalVisible(false);
+  };
+
   const handleCloseModal = () => {
     setProductModalVisible(false);
     setIsScannerPaused(false);
@@ -599,6 +394,15 @@ export default function ScanSellScreen() {
   const onBarcodeScanned = (result: BarcodeScanningResult) => {
     if (isScannerPaused || loading || enterModalVisible || productModalVisible) return;
     if (result.data) handleScannedCode(result.data);
+  };
+
+  const initialFormData: ProductFormData = {
+    name: currentProduct?.name || '',
+    barcode: currentProduct?.barcode || '',
+    sellingPrice: currentProduct?.sellingPrice || 0,
+    purchasePrice: currentProduct?.purchasePrice || 0,
+    category: currentProduct?.category || categories[0] || 'General',
+    quantity: currentProduct?.quantity || 1,
   };
 
   if (permission && !permission.granted) {
@@ -749,13 +553,13 @@ export default function ScanSellScreen() {
             </Text>
             {mode === 'sell' && (
               <Text variant="muted" className="text-xs font-bold uppercase">
-                {cart.length} {t('items')}
+                {activeCartItems.length} {t('items')}
               </Text>
             )}
           </View>
           <View className="flex-row items-center gap-4">
-            {cart.length > 0 && mode === 'sell' && (
-              <Pressable onPress={clearAllCart}>
+            {activeCartItems.length > 0 && mode === 'sell' && (
+              <Pressable onPress={handleClearCart}>
                 <Text className="text-xs font-bold uppercase tracking-tighter text-destructive">
                   Clear All
                 </Text>
@@ -816,7 +620,7 @@ export default function ScanSellScreen() {
 
         <View className="mb-4 max-h-60">
           <FlatList
-            data={cart}
+            data={activeCartItems}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
@@ -888,7 +692,7 @@ export default function ScanSellScreen() {
           <Button
             className="h-16 flex-row items-center justify-between rounded-3xl bg-primary px-6 shadow-xl shadow-primary/30"
             onPress={onCheckout}
-            disabled={cart.length === 0}>
+            disabled={activeCartItems.length === 0}>
             <View>
               <Text className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/70">
                 Total Amount
@@ -955,7 +759,7 @@ export default function ScanSellScreen() {
         initialData={initialFormData}
         isNewProduct={isNewProduct}
         categories={categories}
-        onRecommendCategory={handleRecommendCategory}
+        onRecommendCategory={(name) => handleRecommendCategory(name).then((r) => r?.category)}
       />
 
       {loading && (
