@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -44,10 +45,15 @@ type UIProduct = {
 
 export default function InventoryScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ filter?: string }>();
   const [query, setQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All Items');
+  const [activeFilter, setActiveFilter] = useState(params.filter || 'All Items');
   const [products, setProducts] = useState<UIProduct[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setActiveFilter(params.filter || 'All Items');
+  }, [params.filter]);
 
   const fetchProducts = useCallback(async () => {
     try {

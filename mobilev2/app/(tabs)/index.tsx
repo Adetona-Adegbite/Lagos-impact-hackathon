@@ -25,6 +25,7 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useColorScheme } from 'nativewind';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.62);
@@ -36,6 +37,7 @@ type StatCard = {
   icon: any;
   color: string;
   hint?: string;
+  onPress?: () => void;
 };
 
 export default function RetailHomeScreen() {
@@ -47,6 +49,7 @@ export default function RetailHomeScreen() {
     totalItems: 0,
   });
   const [recentSales, setRecentSales] = useState<any[]>([]);
+  const { colorScheme } = useColorScheme();
 
   const ACTIONS = [
     {
@@ -129,7 +132,7 @@ export default function RetailHomeScreen() {
       value: `₦${stats.todaySales.toLocaleString()}`,
       icon: CreditCard,
       color: 'text-primary',
-      hint: '+12%',
+      onPress: () => router.push('/all-sales'),
     },
     {
       id: 's2',
@@ -137,6 +140,7 @@ export default function RetailHomeScreen() {
       value: `${stats.lowStock} ${t('items')}`,
       icon: AlertTriangle,
       color: 'text-orange-500',
+      onPress: () => router.push({ pathname: '/inventory', params: { filter: 'Low Stock' } }),
     },
     {
       id: 's3',
@@ -144,30 +148,33 @@ export default function RetailHomeScreen() {
       value: `${stats.totalItems}`,
       icon: Package,
       color: 'text-blue-400',
+      onPress: () => router.push('/inventory'),
     },
   ];
 
   const renderStat = ({ item }: { item: StatCard }) => (
-    <Card style={{ width: CARD_WIDTH }} className="mr-3 border-border bg-secondary p-4">
-      <View className="mb-4 flex-row items-center justify-between">
-        <View className={cn('h-11 w-11 items-center justify-center rounded-xl bg-background/50')}>
-          <item.icon size={22} className={item.color} />
-        </View>
-        {item.hint && (
-          <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
-            <TrendingUp size={12} className="text-primary" />
-            <Text className="text-[10px] font-bold text-primary">{item.hint}</Text>
+    <Pressable onPress={item.onPress}>
+      <Card style={{ width: CARD_WIDTH }} className="mr-3 border-border bg-secondary p-4">
+        <View className="mb-4 flex-row items-center justify-between">
+          <View className={cn('h-11 w-11 items-center justify-center rounded-xl bg-background/50')}>
+            <item.icon size={22} className={item.color} />
           </View>
-        )}
-      </View>
+          {item.hint && (
+            <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
+              <TrendingUp size={12} className="text-primary" />
+              <Text className="text-[10px] font-bold text-primary">{item.hint}</Text>
+            </View>
+          )}
+        </View>
 
-      <View>
-        <Text variant="muted" className="mb-1 text-xs font-bold uppercase tracking-wider">
-          {item.title}
-        </Text>
-        <Text className="text-2xl font-black text-foreground">{item.value}</Text>
-      </View>
-    </Card>
+        <View>
+          <Text variant="muted" className="mb-1 text-xs font-bold uppercase tracking-wider">
+            {item.title}
+          </Text>
+          <Text className="text-2xl font-black text-foreground">{item.value}</Text>
+        </View>
+      </Card>
+    </Pressable>
   );
 
   return (
@@ -210,13 +217,10 @@ export default function RetailHomeScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}>
         {/* Stats Section */}
-        <View className="mb-2 mt-4 flex-row items-end justify-between px-5">
+        <View className="mb-2 mt-4 px-5">
           <Text className="text-xs font-black uppercase tracking-widest text-muted-foreground">
             {t('overview')}
           </Text>
-          <Pressable>
-            <Text className="text-xs font-bold text-primary">{t('viewReports')}</Text>
-          </Pressable>
         </View>
 
         <FlatList
@@ -228,12 +232,7 @@ export default function RetailHomeScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10 }}
         />
 
-        {/* Quick Actions Grid */}
-        <View className="mb-4 mt-6 px-5">
-          <Text variant="h2" className="font-black text-primary">
-            {t('quickActions')}
-          </Text>
-        </View>
+        <View className="m-5 flex h-[1px] bg-accent" />
 
         <View className="flex-row flex-wrap gap-3 px-5">
           {ACTIONS.map((a) => (
@@ -254,7 +253,7 @@ export default function RetailHomeScreen() {
                   )}>
                   <a.icon
                     size={28}
-                    color={a.primary ? '#000' : '#fff'}
+                    color={a.primary ? '#000' : colorScheme === 'dark' ? '#fff' : '#444'}
                     strokeWidth={a.primary ? 2.5 : 2}
                   />
                 </View>
