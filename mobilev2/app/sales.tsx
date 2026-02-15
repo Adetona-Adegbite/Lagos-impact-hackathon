@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Image,
@@ -30,6 +30,7 @@ import {
   Scan,
   ArrowLeft,
   ImageIcon,
+  Pencil,
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { productService } from '@/services/productService';
@@ -53,10 +54,10 @@ type CartItem = {
   productId: string;
 };
 
-// TODO(tobani):
-// update the checkout flow to ask if the sale has been paid for
-// if it hasnt it should have a special section on the sales ui,
-// i'd like to add special support for 'credit' where you can specify their details to keep track of what they owe
+type Cart = {
+  id: string;
+  items: CartItem[];
+};
 
 export default function ScanSellScreen() {
   const router = useRouter();
@@ -71,11 +72,75 @@ export default function ScanSellScreen() {
 
   useEffect(() => {
     if (params.initialMode) {
-      setMode(params.initialMode as any);
+      const targetMode = params.initialMode as any;
+      setMode(targetMode);
+      if (targetMode === 'stock') {
+        setActiveCartId('inventory');
+      } else if (targetMode === 'sell') {
+        setActiveCartId((prev) => (prev === 'inventory' ? carts[0].id : prev));
+      }
     }
   }, [params.initialMode]);
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [carts, setCarts] = useState<Cart[]>([
+    { id: Math.random().toString(36).substring(7), items: [] },
+    { id: 'inventory', items: [] },
+  ]);
+  const [activeCartId, setActiveCartId] = useState<string>(
+    params.initialMode === 'stock' ? 'inventory' : carts[0].id
+  );
+
+  const activeCart = useMemo(
+    () => carts.find((c) => c.id === activeCartId) || carts[0],
+    [carts, activeCartId]
+  );
+  const cart = activeCart.items;
+  const activeCartIndex = useMemo(
+    () => carts.findIndex((c) => c.id === activeCartId),
+    [carts, activeCartId]
+  );
+
+  const setCart = useCallback(
+    (newItems: CartItem[] | ((prev: CartItem[]) => CartItem[])) => {
+      setCarts((prevCarts) =>
+        prevCarts.map((c) => {
+          if (c.id !== activeCartId) return c;
+          return {
+            ...c,
+            items: typeof newItems === 'function' ? newItems(c.items) : newItems,
+          };
+        })
+      );
+    },
+    [activeCartId]
+  );
+
+  const addNewCart = () => {
+    const newId = Math.random().toString(36).substring(7);
+    setCarts([...carts, { id: newId, items: [] }]);
+    setActiveCartId(newId);
+  };
+
+  const removeCart = (id: string) => {
+    if (id === 'inventory') return;
+
+    const salesCarts = carts.filter((c) => c.id !== 'inventory');
+    if (salesCarts.length <= 1) {
+      setCart([]);
+      return;
+    }
+    const newCarts = carts.filter((c) => c.id !== id);
+    setCarts(newCarts);
+    if (activeCartId === id) {
+      // If we removed the active cart, switch to another sales cart if possible
+      const remainingSales = newCarts.filter((c) => c.id !== 'inventory');
+      if (remainingSales.length > 0) {
+        setActiveCartId(remainingSales[remainingSales.length - 1].id);
+      } else {
+        setActiveCartId('inventory');
+      }
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [sound, setSound] = useState<Audio.Sound>();
 
@@ -178,6 +243,34 @@ export default function ScanSellScreen() {
     }
   };
 
+  const handleEditCartItem = async (item: CartItem) => {
+    try {
+      setLoading(true);
+      const product = await productService.getProductById(item.productId);
+
+      if (product) {
+        setCurrentProduct({
+          id: product.id,
+          barcode: product.barcode,
+          name: product.name,
+          sellingPrice: product.sellingPrice,
+          quantity: item.qty,
+          category: product.category,
+          purchasePrice: product.purchasePrice,
+        });
+        setIsNewProduct(false);
+        setProductModalVisible(true);
+      } else {
+        Alert.alert('Error', 'Product not found');
+      }
+    } catch (error) {
+      console.log('Error loading product for edit', error);
+      Alert.alert('Error', 'Failed to load product details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const changeCartQty = (id: string, delta: number) =>
     setCart((prev) =>
       prev
@@ -234,7 +327,32 @@ export default function ScanSellScreen() {
               }));
               await productService.processSale(itemsToProcess);
 
-              setCart([]);
+              setCarts((prevCarts) =>
+                prevCarts.map((c) => {
+                  if (c.id === activeCartId) {
+                    return { ...c, items: [] };
+                  }
+                  if (c.id === 'inventory') {
+                    return {
+                      ...c,
+                      items: c.items.map((invItem) => {
+                        const soldItem = itemsToProcess.find(
+                          (sold) => sold.productId === invItem.productId
+                        );
+                        if (soldItem) {
+                          return {
+                            ...invItem,
+                            qty: Math.max(0, invItem.qty - soldItem.quantity),
+                          };
+                        }
+                        return invItem;
+                      }),
+                    };
+                  }
+                  return c;
+                })
+              );
+
               Alert.alert(
                 'Success',
                 'Sale recorded successfully!',
@@ -300,6 +418,8 @@ export default function ScanSellScreen() {
             purchasePrice: product.purchasePrice,
           });
           setIsNewProduct(false);
+          setIsScannerPaused(true);
+          setProductModalVisible(true);
         } else {
           setCurrentProduct({
             barcode: barcode,
@@ -310,9 +430,9 @@ export default function ScanSellScreen() {
             purchasePrice: 0,
           });
           setIsNewProduct(true);
+          setIsScannerPaused(true);
+          setProductModalVisible(true);
         }
-        setIsScannerPaused(true);
-        setProductModalVisible(true);
       } else {
         if (product) {
           setCart((prev) => {
@@ -403,6 +523,18 @@ export default function ScanSellScreen() {
               image: null,
             },
           ]);
+        } else if (mode === 'stock') {
+          setCart((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              productId: newId,
+              title: data.name,
+              unitPrice: data.sellingPrice,
+              qty: data.quantity,
+              image: null,
+            },
+          ]);
         }
       } else if (currentProduct.id) {
         await productService.updateProduct(currentProduct.id, {
@@ -421,6 +553,33 @@ export default function ScanSellScreen() {
                 : item
             )
           );
+        } else if (mode === 'stock') {
+          setCart((prev) => {
+            const found = prev.find((p) => p.productId === currentProduct.id);
+            if (found) {
+              return prev.map((p) =>
+                p.productId === currentProduct.id
+                  ? {
+                      ...p,
+                      qty: data.quantity,
+                      title: data.name,
+                      unitPrice: data.sellingPrice,
+                    }
+                  : p
+              );
+            }
+            return [
+              ...prev,
+              {
+                id: Date.now().toString(),
+                productId: currentProduct.id!,
+                title: data.name,
+                unitPrice: data.sellingPrice,
+                qty: data.quantity,
+                image: null,
+              },
+            ];
+          });
         }
       }
       setProductModalVisible(false);
@@ -472,7 +631,7 @@ export default function ScanSellScreen() {
             enableTorch={torch}
             onBarcodeScanned={onBarcodeScanned}
             barcodeScannerSettings={{
-              barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'],
+              barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
             }}
           />
         )}
@@ -488,7 +647,11 @@ export default function ScanSellScreen() {
 
           <View className="flex-row rounded-full border border-white/20 bg-black/40 p-1">
             <Pressable
-              onPress={() => setMode('sell')}
+              onPress={() => {
+                setMode('sell');
+                const salesCart = carts.find((c) => c.id !== 'inventory');
+                if (salesCart) setActiveCartId(salesCart.id);
+              }}
               className={cn(
                 'rounded-full px-5 py-2',
                 mode === 'sell' ? 'bg-primary' : 'bg-transparent'
@@ -502,7 +665,10 @@ export default function ScanSellScreen() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setMode('stock')}
+              onPress={() => {
+                setMode('stock');
+                setActiveCartId('inventory');
+              }}
               className={cn(
                 'rounded-full px-5 py-2',
                 mode === 'stock' ? 'bg-primary' : 'bg-transparent'
@@ -577,7 +743,9 @@ export default function ScanSellScreen() {
         <View className="mb-4 flex-row items-center justify-between">
           <View>
             <Text variant="h3" className="font-black text-foreground">
-              {mode === 'sell' ? t('cart') : t('scannedItems')}
+              {mode === 'sell'
+                ? `${t('cart')} ${carts.filter((c) => c.id !== 'inventory').findIndex((c) => c.id === activeCartId) + 1}`
+                : t('scannedItems')}
             </Text>
             {mode === 'sell' && (
               <Text variant="muted" className="text-xs font-bold uppercase">
@@ -585,14 +753,66 @@ export default function ScanSellScreen() {
               </Text>
             )}
           </View>
-          {cart.length > 0 && mode === 'sell' && (
-            <Pressable onPress={clearAllCart}>
-              <Text className="text-xs font-bold uppercase tracking-tighter text-destructive">
-                Clear All
-              </Text>
-            </Pressable>
-          )}
+          <View className="flex-row items-center gap-4">
+            {cart.length > 0 && mode === 'sell' && (
+              <Pressable onPress={clearAllCart}>
+                <Text className="text-xs font-bold uppercase tracking-tighter text-destructive">
+                  Clear All
+                </Text>
+              </Pressable>
+            )}
+            {mode === 'sell' && carts.filter((c) => c.id !== 'inventory').length > 1 && (
+              <Pressable onPress={() => removeCart(activeCartId)}>
+                <Text className="text-xs font-bold uppercase tracking-tighter text-muted-foreground">
+                  Remove Cart
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </View>
+
+        {mode === 'sell' && (
+          <View className="mb-4">
+            <FlatList
+              horizontal
+              data={carts.filter((c) => c.id !== 'inventory')}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item, index }) => (
+                <Pressable
+                  onPress={() => setActiveCartId(item.id)}
+                  className={cn(
+                    'mr-2 flex-row items-center gap-2 rounded-xl border px-4 py-2',
+                    activeCartId === item.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-secondary/50'
+                  )}>
+                  <ShoppingCart size={14} color={activeCartId === item.id ? '#36e27b' : '#666'} />
+                  <Text
+                    className={cn(
+                      'text-xs font-bold',
+                      activeCartId === item.id ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                    {t('cart')} {index + 1}
+                    {item.items.length > 0
+                      ? ` · ₦${item.items
+                          .reduce((s, it) => s + it.qty * it.unitPrice, 0)
+                          .toLocaleString()}`
+                      : ''}
+                  </Text>
+                </Pressable>
+              )}
+              ListFooterComponent={
+                <Pressable
+                  onPress={addNewCart}
+                  className="flex-row items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2">
+                  <Plus size={14} color="#666" />
+                  <Text className="text-xs font-bold text-muted-foreground">New Cart</Text>
+                </Pressable>
+              }
+            />
+          </View>
+        )}
 
         <View className="mb-4 max-h-60">
           <FlatList
@@ -616,23 +836,40 @@ export default function ScanSellScreen() {
                 </View>
 
                 <View className="ml-2 flex-row items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-lg border-border"
-                    onPress={() => changeCartQty(item.id, -1)}>
-                    <Minus size={14} color="#666" />
-                  </Button>
-                  <Text className="min-w-[20px] text-center font-black text-foreground">
-                    {item.qty}
-                  </Text>
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="h-8 w-8 rounded-lg"
-                    onPress={() => changeCartQty(item.id, 1)}>
-                    <Plus size={14} color="#000" />
-                  </Button>
+                  {mode === 'stock' ? (
+                    <>
+                      <Text className="mr-2 text-xs font-bold text-muted-foreground">
+                        {item.qty} in stock
+                      </Text>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg border-border"
+                        onPress={() => handleEditCartItem(item)}>
+                        <Pencil size={14} color="#666" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg border-border"
+                        onPress={() => changeCartQty(item.id, -1)}>
+                        <Minus size={14} color="#666" />
+                      </Button>
+                      <Text className="min-w-[20px] text-center font-black text-foreground">
+                        {item.qty}
+                      </Text>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg"
+                        onPress={() => changeCartQty(item.id, 1)}>
+                        <Plus size={14} color="#000" />
+                      </Button>
+                    </>
+                  )}
                 </View>
               </View>
             )}
@@ -640,7 +877,7 @@ export default function ScanSellScreen() {
               <View className="items-center py-6">
                 <ShoppingCart size={32} className="mb-2 text-muted-foreground/20" />
                 <Text variant="muted" className="font-bold italic">
-                  No items scanned yet
+                  No items scanned yet{' '}
                 </Text>
               </View>
             }
