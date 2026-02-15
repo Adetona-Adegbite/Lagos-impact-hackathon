@@ -498,10 +498,10 @@ export default function ScanSellScreen() {
           </View>
         </SafeAreaView>
 
-        <View className="pointer-events-none absolute inset-0 z-0 items-center justify-center">
+        <View className="absolute inset-0 z-0 items-center justify-start py-32">
           <View
             style={{ width: scanBoxSize, height: scanBoxSize }}
-            className="overflow-hidden rounded-2xl border-2 border-white/30 bg-white/5">
+            className="pointer-events-none overflow-hidden rounded-2xl border-2 border-white/30 bg-white/5">
             <View className="absolute left-0 top-0 h-10 w-10 rounded-tl-2xl border-l-4 border-t-4 border-primary" />
             <View className="absolute right-0 top-0 h-10 w-10 rounded-tr-2xl border-r-4 border-t-4 border-primary" />
             <View className="absolute bottom-0 left-0 h-10 w-10 rounded-bl-2xl border-b-4 border-l-4 border-primary" />
@@ -522,22 +522,24 @@ export default function ScanSellScreen() {
               Align barcode to scan
             </Text>
           </View>
-        </View>
 
-        <View className="absolute right-4 top-1/2 z-10 -translate-y-1/2 gap-6">
-          <Pressable onPress={toggleCameraType} className="items-center">
-            <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
-              <RefreshCw size={22} color="white" />
-            </View>
-            <Text className="text-[10px] font-black uppercase text-white shadow-black">Flip</Text>
-          </Pressable>
+          <View className="absolute right-1 top-1/2 z-10 -translate-y-full gap-6">
+            <Pressable onPress={toggleCameraType} className="items-center">
+              <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
+                <RefreshCw size={22} color="white" />
+              </View>
+              <Text className="text-[10px] font-black uppercase text-white shadow-black">Flip</Text>
+            </Pressable>
 
-          <Pressable onPress={() => setEnterModalVisible(true)} className="items-center">
-            <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
-              <Keyboard size={22} color="white" />
-            </View>
-            <Text className="text-[10px] font-black uppercase text-white shadow-black">Manual</Text>
-          </Pressable>
+            <Pressable onPress={() => setEnterModalVisible(true)} className="items-center">
+              <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
+                <Keyboard size={22} color="white" />
+              </View>
+              <Text className="text-[10px] font-black uppercase text-white shadow-black">
+                Manual
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
