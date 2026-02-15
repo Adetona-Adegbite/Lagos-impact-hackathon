@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ArrowRight, Smartphone, Store, Store as StoreIcon } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Smartphone, Store as StoreIcon } from 'lucide-react-native';
 import { authApi } from '@/services/api';
 import { t, localizationService } from '@/utils/localization';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,6 @@ const LANGUAGES = [
 export default function LoginScreen() {
   const router = useRouter();
   const [phone, setPhone] = useState('');
-  const [shopName, setShopName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState(localizationService.getCurrentLanguage());
 
@@ -50,7 +49,7 @@ export default function LoginScreen() {
       await authApi.requestOtp(phone);
       router.push({
         pathname: '/(auth)/verify-otp',
-        params: { phone, shopName },
+        params: { phone },
       });
     } catch (error: any) {
       Alert.alert(t('errorTitle'), error.message);
@@ -145,23 +144,6 @@ export default function LoginScreen() {
                 />
                 <View className="pr-4">
                   <Smartphone size={20} color="#9AA0A6" />
-                </View>
-              </View>
-            </View>
-
-            {/* Shop Name Field */}
-            <View>
-              <Text className="mb-2 text-sm font-bold text-foreground">{t('shopName')}</Text>
-              <View className="h-14 flex-row items-center overflow-hidden rounded-full border border-border bg-secondary">
-                <Input
-                  className="h-full flex-1 border-0 bg-transparent px-4 text-lg"
-                  placeholder="e.g. Mama Nkechi Store"
-                  placeholderTextColor="#9AA0A6"
-                  value={shopName}
-                  onChangeText={setShopName}
-                />
-                <View className="pr-4">
-                  <Store size={20} color="#9AA0A6" />
                 </View>
               </View>
             </View>

@@ -63,14 +63,8 @@ export const verifyOtp = async (
     user = await prisma.user.create({
       data: {
         phoneNumber,
-        shopName: shopName || null,
+        shopName: shopName || "My Shop",
       },
-    });
-  } else if (shopName && !user.shopName) {
-    // Optionally update shop name if provided and not set
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { shopName },
     });
   }
 
@@ -110,4 +104,22 @@ export const getUserProfile = async (userId: string) => {
   }
 
   return user;
+};
+
+export const updateUserProfile = async (
+  userId: string,
+  data: { shopName?: string },
+) => {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      shopName: data.shopName,
+    },
+  });
+
+  return {
+    id: user.id,
+    phoneNumber: user.phoneNumber,
+    shopName: user.shopName,
+  };
 };

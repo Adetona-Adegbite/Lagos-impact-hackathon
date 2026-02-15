@@ -25,9 +25,8 @@ const RESEND_COOLDOWN = 30; // seconds
 
 export default function VerifyOtpScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ phone: string; shopName: string }>();
+  const params = useLocalSearchParams<{ phone: string }>();
   const phone = params.phone ?? 'Unknown';
-  const shopName = params.shopName;
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const inputsRef = useRef<Array<TextInput | null>>([]);
@@ -151,11 +150,8 @@ export default function VerifyOtpScreen() {
 
     setIsVerifying(true);
     try {
-      const response = await authApi.verifyOtp(phone, code, shopName);
+      const response = await authApi.verifyOtp(phone, code);
       const userToSave = { ...response.user };
-      if (shopName) {
-        userToSave.shopName = shopName;
-      }
       await authStorage.saveAuthData(response.token, userToSave);
       syncEngine.initialize().catch((e) => console.log('Initial sync warning:', e));
 

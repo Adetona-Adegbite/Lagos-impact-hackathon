@@ -22,6 +22,12 @@ const verifyOtpSchema = z.object({
   }),
 });
 
+const updateProfileSchema = z.object({
+  body: z.object({
+    shopName: z.string().min(1, "Shop name is required").optional(),
+  }),
+});
+
 /**
  * @swagger
  * tags:
@@ -120,5 +126,35 @@ router.post("/verify-otp", validate(verifyOtpSchema), authController.verifyOtp);
  *         description: Unauthorized
  */
 router.get("/profile", authenticate, authController.getProfile);
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   patch:
+ *     summary: Update user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               shopName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User profile updated
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch(
+  "/profile",
+  authenticate,
+  validate(updateProfileSchema),
+  authController.updateProfile,
+);
 
 export default router;

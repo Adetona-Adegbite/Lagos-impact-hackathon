@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,10 +18,13 @@ import { ArrowLeft } from 'lucide-react-native';
 import { t, localizationService } from '@/utils/localization';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { authApi } from '@/services/api';
 import { authStorage } from '@/services/authStorage';
 import { clearDatabase, initDatabase } from '@/services/database';
 import { useColorScheme } from 'nativewind';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { cn } from '@/lib/utils';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -28,6 +32,10 @@ export default function ProfileScreen() {
   const isDarkMode = colorScheme === 'dark';
 
   const [shopName, setShopName] = useState('My Shop');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editedShopName, setEditedShopName] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [currentLanguageCode, setCurrentLanguageCode] = useState(
     localizationService.getCurrentLanguage()
@@ -60,13 +68,39 @@ export default function ProfileScreen() {
   useEffect(() => {
     const loadSettings = async () => {
       const authData = await authStorage.getAuthData();
-      if (authData?.user?.shopName) {
-        setShopName(authData.user.shopName);
+      if (authData?.user) {
+        setShopName(authData.user.shopName || 'My Shop');
+        setPhoneNumber(authData.user.phoneNumber || '');
       }
       setCurrentLanguageCode(localizationService.getCurrentLanguage());
     };
     loadSettings();
   }, []);
+
+  const handleUpdateProfile = async () => {
+    if (!editedShopName.trim()) {
+      Alert.alert(t('errorTitle'), 'Shop name cannot be empty');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const authData = await authStorage.getAuthData();
+      if (!authData?.token) throw new Error('No auth token found');
+
+      const updatedUser = await authApi.updateProfile({ shopName: editedShopName }, authData.token);
+
+      // Update local storage
+      await authStorage.saveAuthData(authData.token, updatedUser);
+
+      setShopName(updatedUser.shopName);
+      setIsEditModalVisible(false);
+    } catch (error: any) {
+      Alert.alert(t('errorTitle'), error.message || 'Failed to update profile');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const languageOptions = [
     { code: 'en', name: t('english') },
@@ -116,7 +150,11 @@ export default function ProfileScreen() {
             <Text style={[styles.planText, { color: isDarkMode ? '#9ca3af' : '#6b7280' }]}>
               {t('standardPlan')}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setEditedShopName(shopName);
+                setIsEditModalVisible(true);
+              }}>
               <Text style={[styles.editProfile, { color: '#36e27b' }]}>{t('editProfile')}</Text>
             </TouchableOpacity>
           </View>
@@ -265,6 +303,84 @@ export default function ProfileScreen() {
                 />
               )}
             />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isEditModalVisible}
+        onRequestClose={() => setIsEditModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: isDarkMode ? '#fff' : '#111827' }]}>
+                {t('editProfile')}
+              </Text>
+              <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                <MaterialIcons name="close" size={24} color={isDarkMode ? '#9ca3af' : '#4b5563'} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ gap: 16 }}>
+              <View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: isDarkMode ? '#9ca3af' : '#6b7280',
+                    marginBottom: 8,
+                  }}>
+                  {t('phoneNumber')}
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: isDarkMode ? '#253b30' : '#f3f4f6',
+                    padding: 12,
+                    borderRadius: 12,
+                    opacity: 0.6,
+                  }}>
+                  <Text style={{ color: isDarkMode ? '#fff' : '#111827' }}>{phoneNumber}</Text>
+                </View>
+                <Text style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
+                  Phone number cannot be changed.
+                </Text>
+              </View>
+
+              <View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: isDarkMode ? '#9ca3af' : '#6b7280',
+                    marginBottom: 8,
+                  }}>
+                  {t('shopName')}
+                </Text>
+                <Input
+                  className={cn(
+                    'h-12 rounded-xl px-4',
+                    isDarkMode ? 'bg-[#253b30] text-white' : 'bg-[#f3f4f6] text-black'
+                  )}
+                  value={editedShopName}
+                  onChangeText={setEditedShopName}
+                  placeholder="Enter shop name"
+                />
+              </View>
+
+              <Button
+                onPress={handleUpdateProfile}
+                disabled={isUpdating}
+                className="mt-4 h-12 rounded-xl bg-primary">
+                {isUpdating ? (
+                  <ActivityIndicator color="#062" />
+                ) : (
+                  <Text className="font-bold text-primary-foreground">Save Changes</Text>
+                )}
+              </Button>
+            </View>
           </View>
         </View>
       </Modal>

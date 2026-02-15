@@ -53,3 +53,18 @@ export const getProfile = async (
     next(error);
   }
 };
+
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.user!.userId;
+    const { shopName } = req.body;
+    const user = await authService.updateUserProfile(userId, { shopName });
+    sendSuccess(res, user, "User profile updated");
+  } catch (error) {
+    next(error);
+  }
+};

@@ -67,6 +67,14 @@ export const authApi = {
       data: { phoneNumber, code, shopName },
     });
   },
+
+  updateProfile: (data: { shopName?: string }, token: string) => {
+    return request<any>('/api/v1/auth/profile', {
+      method: 'PATCH',
+      data,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 export const productsApi = {
