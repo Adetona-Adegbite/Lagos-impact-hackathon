@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Pressable,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -102,6 +104,8 @@ export default function ScanSellScreen() {
     setEnterModalVisible,
     enteredCode,
     setEnteredCode,
+    searchResults,
+    setSearchResults,
   } = useProductManagement();
 
   const { playSound } = useSound();
@@ -376,13 +380,16 @@ export default function ScanSellScreen() {
     }
   };
 
-  const handleEnterCodeConfirm = () => {
-    if (!enteredCode.trim()) {
-      Alert.alert('Enter code', 'Please enter a code.');
+  const handleEnterCodeConfirm = (code?: string) => {
+    const codeToProcess = typeof code === 'string' ? code : enteredCode.trim();
+
+    if (!codeToProcess) {
+      Alert.alert('Enter code', 'Please enter a code or name.');
       return;
     }
-    handleScannedCode(enteredCode.trim());
+    handleScannedCode(codeToProcess);
     setEnteredCode('');
+    setSearchResults([]);
     setEnterModalVisible(false);
   };
 
@@ -726,19 +733,50 @@ export default function ScanSellScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setEnterModalVisible(false)}>
-        <View className="flex-1 items-center justify-center bg-black/60 p-6">
-          <Card className="w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1 items-center justify-center bg-black/60 p-6">
+          <Card className="max-h-full w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
             <Text variant="h3" className="mb-6 font-black text-foreground">
-              Enter Barcode
+              Enter Barcode or Name
             </Text>
             <Input
-              placeholder="e.g. 12345678"
-              className="mb-6 h-14 rounded-2xl border-border bg-secondary text-lg font-bold"
+              placeholder="e.g. 12345678 or Indomie"
+              className="mb-4 h-14 rounded-2xl border-border bg-secondary text-lg font-bold"
               value={enteredCode}
               onChangeText={setEnteredCode}
-              keyboardType="number-pad"
               autoFocus
             />
+
+            {searchResults.length > 0 && (
+              <View className="mb-4 max-h-44 shrink overflow-hidden rounded-xl border border-border bg-secondary/30">
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={true}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item }) => (
+                    <Pressable
+                      onPress={() => handleEnterCodeConfirm(item.barcode)}
+                      className="flex-row items-center justify-between border-b border-border/50 p-3 active:bg-primary/10">
+                      <View className="flex-1">
+                        <Text className="font-bold text-foreground">{item.name}</Text>
+                        <Text className="text-xs text-muted-foreground">{item.barcode}</Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="font-bold text-primary">
+                          ₦{item.sellingPrice.toLocaleString()}
+                        </Text>
+                        <Text className="text-[10px] text-muted-foreground">
+                          {item.quantity} in stock
+                        </Text>
+                      </View>
+                    </Pressable>
+                  )}
+                />
+              </View>
+            )}
+
             <View className="flex-row gap-3">
               <Button
                 variant="outline"
@@ -746,12 +784,12 @@ export default function ScanSellScreen() {
                 onPress={() => setEnterModalVisible(false)}>
                 <Text className="font-bold">Cancel</Text>
               </Button>
-              <Button className="h-12 flex-1 rounded-2xl" onPress={handleEnterCodeConfirm}>
+              <Button className="h-12 flex-1 rounded-2xl" onPress={() => handleEnterCodeConfirm()}>
                 <Text className="text-xs font-black uppercase">Confirm</Text>
               </Button>
             </View>
           </Card>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <ProductFormModal

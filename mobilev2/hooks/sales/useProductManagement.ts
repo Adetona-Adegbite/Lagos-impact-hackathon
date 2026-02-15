@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { productService } from '@/services/productService';
 import { ProductFormData } from '@/components/ProductFormModal';
+import { Product } from '@/services/database';
 
 export const useProductManagement = () => {
   const [productModalVisible, setProductModalVisible] = useState(false);
@@ -12,6 +13,15 @@ export const useProductManagement = () => {
 
   const [enterModalVisible, setEnterModalVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
+  const [searchResults, setSearchResults] = useState<(Product & { quantity: number })[]>([]);
+
+  useEffect(() => {
+    if (enteredCode.trim().length > 0) {
+      productService.searchProducts(enteredCode.trim()).then(setSearchResults);
+    } else {
+      setSearchResults([]);
+    }
+  }, [enteredCode]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -47,5 +57,7 @@ export const useProductManagement = () => {
     setEnterModalVisible,
     enteredCode,
     setEnteredCode,
+    searchResults,
+    setSearchResults,
   };
 };

@@ -27,6 +27,23 @@ export const productService = {
   },
 
   /**
+   * Search products by name or barcode
+   */
+  searchProducts: async (query: string): Promise<(Product & { quantity: number })[]> => {
+    const sql = `
+      SELECT p.*, i.quantity
+      FROM products p
+      LEFT JOIN inventory i ON p.id = i.productId
+      WHERE (p.name LIKE ? OR p.barcode LIKE ?) AND p.deleted = 0
+      ORDER BY p.name ASC
+      LIMIT 50;
+    `;
+    const searchPattern = `%${query}%`;
+    const result = await executeSql(sql, [searchPattern, searchPattern]);
+    return result.rows._array;
+  },
+
+  /**
    * Find a product by barcode
    */
   getProductByBarcode: async (
