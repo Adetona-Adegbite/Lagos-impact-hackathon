@@ -24,7 +24,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, toggleColorScheme } = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
   const [shopName, setShopName] = useState('My Shop');
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView
       edges={['top']}
-      style={[styles.container, { backgroundColor: isDarkMode ? '#112117' : '#f6f8f7' }]}>
+      style={[styles.container, { backgroundColor: isDarkMode ? '#122117' : '#f6f8f7' }]}>
       <ScreenHeader title={t('settings')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -151,9 +151,17 @@ export default function ProfileScreen() {
               iconBg: '#FFF7ED',
               label: t('appTheme'),
               subtitle: t('appThemeSubtitle'),
+              onPress: toggleColorScheme,
               rightContent: (
-                <View style={styles.themeTag}>
-                  <Text style={styles.themeTagText}>{isDarkMode ? t('dark') : t('light')}</Text>
+                <View
+                  style={[
+                    styles.themeTag,
+                    { backgroundColor: isDarkMode ? '#253b30' : '#e5e7eb' },
+                  ]}>
+                  <Text
+                    style={[styles.themeTagText, { color: isDarkMode ? '#9ca3af' : '#6b7280' }]}>
+                    {isDarkMode ? t('dark') : t('light')}
+                  </Text>
                   <MaterialIcons name="chevron-right" size={20} color="#9ca3af" />
                 </View>
               ),

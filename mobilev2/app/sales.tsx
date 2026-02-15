@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Audio } from 'expo-av';
@@ -64,6 +65,7 @@ export default function ScanSellScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
   const [torch, setTorch] = useState(false);
+  const { colorScheme } = useColorScheme();
 
   const [mode, setMode] = useState<'sell' | 'stock'>((params.initialMode as any) || 'sell');
 
@@ -481,7 +483,7 @@ export default function ScanSellScreen() {
             size="icon"
             className="h-10 w-10 rounded-full bg-secondary"
             onPress={() => router.back()}>
-            <ArrowLeft size={22} color="white" />
+            <ArrowLeft size={22} color={colorScheme === 'dark' ? 'white' : 'black'} />
           </Button>
 
           <View className="flex-row rounded-full border border-white/20 bg-black/40 p-1">
