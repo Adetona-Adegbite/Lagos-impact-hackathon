@@ -8,13 +8,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native';
-import {
-  Barcode,
-  Sparkles,
-  ChevronDown,
-  Minus,
-  Plus,
-} from 'lucide-react-native';
+import { Barcode, Sparkles, ChevronDown, Minus, Plus } from 'lucide-react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -102,25 +96,17 @@ export function ProductFormModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 items-center justify-center bg-black/60 p-6"
-      >
+        className="flex-1 items-center justify-center bg-black/60 p-6">
         <Card className="max-h-[90%] w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
           <Text variant="h3" className="mb-2 font-black text-foreground">
             {isNewProduct ? t('addItem') : t('editProduct')}
           </Text>
           <View className="mb-6 flex-row items-center gap-2 self-start rounded-xl bg-primary/10 px-3 py-1.5">
             <Barcode size={14} className="text-primary" />
-            <Text className="text-[11px] font-black uppercase text-primary">
-              {barcode}
-            </Text>
+            <Text className="text-[11px] font-black uppercase text-primary">{barcode}</Text>
           </View>
 
           <FlatList
@@ -130,21 +116,10 @@ export function ProductFormModal({
             renderItem={() => (
               <View className="gap-5 pb-4">
                 <View>
-                  <View className="mb-2 flex-row items-center justify-between px-1">
+                  <View className="mb-2 px-1">
                     <Text className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       Product Name
                     </Text>
-                    {isNewProduct && onRecommendCategory && (
-                      <Pressable
-                        className="flex-row items-center gap-1"
-                        onPress={handleSuggest}
-                      >
-                        <Sparkles size={12} color="white" />
-                        <Text className="text-[10px] font-bold text-primary">
-                          {t('suggest')}
-                        </Text>
-                      </Pressable>
-                    )}
                   </View>
                   <Input
                     className="h-14 rounded-2xl border-border bg-secondary text-base font-bold"
@@ -194,15 +169,10 @@ export function ProductFormModal({
                     <Text className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       {t('category')}
                     </Text>
-                    {!isNewProduct && onRecommendCategory && (
-                      <Pressable
-                        className="flex-row items-center gap-1"
-                        onPress={handleSuggest}
-                      >
+                    {onRecommendCategory && (
+                      <Pressable className="flex-row items-center gap-1" onPress={handleSuggest}>
                         <Sparkles size={12} color="white" />
-                        <Text className="text-[10px] font-bold text-primary">
-                          {t('suggest')}
-                        </Text>
+                        <Text className="text-[10px] font-bold text-primary">{t('suggest')}</Text>
                       </Pressable>
                     )}
                   </View>
@@ -244,8 +214,7 @@ export function ProductFormModal({
                       variant="secondary"
                       size="icon"
                       className="h-12 w-12 rounded-xl border border-border bg-background shadow-sm"
-                      onPress={() => setQuantity((q) => Math.max(0, q - 1))}
-                    >
+                      onPress={() => setQuantity((q) => Math.max(0, q - 1))}>
                       <Minus size={20} color="white" />
                     </Button>
                     <View className="flex-1 items-center">
@@ -265,8 +234,7 @@ export function ProductFormModal({
                     <Button
                       className="h-12 w-12 rounded-xl bg-primary shadow-sm"
                       size="icon"
-                      onPress={() => setQuantity((q) => q + 1)}
-                    >
+                      onPress={() => setQuantity((q) => q + 1)}>
                       <Plus size={20} color="#000" />
                     </Button>
                   </View>
@@ -276,18 +244,13 @@ export function ProductFormModal({
           />
 
           <View className="mt-4 flex-row gap-3">
-            <Button
-              variant="outline"
-              className="h-14 flex-1 rounded-2xl"
-              onPress={onClose}
-            >
+            <Button variant="outline" className="h-14 flex-1 rounded-2xl" onPress={onClose}>
               <Text className="font-bold">{t('cancel')}</Text>
             </Button>
             <Button
               className="flex-2 h-14 rounded-2xl bg-primary"
               onPress={handleConfirm}
-              disabled={isSubmitting}
-            >
+              disabled={isSubmitting}>
               {isSubmitting ? (
                 <ActivityIndicator color="#000" />
               ) : (
