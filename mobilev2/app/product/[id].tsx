@@ -17,6 +17,7 @@ import {
   ImageIcon,
   Calendar,
   AlertTriangle,
+  Barcode,
 } from 'lucide-react-native';
 import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
@@ -216,6 +217,14 @@ export default function ProductDetailsScreen() {
             <Text className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
               {product.category}
             </Text>
+            <View className="mt-4 flex items-center justify-center">
+              <View className="flex-row items-center gap-2 self-start rounded-xl bg-primary/10 px-3 py-1.5">
+                <Barcode size={14} className="text-primary" />
+                <Text className="text-[11px] font-black uppercase text-primary">
+                  {product.barcode}
+                </Text>
+              </View>
+            </View>
 
             <View className="mt-6 w-full flex-row gap-8">
               <View className="flex-1 items-center">
