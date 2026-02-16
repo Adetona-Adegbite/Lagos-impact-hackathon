@@ -1,13 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  FlatList,
-  ActivityIndicator,
-  Pressable,
-} from 'react-native';
+import { View, Modal, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Barcode, Sparkles, ChevronDown, Minus, Plus } from 'lucide-react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import { Button } from '@/components/ui/button';
@@ -98,7 +91,7 @@ export function ProductFormModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         className="flex-1 items-center justify-center bg-black/60 p-6">
         <Card className="max-h-[90%] w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
           <Text variant="h3" className="mb-2 font-black text-foreground">

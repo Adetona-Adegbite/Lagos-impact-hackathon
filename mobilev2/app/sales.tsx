@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Pressable,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, BarcodeScanningResult } from 'expo-camera';
@@ -731,7 +731,7 @@ export default function ScanSellScreen() {
         animationType="fade"
         onRequestClose={() => setEnterModalVisible(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
           className="flex-1 items-center justify-center bg-black/60 p-6">
           <Card className="max-h-full w-full rounded-[32px] border border-border bg-background p-6 shadow-2xl">
             <Text variant="h3" className="mb-6 font-black text-foreground">

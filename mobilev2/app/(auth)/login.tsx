@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Linking,
-  Alert,
-  ActivityIndicator,
-  Pressable,
-} from 'react-native';
+import { View, ScrollView, Linking, Alert, ActivityIndicator, Pressable } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ArrowRight, Smartphone, Store as StoreIcon } from 'lucide-react-native';
