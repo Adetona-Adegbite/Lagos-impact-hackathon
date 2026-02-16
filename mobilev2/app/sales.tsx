@@ -3,7 +3,6 @@ import {
   View,
   Animated,
   Dimensions,
-  StatusBar,
   Alert,
   Modal,
   ActivityIndicator,
@@ -431,8 +430,6 @@ export default function ScanSellScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
       <View className="flex-1 overflow-hidden bg-black">
         {permission?.granted && (
           <CameraView

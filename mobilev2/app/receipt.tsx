@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, ActivityIndicator, StatusBar, Pressable } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -93,8 +93,6 @@ export default function SalesReceiptScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-
       <ScreenHeader title={`Receipt #${sale.id.slice(-4).toUpperCase()}`} />
 
       <ScrollView

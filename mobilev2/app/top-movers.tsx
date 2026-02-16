@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Calendar, TrendingUp, TrendingDown } from 'lucide-react-native';
@@ -79,8 +79,6 @@ export default function TopSellers() {
 
   return (
     <SafeAreaView style={[styles.container, isDarkMode && styles.containerDark]} edges={['top']}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-
       {/* Header */}
       <View style={styles.header}>
         <Button

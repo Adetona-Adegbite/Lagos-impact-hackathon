@@ -7,7 +7,6 @@ import {
   Pressable,
   Dimensions,
   ActivityIndicator,
-  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -169,8 +168,6 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-
       <ScreenHeader
         title={t('inventory')}
         rightAdornment={

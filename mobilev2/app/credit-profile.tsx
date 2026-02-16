@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
   Alert,
   Platform,
 } from 'react-native';
@@ -181,7 +180,6 @@ export default function CreditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
         <Button

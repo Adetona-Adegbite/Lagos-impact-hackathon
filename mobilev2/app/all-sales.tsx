@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, FlatList, Pressable, Dimensions, StatusBar } from 'react-native';
+import { View, ScrollView, FlatList, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Search, Sparkles, TrendingUp, ShoppingCart, Plus, Calendar } from 'lucide-react-native';
@@ -89,8 +89,6 @@ export default function AllSalesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" />
-
       <ScreenHeader
         title={t('allSales')}
         className="border-b-0 px-5 py-4"

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Image, ScrollView, FlatList, Dimensions, StatusBar, Pressable } from 'react-native';
+import { View, Image, ScrollView, FlatList, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -179,8 +179,6 @@ export default function RetailHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" />
-
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 py-4">
         <View className="flex-row items-center gap-3">

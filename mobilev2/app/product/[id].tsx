@@ -1,13 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  StatusBar,
-  Pressable,
-  Dimensions,
-  Alert,
-} from 'react-native';
+import { View, ScrollView, ActivityIndicator, Pressable, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -215,8 +207,6 @@ export default function ProductDetailsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-
       <ScreenHeader
         title={t('productDetails')}
         rightAdornment={

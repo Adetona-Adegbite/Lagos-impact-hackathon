@@ -1,14 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  Animated,
-  Alert,
-  Pressable,
-} from 'react-native';
+import { View, TextInput, KeyboardAvoidingView, Animated, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
@@ -184,7 +175,6 @@ export default function VerifyOtpScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <KeyboardAvoidingView behavior="padding" className="flex-1">
         <View className="flex-1 px-5 pt-2">
           {/* Header */}
