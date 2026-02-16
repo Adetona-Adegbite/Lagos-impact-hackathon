@@ -6,6 +6,7 @@ import {
   StatusBar,
   Pressable,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,6 +19,7 @@ import {
   Calendar,
   AlertTriangle,
   Barcode,
+  Trash2,
 } from 'lucide-react-native';
 import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
@@ -141,6 +143,30 @@ export default function ProductDetailsScreen() {
     }
   };
 
+  const handleDeleteProduct = () => {
+    if (!product) return;
+    Alert.alert(
+      'Delete Product',
+      'Are you sure you want to delete this product? This action cannot be undone.',
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await productService.deleteProduct(product.id);
+              router.back();
+            } catch (error) {
+              console.error('Failed to delete product:', error);
+              Alert.alert('Error', 'Failed to delete product');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleRecommendCategory = async (name: string) => {
     try {
       const res = await productService.recommendCategory(name);
@@ -194,13 +220,24 @@ export default function ProductDetailsScreen() {
       <ScreenHeader
         title={t('productDetails')}
         rightAdornment={
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-10 w-10 rounded-full bg-secondary"
-            onPress={() => setEditModalVisible(true)}>
-            <Edit3 size={20} color="white" />
-          </Button>
+          <View className="flex-row gap-2">
+            {sales.length === 0 && (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-10 w-10 rounded-full"
+                onPress={handleDeleteProduct}>
+                <Trash2 size={20} color="white" />
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-secondary"
+              onPress={() => setEditModalVisible(true)}>
+              <Edit3 size={20} color="white" />
+            </Button>
+          </View>
         }
       />
 
