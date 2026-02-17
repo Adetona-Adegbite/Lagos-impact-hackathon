@@ -11,10 +11,11 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
 import { t, localizationService } from '@/utils/localization';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
@@ -313,7 +314,7 @@ export default function ProfileScreen() {
         transparent={true}
         visible={isEditModalVisible}
         onRequestClose={() => setIsEditModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView behavior="padding" style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: isDarkMode ? '#1c2e24' : '#fff' }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: isDarkMode ? '#fff' : '#111827' }]}>
@@ -382,7 +383,7 @@ export default function ProfileScreen() {
               </Button>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
