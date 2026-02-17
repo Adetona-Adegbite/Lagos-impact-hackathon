@@ -18,11 +18,11 @@ model User {
 }
 
 model Otp {
-  id          String   @id @default(cuid())
-  phoneNumber String
-  code        String
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  phoneNumber    String
+  verificationId String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
 }
 
 model Product {

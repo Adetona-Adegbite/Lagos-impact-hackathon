@@ -1,16 +1,21 @@
 import jwt from "jsonwebtoken";
 import prisma from "../../config/db.js";
 import { env } from "../../config/env.js";
+import { MessageCentralSDK, VerificationStatus } from "./otp.service..js";
 
-// Helper to generate a 6-digit OTP
-const generateOtp = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+const messageCentralSDK = new MessageCentralSDK({
+  customerId: env.MESSAGE_CENTRAL_CUSTOMER_ID!,
+  base64Password: Buffer.from(env.MESSAGE_CENTRAL_PASSWORD!, "utf8").toString(
+    "base64",
+  ),
+});
 
 export const requestOtp = async (phoneNumber: string) => {
   // Generate OTP
-  const code = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+  const { verificationId } = await messageCentralSDK.sendOtp({
+    mobileNumber: phoneNumber,
+  });
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   // Save OTP to database
   // We can delete existing OTPs for this phone number to avoid clutter
@@ -21,14 +26,10 @@ export const requestOtp = async (phoneNumber: string) => {
   await prisma.otp.create({
     data: {
       phoneNumber,
-      code,
+      verificationId,
       expiresAt,
     },
   });
-
-  // In a real application, you would integrate with an SMS provider (e.g., Twilio) here.
-  // For this implementation, we will log the OTP to the console.
-  console.log(`[OTP-Mock] OTP for ${phoneNumber} is: ${code}`);
 
   return { message: "OTP sent successfully" };
 };
@@ -42,7 +43,6 @@ export const verifyOtp = async (
   const otpRecord = await prisma.otp.findFirst({
     where: {
       phoneNumber,
-      code,
       expiresAt: {
         gt: new Date(),
       },
@@ -51,6 +51,22 @@ export const verifyOtp = async (
 
   if (!otpRecord) {
     throw { statusCode: 400, message: "Invalid or expired OTP" };
+  }
+
+  const { message, responseCode } = await messageCentralSDK.verifyOtp({
+    verificationId: otpRecord.verificationId,
+    code,
+  });
+  if (responseCode !== 200) {
+    switch (message as VerificationStatus) {
+      case "ALREADY_VERIFIED":
+      case "VERIFICATION_COMPLETED":
+        break;
+      case "VERIFICATION_EXPIRED":
+        throw { statusCode: 400, message: "OTP has expired" };
+      default:
+        throw { statusCode: 400, message: "Invalid OTP" };
+    }
   }
 
   // Check if user exists

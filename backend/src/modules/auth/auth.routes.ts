@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as authController from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.js";
 import { validate } from "../../utils/validators.js";
+import { OTP_LENGTH } from "./otp.service..js";
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const requestOtpSchema = z.object({
 const verifyOtpSchema = z.object({
   body: z.object({
     phoneNumber: z.string().min(1, "Phone number is required"),
-    code: z.string().length(6, "OTP code must be 6 digits"),
+    code: z.string().length(OTP_LENGTH, "OTP code must be 6 digits"),
     shopName: z.string().optional(),
   }),
 });
