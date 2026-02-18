@@ -1,6 +1,12 @@
 import cuid from 'cuid';
 import { executeSql } from '../database';
 import { syncApi } from '../api';
+import {
+  CreateProductInput,
+  UpdateProductInput,
+  AdjustStockInput,
+  CreateSaleInput,
+} from '@supamart/shared';
 
 // Types
 export type OpType = 'CREATE' | 'UPDATE' | 'DELETE' | 'ADJUST_STOCK' | 'CREATE_SALE';
@@ -235,11 +241,12 @@ export class SyncEngine {
   }
 
   private async applySingleOperation(op: any) {
-    const payload = typeof op.payload === 'string' ? JSON.parse(op.payload) : op.payload;
+    const rawPayload = typeof op.payload === 'string' ? JSON.parse(op.payload) : op.payload;
 
     switch (op.opType) {
       case 'CREATE':
         if (op.entityType === 'Product') {
+          const payload = rawPayload as CreateProductInput;
           await executeSql(
             `INSERT OR REPLACE INTO products
               (id, name, barcode, category, sellingPrice, purchasePrice, createdAt, updatedAt, deleted, syncStatus)
@@ -267,6 +274,7 @@ export class SyncEngine {
 
       case 'UPDATE':
         if (op.entityType === 'Product') {
+          const payload = rawPayload as UpdateProductInput;
           // Construct dynamic update
           const fields = [];
           const values = [];
@@ -300,25 +308,27 @@ export class SyncEngine {
 
       case 'ADJUST_STOCK':
         // Payload: { delta: number }
-        if (payload.delta) {
+        const adjustPayload = rawPayload as AdjustStockInput;
+        if (adjustPayload.delta) {
           await executeSql(
             `UPDATE inventory SET quantity = quantity + ?, syncStatus = 'synced' WHERE productId = ?`,
-            [payload.delta, op.entityId]
+            [adjustPayload.delta, op.entityId]
           );
         }
         break;
 
       case 'CREATE_SALE':
         // Payload: { totalAmount, items: [...] }
-        const createdAt = op.clientTimestamp || new Date().toISOString();
+        const salePayload = rawPayload as CreateSaleInput;
+        const createdAt = op.clientTimestamp || salePayload.createdAt || new Date().toISOString();
 
         await executeSql(
           `INSERT OR REPLACE INTO sales (id, totalAmount, createdAt, syncStatus) VALUES (?, ?, ?, 'synced')`,
-          [op.entityId, payload.totalAmount, createdAt]
+          [op.entityId, salePayload.totalAmount, createdAt]
         );
 
-        if (payload.items) {
-          for (const item of payload.items) {
+        if (salePayload.items) {
+          for (const item of salePayload.items) {
             const itemId = item.id || cuid();
             // Insert Item
             await executeSql(

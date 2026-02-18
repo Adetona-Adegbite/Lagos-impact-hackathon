@@ -5,13 +5,15 @@
     "moduleResolution": "NodeNext",
     "baseUrl": "./",
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@supamart/shared": ["../shared/schema.ts"],
+    },
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "../shared/**/*"],
+  "exclude": ["node_modules"],
 }

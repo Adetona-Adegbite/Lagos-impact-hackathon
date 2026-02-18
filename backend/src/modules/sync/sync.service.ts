@@ -1,6 +1,14 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../config/db.js";
-import { PushSyncInput, OperationPayload } from "./sync.schema.js";
+import {
+  PushSyncInput,
+  OperationPayload,
+  CreateProductOperation,
+  UpdateProductOperation,
+  DeleteProductOperation,
+  AdjustStockOperation,
+  CreateSaleOperation,
+} from "@supamart/shared";
 
 export class SyncService {
   /**
@@ -99,7 +107,7 @@ export class SyncService {
   private static async applyOperation(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: OperationPayload,
   ) {
     switch (op.opType) {
       case "CREATE":
@@ -118,7 +126,8 @@ export class SyncService {
         await this.handleCreateSale(tx, userId, op);
         break;
       default:
-        throw new Error(`Unknown operation type: ${op.opType}`);
+        const _exhaustiveCheck: never = op;
+        throw new Error(`Unknown operation type: ${(op as any).opType}`);
     }
   }
 
@@ -127,9 +136,9 @@ export class SyncService {
   private static async handleCreate(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: CreateProductOperation,
   ) {
-    const payload = op.payload as any;
+    const payload = op.payload;
 
     if (op.entityType === "Product") {
       await tx.product.create({
@@ -162,26 +171,16 @@ export class SyncService {
   private static async handleUpdate(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: UpdateProductOperation,
   ) {
-    const payload = op.payload as any;
+    const payload = op.payload;
 
     if (op.entityType === "Product") {
       // Last-Write-Wins: Update fields and increment version
-      // We explicitly exclude 'id', 'userId', 'createdAt' from payload updates for safety
-      const {
-        id,
-        userId: uid,
-        createdAt,
-        updatedAt,
-        version,
-        ...updateData
-      } = payload;
-
       await tx.product.update({
         where: { id: op.entityId, userId },
         data: {
-          ...updateData,
+          ...payload,
           version: { increment: 1 },
         },
       });
@@ -193,7 +192,7 @@ export class SyncService {
   private static async handleDelete(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: DeleteProductOperation,
   ) {
     if (op.entityType === "Product") {
       // Soft Delete
@@ -212,10 +211,10 @@ export class SyncService {
   private static async handleAdjustStock(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: AdjustStockOperation,
   ) {
     // EntityId is expected to be productId
-    const payload = op.payload as { delta: number };
+    const payload = op.payload;
 
     if (!payload.delta) return;
 
@@ -231,17 +230,9 @@ export class SyncService {
   private static async handleCreateSale(
     tx: Prisma.TransactionClient,
     userId: string,
-    op: OperationPayload
+    op: CreateSaleOperation,
   ) {
-    const payload = op.payload as {
-      totalAmount: number;
-      items: Array<{
-        id?: string;
-        productId: string;
-        quantity: number;
-        priceAtSale: number;
-      }>;
-    };
+    const payload = op.payload;
 
     // 1. Create Sale Header
     const sale = await tx.sale.create({

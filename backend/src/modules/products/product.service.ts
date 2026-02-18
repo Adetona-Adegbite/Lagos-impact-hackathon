@@ -2,16 +2,11 @@ import prisma from "../../config/db.js";
 import { Prisma } from "@prisma/client";
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCT_CATEGORIES } from "./categories.js";
+import { CreateProductInput, UpdateProductInput } from "@supamart/shared";
 
-export const createProduct = async (data: {
-  id?: string;
-  name: string;
-  barcode: string;
-  category: string;
-  sellingPrice: number;
-  purchasePrice: number;
-  userId: string;
-}) => {
+export const createProduct = async (
+  data: CreateProductInput & { id?: string; userId: string },
+) => {
   const existingProduct = await prisma.product.findUnique({
     where: {
       barcode_userId: {
@@ -119,15 +114,7 @@ export const getProductById = async (id: string) => {
   return product;
 };
 
-export const updateProduct = async (
-  id: string,
-  data: {
-    name?: string;
-    category?: string;
-    sellingPrice?: number;
-    purchasePrice?: number;
-  },
-) => {
+export const updateProduct = async (id: string, data: UpdateProductInput) => {
   const exists = await prisma.product.findUnique({ where: { id } });
   if (!exists) throw { statusCode: 404, message: "Product not found" };
 

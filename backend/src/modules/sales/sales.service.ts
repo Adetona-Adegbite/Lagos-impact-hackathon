@@ -1,22 +1,10 @@
 import prisma from "../../config/db.js";
 import { GoogleGenAI } from "@google/genai";
+import { CreateSaleInput } from "@supamart/shared";
 
 interface CheckoutItem {
   productId: string;
   quantity: number;
-}
-
-interface SyncSaleItem {
-  productId: string;
-  quantity: number;
-  priceAtSale: number;
-}
-
-interface SyncSale {
-  id?: string;
-  totalAmount: number;
-  createdAt?: string;
-  items: SyncSaleItem[];
 }
 
 export const processCheckout = async (
@@ -177,7 +165,7 @@ export const getSaleById = async (id: string) => {
 };
 
 export const syncSales = async (
-  sales: SyncSale[],
+  sales: CreateSaleInput[],
   { userId }: { userId: string },
 ) => {
   const results = [];

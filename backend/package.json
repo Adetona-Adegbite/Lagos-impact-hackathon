@@ -2,18 +2,19 @@
   "name": "supamart-backend",
   "version": "1.0.0",
   "description": "Smart Retail Assistant Backend",
-  "main": "dist/server.js",
+  "main": "dist/backend/src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development nodemon --watch \"src/**\" --ext \"ts,json\" --exec \"tsc && node ./dist/server.js\"",
+    "dev": "NODE_ENV=development nodemon --watch \"src/**\" --watch \"../shared/**\" --ext \"ts,json\" --exec \"tsc && node ./dist/backend/src/server.js\"",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/backend/src/server.js",
     "prisma:migrate": "prisma migrate dev",
     "seed": "node --loader ts-node/esm prisma/seed.ts"
   },
   "dependencies": {
     "@google/genai": "^1.33.0",
     "@prisma/client": "^6.4.1",
+    "@supamart/shared": "file:../shared",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

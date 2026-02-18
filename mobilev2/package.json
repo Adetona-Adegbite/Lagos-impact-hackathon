@@ -28,6 +28,7 @@
     "@rn-primitives/tooltip": "^1.2.0",
     "@rn-primitives/types": "^1.2.0",
     "@rn-primitives/utils": "^1.2.0",
+    "@supamart/shared": "file:../shared",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cuid": "^3.0.0",

@@ -1,11 +1,50 @@
 import { z } from "zod";
-import {
-  CreateProductSchema,
-  UpdateProductSchema,
-  AdjustStockSchema,
-  CreateSaleSchema,
-  SaleItemSchema,
-} from "@supamart/shared";
+
+// --- Product Schemas ---
+
+export const ProductBaseSchema = z.object({
+  name: z.string(),
+  barcode: z.string(),
+  category: z.string(),
+  sellingPrice: z.number(),
+  purchasePrice: z.number(),
+});
+
+export const CreateProductSchema = ProductBaseSchema;
+
+export const UpdateProductSchema = ProductBaseSchema.partial().extend({
+  deleted: z.boolean().optional(),
+});
+
+// --- Inventory Schemas ---
+
+export const AdjustStockSchema = z.object({
+  delta: z.number(),
+});
+
+// --- Sale Schemas ---
+
+export const SaleItemSchema = z.object({
+  id: z.string().optional(),
+  productId: z.string(),
+  quantity: z.number(),
+  priceAtSale: z.number(),
+});
+
+export const CreateSaleSchema = z.object({
+  id: z.string().optional(),
+  totalAmount: z.number(),
+  items: z.array(SaleItemSchema),
+  createdAt: z.string().datetime().optional(),
+});
+
+// --- Types ---
+
+export type CreateProductInput = z.infer<typeof CreateProductSchema>;
+export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
+export type AdjustStockInput = z.infer<typeof AdjustStockSchema>;
+export type SaleItemInput = z.infer<typeof SaleItemSchema>;
+export type CreateSaleInput = z.infer<typeof CreateSaleSchema>;
 
 export const OpTypeSchema = z.enum([
   "CREATE",
@@ -21,15 +60,14 @@ export const CreateProductPayloadSchema = CreateProductSchema;
 export const UpdateProductPayloadSchema = UpdateProductSchema;
 export const AdjustStockPayloadSchema = AdjustStockSchema;
 export const CreateSalePayloadSchema = CreateSaleSchema;
-export { SaleItemSchema };
 
 // --- Operation Schemas ---
 
-export const BaseOperationSchema = z.object({
+const BaseOperationSchema = z.object({
   clientOpId: z.string(),
   entityId: z.string(),
   baseVersion: z.number().optional(),
-  timestamp: z.string().datetime(),
+  timestamp: z.string().datetime(), // Client-side timestamp
 });
 
 export const CreateProductOperationSchema = BaseOperationSchema.extend({
