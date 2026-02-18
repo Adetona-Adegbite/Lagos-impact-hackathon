@@ -11,6 +11,7 @@ import {
   // Package,
   // CreditCard,
   ChevronRight,
+  Landmark,
 } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
 import { cn } from '@/lib/utils';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Icon } from '@/components/ui/icon';
 
 type SaleItemDetail = {
   id: string;
@@ -105,7 +107,7 @@ export default function SalesReceiptScreen() {
             {/* Success Header */}
             <View className="items-center border-b border-border/50 p-8">
               <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-                <Check size={32} color="#36e27b" strokeWidth={3} />
+                <Icon as={Check} size={32} color="#36e27b" strokeWidth={3} />
               </View>
               <Text className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                 Payment Successful
@@ -117,7 +119,7 @@ export default function SalesReceiptScreen() {
               <View className="mt-6 w-full flex-row items-center justify-between rounded-2xl bg-background/40 px-4 py-3">
                 <Text className="text-xs font-bold text-muted-foreground">{dateStr}</Text>
                 <View className="flex-row items-center gap-2">
-                  <Banknote size={14} className="text-primary" />
+                  <Icon as={Banknote} size={14} className="text-primary" />
                   <Text className="text-xs font-black uppercase text-foreground">
                     {sale.paymentMethod || 'Cash'}
                   </Text>
@@ -152,7 +154,7 @@ export default function SalesReceiptScreen() {
                     <Text className="ml-4 font-black text-foreground">
                       ₦{(it.priceAtSale * it.quantity).toLocaleString()}
                     </Text>
-                    <ChevronRight size={14} color="white" />
+                    <Icon as={ChevronRight} size={14} className="text-foreground" />
                   </View>
                 </Pressable>
               ))}
@@ -169,21 +171,21 @@ export default function SalesReceiptScreen() {
 
         {/*<View className="gap-3">*/}
         {/* VAT Insight */}
-        {/*<View className="relative flex-row overflow-hidden rounded-3xl border border-blue-500/20 bg-blue-500/10 p-5">
-              <View className="absolute bottom-0 left-0 top-0 w-1.5 bg-blue-500" />
-              <View className="mr-4 h-10 w-10 items-center justify-center rounded-xl bg-background/50">
-                <Landmark size={18} className="text-blue-500" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-black text-foreground">VAT Eligible</Text>
-                <Text className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
-                  This sale contains VAT-eligible items. Estimated tax:{' '}
-                  <Text className="font-black text-blue-500">
-                    ₦{(sale.totalAmount * 0.075).toLocaleString()}
-                  </Text>
-                </Text>
-              </View>
-            </View>*/}
+        {/*<View className="relative flex-row overflow-hidden rounded-3xl border border-blue-500/20 bg-blue-500/10 p-5 mx-5">
+          <View className="absolute bottom-0 left-0 top-0 w-1.5 bg-blue-500" />
+          <View className="mr-4 h-10 w-10 items-center justify-center rounded-xl bg-background/50">
+            <Icon as={Landmark} size={18} className="text-blue-500" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-black text-foreground">VAT Eligible</Text>
+            <Text className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
+              This sale contains VAT-eligible items. Estimated tax:{' '}
+              <Text className="font-black text-blue-500">
+                ₦{(sale.totalAmount * 0.075).toLocaleString()}
+              </Text>
+            </Text>
+          </View>
+        </View>*/}
 
         {/* Growth Insight */}
         {/*<View className="relative flex-row overflow-hidden rounded-3xl border border-orange-500/20 bg-orange-500/10 p-5">

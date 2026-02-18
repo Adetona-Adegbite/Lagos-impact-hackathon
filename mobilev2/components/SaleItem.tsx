@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Pressable } from 'react-native';
 import { ShoppingCart } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { THEME } from '@/lib/theme';
 import { useRouter } from 'expo-router';
 import { t } from '@/utils/localization';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Icon } from './ui/icon';
 
 export interface Sale {
   id: string;
@@ -24,7 +24,6 @@ interface SaleItemProps {
 export const SaleItem = ({ item }: SaleItemProps) => {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
-  const mutedForeground = THEME[colorScheme ?? 'light'].mutedForeground;
 
   const createdAt = new Date(item.createdAt);
   const isToday = createdAt.toDateString() === new Date().toDateString();
@@ -48,7 +47,7 @@ export const SaleItem = ({ item }: SaleItemProps) => {
       }>
       <Card className="mb-3 flex-row items-center border-border/50 bg-secondary/50 p-4">
         <View className="h-12 w-12 items-center justify-center rounded-2xl bg-background">
-          <ShoppingCart size={20} color={mutedForeground} />
+          <Icon as={ShoppingCart} size={20} className="text-muted-foreground" />
         </View>
         <View className="ml-4 flex-1">
           <Text className="text-sm font-black text-foreground">

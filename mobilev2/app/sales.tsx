@@ -46,6 +46,7 @@ import { useScanner } from '@/hooks/sales/useScanner';
 import { useProductManagement } from '@/hooks/sales/useProductManagement';
 import { useCheckout } from '@/hooks/sales/useCheckout';
 import { useSound } from '@/hooks/sales/useSound';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 
@@ -414,7 +415,7 @@ export default function ScanSellScreen() {
   if (permission && !permission.granted) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background p-5">
-        <Package size={60} className="mb-4 text-muted-foreground" />
+        <Icon as={Package} size={60} className="mb-4 text-muted-foreground" />
         <Text variant="h2" className="mb-2 text-center">
           Camera Access Needed
         </Text>
@@ -450,7 +451,7 @@ export default function ScanSellScreen() {
             size="icon"
             className="h-10 w-10 rounded-full bg-secondary"
             onPress={() => router.back()}>
-            <ArrowLeft size={22} color={colorScheme === 'dark' ? 'white' : 'black'} />
+            <Icon as={ArrowLeft} size={22} className="text-foreground" />
           </Button>
 
           <View className="flex-row rounded-full border border-white/20 bg-black/40 p-1">
@@ -521,7 +522,7 @@ export default function ScanSellScreen() {
           </View>
 
           <View className="mt-8 flex-row items-center gap-2 rounded-full border border-white/10 bg-black/50 px-4 py-2">
-            <Scan size={16} className="text-primary" />
+            <Icon as={Scan} size={16} className="text-primary" />
             <Text className="text-xs font-bold uppercase tracking-widest text-white">
               Align barcode to scan
             </Text>
@@ -530,14 +531,14 @@ export default function ScanSellScreen() {
           <View className="absolute right-1 top-1/2 z-10 -translate-y-full gap-6">
             <Pressable onPress={toggleCameraType} className="items-center">
               <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
-                <RefreshCw size={22} color="white" />
+                <Icon as={RefreshCw} size={22} color="white" />
               </View>
               <Text className="text-[10px] font-black uppercase text-white shadow-black">Flip</Text>
             </Pressable>
 
             <Pressable onPress={() => setEnterModalVisible(true)} className="items-center">
               <View className="mb-1 h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40">
-                <Keyboard size={22} color="white" />
+                <Icon as={Keyboard} size={22} color="white" />
               </View>
               <Text className="text-[10px] font-black uppercase text-white shadow-black">
                 Manual
@@ -597,7 +598,11 @@ export default function ScanSellScreen() {
                       ? 'border-primary bg-primary/10'
                       : 'border-border bg-secondary/50'
                   )}>
-                  <ShoppingCart size={14} color={activeCartId === item.id ? '#36e27b' : '#666'} />
+                  <Icon
+                    as={ShoppingCart}
+                    size={14}
+                    className={activeCartId === item.id ? 'text-primary' : 'text-muted-foreground'}
+                  />
                   <Text
                     className={cn(
                       'text-xs font-bold',
@@ -616,7 +621,7 @@ export default function ScanSellScreen() {
                 <Pressable
                   onPress={addNewCart}
                   className="flex-row items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2">
-                  <Plus size={14} color="#666" />
+                  <Icon as={Plus} size={14} className="text-muted-foreground" />
                   <Text className="text-xs font-bold text-muted-foreground">New Cart</Text>
                 </Pressable>
               }
@@ -633,7 +638,7 @@ export default function ScanSellScreen() {
               <View className="mb-3 flex-row items-center justify-between rounded-2xl border border-border/50 bg-secondary/50 p-3">
                 <View className="flex-1 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-background">
-                    <ImageIcon size={18} className="text-muted-foreground/30" />
+                    <Icon as={ImageIcon} size={18} className="text-muted-foreground/30" />
                   </View>
                   <View className="flex-1">
                     <Text className="text-sm font-black text-foreground" numberOfLines={1}>
@@ -656,7 +661,7 @@ export default function ScanSellScreen() {
                         size="icon"
                         className="h-8 w-8 rounded-lg border-border"
                         onPress={() => handleEditCartItem(item)}>
-                        <Pencil size={14} color="#666" />
+                        <Icon as={Pencil} size={14} className="text-muted-foreground" />
                       </Button>
                     </>
                   ) : (
@@ -666,7 +671,7 @@ export default function ScanSellScreen() {
                         size="icon"
                         className="h-8 w-8 rounded-lg border-border"
                         onPress={() => changeCartQty(item.id, -1)}>
-                        <Minus size={14} color="#666" />
+                        <Icon as={Minus} size={14} color="#666" />
                       </Button>
                       <Text className="min-w-[20px] text-center font-black text-foreground">
                         {item.qty}
@@ -676,7 +681,7 @@ export default function ScanSellScreen() {
                         size="icon"
                         className="h-8 w-8 rounded-lg"
                         onPress={() => changeCartQty(item.id, 1)}>
-                        <Plus size={14} color="#000" />
+                        <Icon as={Plus} size={14} color="#000" />
                       </Button>
                     </>
                   )}
@@ -685,7 +690,7 @@ export default function ScanSellScreen() {
             )}
             ListEmptyComponent={
               <View className="items-center py-6">
-                <ShoppingCart size={32} className="mb-2 text-muted-foreground/20" />
+                <Icon as={ShoppingCart} size={32} className="mb-2 text-muted-foreground/20" />
                 <Text variant="muted" className="font-bold italic">
                   No items scanned yet{' '}
                 </Text>
@@ -711,7 +716,7 @@ export default function ScanSellScreen() {
               <Text className="font-black uppercase tracking-tight text-primary-foreground">
                 Checkout
               </Text>
-              <ArrowRight size={20} color="#000" strokeWidth={3} />
+              <Icon as={ArrowRight} size={20} color="#000" strokeWidth={3} />
             </View>
           </Button>
         ) : (

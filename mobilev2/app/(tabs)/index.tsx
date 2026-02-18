@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useColorScheme } from 'nativewind';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.62);
@@ -157,11 +158,11 @@ export default function RetailHomeScreen() {
       <Card style={{ width: CARD_WIDTH }} className="mr-3 border-border bg-secondary p-4">
         <View className="mb-4 flex-row items-center justify-between">
           <View className={cn('h-11 w-11 items-center justify-center rounded-xl bg-background/50')}>
-            <item.icon size={22} className={item.color} />
+            <Icon as={item.icon} size={22} className={item.color} />
           </View>
           {item.hint && (
             <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-1">
-              <TrendingUp size={12} className="text-primary" />
+              <Icon as={TrendingUp} size={12} className="text-primary" />
               <Text className="text-[10px] font-bold text-primary">{item.hint}</Text>
             </View>
           )}
@@ -205,7 +206,7 @@ export default function RetailHomeScreen() {
           variant="secondary"
           size="icon"
           className="relative h-11 w-11 rounded-2xl bg-secondary">
-          <Bell size={20} color="white" />
+          <Icon as={Bell} size={20} className="text-foreground" />
           <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
         </Button>
       </View>
@@ -249,13 +250,19 @@ export default function RetailHomeScreen() {
                     'h-12 w-12 items-center justify-center rounded-2xl',
                     a.primary ? 'bg-white/20' : 'bg-background/40'
                   )}>
-                  <a.icon
+                  <Icon
+                    as={a.icon}
                     size={28}
-                    color={a.primary ? '#000' : colorScheme === 'dark' ? '#fff' : '#444'}
+                    className={a.primary ? 'text-black' : 'text-foreground'}
                     strokeWidth={a.primary ? 2.5 : 2}
                   />
                 </View>
-                <ArrowRight size={18} color={a.primary ? '#000' : '#666'} strokeWidth={3} />
+                <Icon
+                  as={ArrowRight}
+                  size={18}
+                  color={a.primary ? '#000' : '#666'}
+                  strokeWidth={3}
+                />
               </View>
               <View>
                 <Text
@@ -285,7 +292,7 @@ export default function RetailHomeScreen() {
               {t('recentSales')}
             </Text>
             <Pressable onPress={() => router.push('/all-sales')}>
-              <ChevronRight size={20} color="#666" />
+              <Icon as={ChevronRight} size={20} className="text-muted-foreground" />
             </Pressable>
           </View>
 
@@ -295,7 +302,7 @@ export default function RetailHomeScreen() {
 
           {recentSales.length === 0 && (
             <View className="items-center rounded-3xl border border-dashed border-border bg-secondary/30 py-10">
-              <History size={40} className="mb-2 text-muted-foreground/30" />
+              <Icon as={History} size={40} className="mb-2 text-muted-foreground/30" />
               <Text variant="muted" className="font-bold">
                 No recent sales
               </Text>
@@ -309,7 +316,7 @@ export default function RetailHomeScreen() {
         <Button
           onPress={() => router.push('/sales')}
           className="h-16 flex-row gap-3 rounded-full bg-primary">
-          <ShoppingCart size={24} color="#000" strokeWidth={3} />
+          <Icon as={ShoppingCart} size={24} color="#000" strokeWidth={3} />
           <Text className="text-lg font-black uppercase tracking-tight text-primary-foreground">
             {t('newSale')}
           </Text>

@@ -29,6 +29,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { useLocalSearchParams } from 'expo-router';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 
@@ -125,7 +126,7 @@ export default function InventoryScreen() {
           {item.img ? (
             <Image source={{ uri: item.img }} className="h-full w-full" resizeMode="cover" />
           ) : (
-            <ImageIcon size={24} className="text-muted-foreground/30" />
+            <Icon as={ImageIcon} size={24} className="text-muted-foreground/30" />
           )}
         </View>
 
@@ -146,7 +147,7 @@ export default function InventoryScreen() {
               item.lowStock ? 'bg-destructive/10' : 'bg-primary/10'
             )}>
             {item.lowStock ? (
-              <AlertTriangle size={12} className="text-destructive" />
+              <Icon as={AlertTriangle} size={12} className="text-destructive" />
             ) : (
               <View className="h-2 w-2 rounded-full bg-primary" />
             )}
@@ -159,7 +160,7 @@ export default function InventoryScreen() {
             </Text>
           </View>
           <View className="mt-2">
-            <ChevronRight size={18} className="text-muted-foreground/50" />
+            <Icon as={ChevronRight} size={18} className="text-muted-foreground/50" />
           </View>
         </View>
       </Card>
@@ -172,7 +173,7 @@ export default function InventoryScreen() {
         title={t('inventory')}
         rightAdornment={
           <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
-            <Bell size={20} color="white" />
+            <Icon as={Bell} size={20} className="text-foreground" />
             <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
           </Button>
         }
@@ -181,7 +182,7 @@ export default function InventoryScreen() {
       {/* Search & Filter */}
       <View className="gap-4 px-5 pt-4">
         <View className="h-12 flex-row items-center rounded-2xl border border-border bg-secondary px-4">
-          <Search size={18} className="text-muted-foreground" />
+          <Icon as={Search} size={18} className="text-muted-foreground" />
           <TextInput
             placeholder={t('searchPlaceholder')}
             placeholderTextColor="#6b7280"
@@ -190,7 +191,7 @@ export default function InventoryScreen() {
             onChangeText={setQuery}
           />
           <Pressable>
-            <SlidersHorizontal size={18} className="text-muted-foreground" />
+            <Icon as={SlidersHorizontal} size={18} className="text-muted-foreground" />
           </Pressable>
         </View>
 
@@ -254,7 +255,7 @@ export default function InventoryScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View className="mt-4 items-center rounded-3xl border border-dashed border-border bg-secondary/20 py-20">
-                <Package size={48} className="mb-3 text-muted-foreground/20" />
+                <Icon as={Package} size={48} className="mb-3 text-muted-foreground/20" />
                 <Text variant="p" className="text-center font-bold text-muted-foreground">
                   {t('noProductsFound')}
                 </Text>
@@ -274,7 +275,7 @@ export default function InventoryScreen() {
             })
           }
           className="h-16 flex-row gap-2 rounded-full bg-primary">
-          <Plus size={24} color="#000" strokeWidth={3} />
+          <Icon as={Plus} size={24} color="#000" strokeWidth={3} />
           <Text className="text-lg font-black uppercase tracking-tight text-primary-foreground">
             {t('addItem')}
           </Text>

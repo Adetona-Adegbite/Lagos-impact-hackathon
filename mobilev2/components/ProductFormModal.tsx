@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Modal, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import {
+  View,
+  Modal,
+  FlatList,
+  ActivityIndicator,
+  Pressable,
+  TouchableOpacity,
+} from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Barcode, Sparkles, ChevronDown, Minus, Plus } from 'lucide-react-native';
 import RNPickerSelect from 'react-native-picker-select';
@@ -8,6 +15,7 @@ import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { t } from '@/utils/localization';
+import { Icon } from './ui/icon';
 
 export interface ProductFormData {
   name: string;
@@ -98,7 +106,7 @@ export function ProductFormModal({
             {isNewProduct ? t('addItem') : t('editProduct')}
           </Text>
           <View className="mb-6 flex-row items-center gap-2 self-start rounded-xl bg-primary/10 px-3 py-1.5">
-            <Barcode size={14} className="text-primary" />
+            <Icon as={Barcode} size={14} className="text-primary" />
             <Text className="text-[11px] font-black uppercase text-primary">{barcode}</Text>
           </View>
 
@@ -163,10 +171,12 @@ export function ProductFormModal({
                       {t('category')}
                     </Text>
                     {onRecommendCategory && (
-                      <Pressable className="flex-row items-center gap-1" onPress={handleSuggest}>
-                        <Sparkles size={12} color="white" />
+                      <TouchableOpacity
+                        className="flex-row items-center gap-1 p-1"
+                        onPress={handleSuggest}>
+                        <Icon as={Sparkles} size={12} className="text-foreground" />
                         <Text className="text-[10px] font-bold text-primary">{t('suggest')}</Text>
-                      </Pressable>
+                      </TouchableOpacity>
                     )}
                   </View>
                   <View className="relative h-14 justify-center overflow-hidden rounded-2xl border border-border bg-secondary px-4">
@@ -186,13 +196,14 @@ export function ProductFormModal({
                           fontWeight: '700',
                         },
                         placeholder: { color: '#666' },
+                        iconContainer: {
+                          top: '50%',
+                          transform: [{ translateY: '-50%' }],
+                        },
                       }}
                       useNativeAndroidPickerStyle={false}
                       Icon={() => (
-                        <ChevronDown
-                          size={18}
-                          className="absolute right-4 top-1/2 translate-y-[-50%] text-muted-foreground"
-                        />
+                        <Icon as={ChevronDown} size={18} className="text-muted-foreground" />
                       )}
                     />
                   </View>
@@ -208,7 +219,7 @@ export function ProductFormModal({
                       size="icon"
                       className="h-12 w-12 rounded-xl border border-border bg-background shadow-sm"
                       onPress={() => setQuantity((q) => Math.max(0, q - 1))}>
-                      <Minus size={20} color="white" />
+                      <Icon as={Minus} size={20} className="text-foreground" />
                     </Button>
                     <View className="flex-1 items-center">
                       <Input
@@ -228,7 +239,7 @@ export function ProductFormModal({
                       className="h-12 w-12 rounded-xl bg-primary shadow-sm"
                       size="icon"
                       onPress={() => setQuantity((q) => q + 1)}>
-                      <Plus size={20} color="#000" />
+                      <Icon as={Plus} size={20} color="#000" />
                     </Button>
                   </View>
                 </View>

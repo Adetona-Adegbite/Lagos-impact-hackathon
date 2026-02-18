@@ -15,6 +15,7 @@ import { localizationService, t } from '@/utils/localization';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 const SAFE_TOP = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 44;
@@ -198,7 +199,7 @@ export default function OnboardingScreen() {
                     {isMiddle && (
                       <View className="absolute bottom-4 left-4 right-4 flex-row items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3">
                         <View className="h-10 w-10 items-center justify-center rounded-full bg-primary">
-                          <Check size={18} color="#000" strokeWidth={3} />
+                          <Icon as={Check} size={19} color="#000" strokeWidth={3} />
                         </View>
                         <View className="flex-1">
                           <View className="mb-2 h-2 w-24 rounded-md bg-white/90" />
@@ -212,7 +213,7 @@ export default function OnboardingScreen() {
                       <View className="absolute bottom-5 left-3 right-3 rounded-xl border border-white/5 bg-background/80 p-3">
                         <View className="flex-row items-center">
                           <View className="h-10 w-10 items-center justify-center rounded-full bg-primary">
-                            <Check size={18} color="#000" strokeWidth={3} />
+                            <Icon as={Check} size={18} color="#000" strokeWidth={3} />
                           </View>
                           <View className="ml-3">
                             <Text className="text-[10px] font-bold uppercase text-primary">
@@ -233,7 +234,7 @@ export default function OnboardingScreen() {
 
                   {item.badgeIcon && isFirst && (
                     <View className="absolute -bottom-2 right-6 rounded-2xl border-4 border-background bg-primary p-3 shadow-lg">
-                      <item.badgeIcon size={24} color="#000" strokeWidth={2.5} />
+                      <Icon as={item.badgeIcon} size={24} color="#000" strokeWidth={2.5} />
                     </View>
                   )}
                 </View>
@@ -273,7 +274,7 @@ export default function OnboardingScreen() {
               ))}
             </View>
             <Button onPress={goNext} size="icon" className="h-14 w-14 rounded-full p-0">
-              <ChevronRight size={24} color="#000" strokeWidth={3} />
+              <Icon as={ChevronRight} size={24} color="#000" strokeWidth={3} />
             </Button>
           </View>
         )}
@@ -295,7 +296,7 @@ export default function OnboardingScreen() {
               <Text className="text-base font-extrabold uppercase tracking-tight text-primary-foreground">
                 {t('continue')}
               </Text>
-              <ChevronRight size={20} color="#000" strokeWidth={3} />
+              <Icon as={ChevronRight} size={20} color="#000" strokeWidth={3} />
             </Button>
           </View>
         )}

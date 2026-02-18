@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
 
 const LANGUAGES = [
   { label: 'english', code: 'en' },
@@ -65,7 +66,7 @@ export default function LoginScreen() {
               size="icon"
               className="h-10 w-10 rounded-full bg-secondary"
               onPress={() => router.back()}>
-              <ArrowLeft size={22} color="white" />
+              <Icon as={ArrowLeft} size={22} className="text-foreground" />
             </Button>
 
             <View className="flex-row items-center gap-1.5">
@@ -78,7 +79,7 @@ export default function LoginScreen() {
           {/* Hero Section */}
           <View className="mb-6 px-0.5 py-2">
             <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
-              <StoreIcon size={28} color="#122117" strokeWidth={2.5} />
+              <Icon as={StoreIcon} size={28} color="#122117" strokeWidth={2.5} />
             </View>
             <Text variant="h1" className="mb-2">
               {t('welcomeOga')}
@@ -133,7 +134,7 @@ export default function LoginScreen() {
                   onChangeText={setPhone}
                 />
                 <View className="pr-4">
-                  <Smartphone size={20} color="#9AA0A6" />
+                  <Icon as={Smartphone} size={20} color="#9AA0A6" />
                 </View>
               </View>
             </View>
@@ -153,7 +154,7 @@ export default function LoginScreen() {
                   <Text className="text-base font-black uppercase tracking-tight text-primary-foreground">
                     {t('getCode')}
                   </Text>
-                  <ArrowRight size={18} color="#062" strokeWidth={3} />
+                  <Icon as={ArrowRight} size={18} color="#062" strokeWidth={3} />
                 </View>
               )}
             </Button>

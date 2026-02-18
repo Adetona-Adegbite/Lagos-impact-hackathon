@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { useColorScheme } from 'nativewind';
+import { Icon } from './ui/icon';
 
 interface ScreenHeaderProps {
   title: string;
@@ -16,7 +16,6 @@ interface ScreenHeaderProps {
 
 export function ScreenHeader({ title, rightAdornment, onBack, className }: ScreenHeaderProps) {
   const router = useRouter();
-  const { colorScheme } = useColorScheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -38,7 +37,7 @@ export function ScreenHeader({ title, rightAdornment, onBack, className }: Scree
           size="icon"
           className="h-10 w-10 rounded-full bg-secondary"
           onPress={handleBack}>
-          <ArrowLeft size={22} color={colorScheme === 'dark' ? 'white' : 'black'} />
+          <Icon as={ArrowLeft} size={22} className="text-foreground" />
         </Button>
         <Text variant="h3" className="font-black text-foreground" numberOfLines={1}>
           {title}

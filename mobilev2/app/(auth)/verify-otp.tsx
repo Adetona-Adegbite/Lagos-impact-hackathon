@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
 
 const RESEND_COOLDOWN = 30; // seconds
 
@@ -185,7 +186,7 @@ export default function VerifyOtpScreen() {
               size="icon"
               className="h-10 w-10 rounded-full bg-secondary"
               onPress={() => router.back()}>
-              <ArrowLeft size={22} color="white" />
+              <Icon as={ArrowLeft} size={22} className="text-foreground" />
             </Button>
             <Text variant="h3" className="font-extrabold text-foreground">
               {t('verifyCodeTitle')}

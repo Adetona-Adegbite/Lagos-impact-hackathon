@@ -22,6 +22,7 @@ import { productService } from '@/services/productService';
 import { t } from '@/utils/localization';
 import { cn } from '@/lib/utils';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Icon } from '@/components/ui/icon';
 
 type Range = 'month' | 'ytd';
 
@@ -189,7 +190,7 @@ export default function ReportsScreen() {
                 </Text>
               </View>
               <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary/20">
-                <TrendingUp size={24} className="text-primary" />
+                <Icon as={TrendingUp} size={24} className="text-primary" />
               </View>
             </View>
 
@@ -260,7 +261,7 @@ export default function ReportsScreen() {
           <View className="mt-4 flex-row items-center gap-2">
             <View className="relative flex-1">
               <View className="absolute left-3 top-3 z-10">
-                <Search size={18} color="#72777C" />
+                <Icon as={Search} size={18} className="text-muted-foreground" />
               </View>
               <Input
                 placeholder="Filter products..."
@@ -282,7 +283,7 @@ export default function ReportsScreen() {
               <Card className="border-border/50 bg-secondary p-5">
                 <View className="mb-4 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
-                    <PieChart size={20} color="#A855F7" />
+                    <Icon as={PieChart} size={20} color="#A855F7" />
                   </View>
                   <Text variant="h3" className="text-lg">
                     Category Insights
@@ -318,7 +319,9 @@ export default function ReportsScreen() {
                         },
                       }}
                       useNativeAndroidPickerStyle={false}
-                      Icon={() => <ChevronDown size={18} className="text-muted-foreground" />}
+                      Icon={() => (
+                        <Icon as={ChevronDown} size={18} className="text-muted-foreground" />
+                      )}
                       placeholder={{ label: 'Select a category...', value: null }}
                     />
                   </View>
@@ -344,7 +347,7 @@ export default function ReportsScreen() {
               <CardContent className="p-5">
                 <View className="mb-4 flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <Calendar size={20} color="#36E27B" />
+                    <Icon as={Calendar} size={20} color="#36E27B" />
                   </View>
                   <Text className="text-lg font-bold text-foreground">Best Performing Day</Text>
                 </View>
@@ -367,7 +370,7 @@ export default function ReportsScreen() {
             <View className="mx-5 mb-6">
               <View className="mb-4 flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
-                  <TrendingUp size={20} color="#22C55E" />
+                  <Icon as={TrendingUp} size={20} color="#22C55E" />
                 </View>
                 <Text variant="h3" className="text-lg">
                   Fastest Moving Products
@@ -411,7 +414,7 @@ export default function ReportsScreen() {
             <View className="mx-5 mb-6">
               <View className="mb-4 flex-row items-center gap-3">
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                  <TrendingDown size={20} color="#F97316" />
+                  <Icon as={TrendingDown} size={20} color="#F97316" />
                 </View>
                 <Text variant="h3" className="text-lg">
                   Slowest Moving Products

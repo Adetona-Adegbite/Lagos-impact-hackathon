@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ProductFormModal, ProductFormData } from '@/components/ProductFormModal';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 
@@ -217,7 +218,7 @@ export default function ProductDetailsScreen() {
                 size="icon"
                 className="h-10 w-10 rounded-full"
                 onPress={handleDeleteProduct}>
-                <Trash2 size={20} color="white" />
+                <Icon as={Trash2} size={20} className="text-foreground" />
               </Button>
             )}
             <Button
@@ -225,7 +226,7 @@ export default function ProductDetailsScreen() {
               size="icon"
               className="h-10 w-10 rounded-full bg-secondary"
               onPress={() => setEditModalVisible(true)}>
-              <Edit3 size={20} color="white" />
+              <Icon as={Edit3} size={20} className="text-foreground" />
             </Button>
           </View>
         }
@@ -238,7 +239,7 @@ export default function ProductDetailsScreen() {
         <View className="p-5">
           <Card className="items-center border-border/50 bg-secondary/30 p-6">
             <View className="mb-4 h-32 w-32 items-center justify-center rounded-3xl bg-background shadow-sm">
-              <ImageIcon size={48} className="text-muted-foreground/20" />
+              <Icon as={ImageIcon} size={48} className="text-muted-foreground/20" />
             </View>
             <Text className="text-center text-2xl font-black text-foreground">{product.name}</Text>
             <Text className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -246,7 +247,7 @@ export default function ProductDetailsScreen() {
             </Text>
             <View className="mt-4 flex items-center justify-center">
               <View className="flex-row items-center gap-2 self-start rounded-xl bg-primary/10 px-3 py-1.5">
-                <Barcode size={14} className="text-primary" />
+                <Icon as={Barcode} size={14} className="text-primary" />
                 <Text className="text-[11px] font-black uppercase text-primary">
                   {product.barcode}
                 </Text>
@@ -279,7 +280,7 @@ export default function ProductDetailsScreen() {
           <Card className="flex-row items-center justify-between border-border/50 bg-secondary/20 p-4">
             <View className="flex-row items-center gap-3">
               <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                <Package size={24} className="text-primary" />
+                <Icon as={Package} size={24} className="text-primary" />
               </View>
               <View>
                 <Text className="text-sm font-black text-foreground">{t('currentStock')}</Text>
@@ -290,7 +291,7 @@ export default function ProductDetailsScreen() {
             </View>
             {product.quantity <= 3 && (
               <View className="flex-row items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1.5">
-                <AlertTriangle size={12} className="text-destructive" />
+                <Icon as={AlertTriangle} size={12} className="text-destructive" />
                 <Text className="text-[10px] font-black uppercase text-destructive">
                   {t('lowStock')}
                 </Text>
@@ -328,7 +329,7 @@ export default function ProductDetailsScreen() {
         <View className="px-5">
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
-              <History size={18} className="text-foreground" />
+              <Icon as={History} size={18} className="text-foreground" />
               <Text className="text-lg font-black text-foreground">{t('salesHistory')}</Text>
             </View>
           </View>
@@ -356,7 +357,7 @@ export default function ProductDetailsScreen() {
 
           {filteredSales.length === 0 ? (
             <View className="items-center rounded-3xl border border-dashed border-border bg-secondary/10 py-12">
-              <TrendingUp size={32} className="mb-2 text-muted-foreground/20" />
+              <Icon as={TrendingUp} size={32} className="mb-2 text-muted-foreground/20" />
               <Text className="text-sm font-bold italic text-muted-foreground">
                 {t('noSalesFound')}{' '}
               </Text>
@@ -368,7 +369,7 @@ export default function ProductDetailsScreen() {
                 className="mb-3 flex-row items-center justify-between rounded-2xl border border-border/50 bg-secondary/40 p-4">
                 <View className="flex-row items-center gap-3">
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-background">
-                    <Calendar size={18} className="text-muted-foreground/40" />
+                    <Icon as={Calendar} size={18} className="text-muted-foreground" />
                   </View>
                   <View>
                     <Text className="text-sm font-black text-foreground">

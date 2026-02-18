@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { Icon } from '@/components/ui/icon';
 
 const { width } = Dimensions.get('window');
 
@@ -94,7 +95,7 @@ export default function AllSalesScreen() {
         className="border-b-0 px-5 py-4"
         rightAdornment={
           <Button variant="secondary" size="icon" className="h-10 w-10 rounded-full bg-secondary">
-            <Calendar size={20} color="white" />
+            <Icon as={Calendar} size={20} className="text-foreground" />
           </Button>
         }
       />
@@ -107,7 +108,7 @@ export default function AllSalesScreen() {
         <View className="mt-2 px-5">
           <Card className="rounded-[32px] border-primary/20 bg-primary/10 p-5">
             <View className="mb-3 flex-row items-center gap-2">
-              <Sparkles size={18} className="text-primary" />
+              <Icon as={Sparkles} size={18} className="text-primary" />
               <Text className="text-[10px] font-black uppercase tracking-widest text-primary">
                 AI Sales Assistant
               </Text>
@@ -143,7 +144,7 @@ export default function AllSalesScreen() {
                 </Text>
               </View>
               <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary/20">
-                <TrendingUp size={24} className="text-primary" />
+                <Icon as={TrendingUp} size={24} className="text-primary" />
               </View>
             </View>
 
@@ -169,7 +170,7 @@ export default function AllSalesScreen() {
         {/* Search & Filter */}
         <View className="mt-8 px-5">
           <View className="mb-4 h-12 flex-row items-center rounded-2xl border border-border bg-secondary px-4">
-            <Search size={18} className="text-muted-foreground" />
+            <Icon as={Search} size={18} className="text-muted-foreground" />
             <Input
               placeholder="Search sales..."
               className="ml-2 h-full flex-1 border-0 bg-transparent text-sm font-bold"
@@ -235,7 +236,7 @@ export default function AllSalesScreen() {
 
           {filteredSales.length === 0 && (
             <View className="items-center rounded-[32px] border border-dashed border-border bg-secondary/30 py-20">
-              <ShoppingCart size={48} className="mb-3 text-muted-foreground/20" />
+              <Icon as={ShoppingCart} size={48} className="mb-3 text-muted-foreground/20" />
               <Text variant="p" className="text-center font-bold text-muted-foreground">
                 No matching sales found
               </Text>
@@ -250,7 +251,7 @@ export default function AllSalesScreen() {
           size="icon"
           className="h-16 w-16 rounded-full bg-primary"
           onPress={() => router.push('/sales')}>
-          <Plus size={32} color="#000" strokeWidth={3} />
+          <Icon as={Plus} size={32} color="#000" strokeWidth={3} />
         </Button>
       </View>
     </SafeAreaView>
