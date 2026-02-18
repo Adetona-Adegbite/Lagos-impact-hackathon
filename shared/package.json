@@ -1,7 +1,8 @@
 {
   "name": "@supamart/shared",
   "version": "1.0.0",
-  "main": "schemas.ts",
+  "main": "schema.ts",
+  "type": "module",
   "dependencies": {
     "zod": "^3.22.4"
   }
