@@ -417,6 +417,45 @@ export const productService = {
   },
 
   /**
+   * Get all product categories from local database
+   */
+  getLocalCategories: async (): Promise<string[]> => {
+    const sql = `SELECT DISTINCT category FROM products WHERE deleted = 0 AND category IS NOT NULL AND category != '' ORDER BY category ASC`;
+    const result = await executeSql(sql);
+    return result.rows._array.map((row) => row.category);
+  },
+
+  /**
+   * Get revenue per category
+   */
+  getCategoryRevenues: async (
+    range: 'month' | 'ytd' = 'month'
+  ): Promise<{ category: string; totalRevenue: number }[]> => {
+    const startDate = new Date();
+
+    if (range === 'month') {
+      startDate.setDate(1); // First day of current month
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      startDate.setMonth(0, 1); // First day of current year
+      startDate.setHours(0, 0, 0, 0);
+    }
+    const startDateStr = startDate.toISOString();
+
+    const sql = `
+     SELECT p.category, SUM(si.quantity * si.priceAtSale) as totalRevenue
+     FROM sale_items si
+     JOIN products p ON si.productId = p.id
+     JOIN sales s ON si.saleId = s.id
+     WHERE s.createdAt >= ? AND p.category IS NOT NULL AND p.category != ''
+     GROUP BY p.category
+     ORDER BY totalRevenue DESC
+   `;
+    const result = await executeSql(sql, [startDateStr]);
+    return result.rows._array;
+  },
+
+  /**
    * Recommend a category for a product
    */
   recommendCategory: async (name: string): Promise<{ category: string }> => {

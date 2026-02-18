@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, TrendingUp, TrendingDown, Calendar, Search } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
+import {
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Search,
+  ChevronDown,
+  PieChart,
+} from 'lucide-react-native';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,12 +33,18 @@ interface ReportStats {
 
 export default function ReportsScreen() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
   const [range, setRange] = useState<Range>('month');
   const [query, setQuery] = useState('');
   const [shopName, setShopName] = useState('My Shop');
 
   const [stats, setStats] = useState<ReportStats | null>(null);
   const [sales, setSales] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryRevenues, setCategoryRevenues] = useState<
+    { category: string; totalRevenue: number }[]
+  >([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -48,12 +63,19 @@ export default function ReportsScreen() {
       try {
         setLoading(true);
         setSelectedIndex(null);
-        const [statsData, salesData] = await Promise.all([
+        const [statsData, salesData, categoriesData, categoryRevenuesData] = await Promise.all([
           productService.getReportStats(range),
           productService.getAllSales(),
+          productService.getLocalCategories(),
+          productService.getCategoryRevenues(range),
         ]);
         setStats(statsData);
         setSales(salesData);
+        setCategories(categoriesData);
+        setCategoryRevenues(categoryRevenuesData);
+        if (categoriesData.length > 0 && !selectedCategory) {
+          setSelectedCategory(categoriesData[0]);
+        }
       } catch (e) {
         console.error('Failed to fetch report data:', e);
       } finally {
@@ -132,6 +154,12 @@ export default function ReportsScreen() {
   const totalPeriodRevenue = useMemo(() => {
     return monthlyTrendData.reduce((sum, d) => sum + d.total, 0);
   }, [monthlyTrendData]);
+
+  const selectedCategoryRevenue = useMemo(() => {
+    if (!selectedCategory) return 0;
+    const catData = categoryRevenues.find((c) => c.category === selectedCategory);
+    return catData ? catData.totalRevenue : 0;
+  }, [selectedCategory, categoryRevenues]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -249,6 +277,68 @@ export default function ReportsScreen() {
           <ActivityIndicator size="large" className="mt-12 text-primary" />
         ) : filteredStats ? (
           <>
+            {/* Category Insights */}
+            <View className="mx-5 mb-6">
+              <Card className="border-border/50 bg-secondary p-5">
+                <View className="mb-4 flex-row items-center gap-3">
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
+                    <PieChart size={20} color="#A855F7" />
+                  </View>
+                  <Text variant="h3" className="text-lg">
+                    Category Insights
+                  </Text>
+                </View>
+
+                <View className="mb-4">
+                  <Text className="mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    Select Category
+                  </Text>
+                  <View className="relative h-14 justify-center overflow-hidden rounded-2xl border border-border bg-background px-4">
+                    <RNPickerSelect
+                      onValueChange={(v) => setSelectedCategory(v)}
+                      items={categories.map((c) => ({ label: c, value: c }))}
+                      value={selectedCategory}
+                      style={{
+                        inputIOS: {
+                          color: colorScheme === 'dark' ? '#fff' : '#000',
+                          fontSize: 16,
+                          fontWeight: '700',
+                          paddingRight: 30,
+                        },
+                        inputAndroid: {
+                          color: colorScheme === 'dark' ? '#fff' : '#000',
+                          fontSize: 16,
+                          fontWeight: '700',
+                          paddingRight: 30,
+                        },
+                        placeholder: { color: '#666' },
+                        iconContainer: {
+                          top: '50%',
+                          transform: [{ translateY: '-50%' }],
+                        },
+                      }}
+                      useNativeAndroidPickerStyle={false}
+                      Icon={() => <ChevronDown size={18} className="text-muted-foreground" />}
+                      placeholder={{ label: 'Select a category...', value: null }}
+                    />
+                  </View>
+                </View>
+
+                <View>
+                  <Text className="mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    Revenue ({range === 'month' ? 'This Month' : 'YTD'})
+                  </Text>
+                  <Text className="text-3xl font-black text-foreground">
+                    ₦
+                    {selectedCategoryRevenue.toLocaleString(undefined, {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </Text>
+                </View>
+              </Card>
+            </View>
+
             {/* Most Profitable Day Card */}
             <Card className="mx-5 mb-6 border-primary/20 bg-primary/5">
               <CardContent className="p-5">
