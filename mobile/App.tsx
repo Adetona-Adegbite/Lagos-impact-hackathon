@@ -20,6 +20,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import SalesScreen from "./screens/Post-Auth/AllSalesScreen";
 import CreditProfileScreen from "./screens/Post-Auth/CreditProfileScreen";
 import TaxExportScreen from "./screens/Post-Auth/TaxExportScreen";
+import PaymentsScreen from "./screens/Post-Auth/PaymentsScreen";
+import LinkPaymentScreen from "./screens/Post-Auth/LinkPaymentScreen";
+import { NotificationProvider } from "./services/notifications";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -40,6 +43,8 @@ const HomeScreens = () => {
         component={CreditProfileScreen}
       />
       <Stack.Screen name="TaxInsightsScreen" component={TaxExportScreen} />
+      <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
+      <Stack.Screen name="LinkPaymentScreen" component={LinkPaymentScreen} />
     </Stack.Navigator>
   );
 };
@@ -49,8 +54,8 @@ const Tabs = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#122117" },
-        tabBarActiveTintColor: "#36e27b",
+        tabBarStyle: { backgroundColor: "#121212" },
+        tabBarActiveTintColor: "#dd4f05",
         tabBarIcon: ({ color, size }) => {
           let iconName: keyof typeof MaterialIcons.glyphMap = "home";
 
@@ -103,25 +108,27 @@ export default function App() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#122117",
+          backgroundColor: "#121212",
         }}
       >
-        <ActivityIndicator size="large" color="#36e27b" />
+        <ActivityIndicator size="large" color="#dd4f05" />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="WelcomeScreen" component={OnboardingScreen} />
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
-        <Stack.Screen name="HomeScreen" component={Tabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <NotificationProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="WelcomeScreen" component={OnboardingScreen} />
+          <Stack.Screen name="LoginScreen" component={LoginScreen} />
+          <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
+          <Stack.Screen name="HomeScreen" component={Tabs} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </NotificationProvider>
   );
 }

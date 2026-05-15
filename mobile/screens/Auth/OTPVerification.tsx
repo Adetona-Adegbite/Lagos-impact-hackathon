@@ -19,7 +19,7 @@ import { authStorage } from "../../services/authStorage";
 import { syncEngine } from "../../services/sync/SyncEngine";
 import { t } from "../../utils/localization";
 
-const MAIN_GREEN = "#36e27b";
+const MAIN_GREEN = "#dd4f05";
 const RESEND_COOLDOWN = 30; // seconds
 
 type Props = {
@@ -341,7 +341,7 @@ export default function VerifyOtpScreen({
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
+  safe: { flex: 1, backgroundColor: "#121212" },
   wrap: { flex: 1 },
   container: {
     flex: 1,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 999,
-    backgroundColor: "#29372e",
+    backgroundColor: "#2e2e2e",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     elevation: 4,
   },
-  verifyBtnText: { color: "#062", fontWeight: "800", fontSize: 16 },
+  verifyBtnText: { color: "#dd4f05", fontWeight: "800", fontSize: 16 },
 
   rowBetween: {
     flexDirection: "row",

@@ -18,10 +18,10 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#36e27b";
+const PRIMARY = "#dd4f05";
 const SURFACE = "#1a2c22";
 const SURFACE_BORDER = "#2f4538";
-const BG = "#122117";
+const BG = "#121212";
 
 type Tx = {
   id: string;
@@ -69,7 +69,7 @@ export default function CreditProfileScreen({
     try {
       const header = ["id", "date", "description", "amount", "type"].join(",");
       const rows = SAMPLE_TX.map((t) =>
-        [t.id, t.date, `"${t.desc}"`, t.amount, t.type].join(",")
+        [t.id, t.date, `"${t.desc}"`, t.amount, t.type].join(","),
       );
       const csv = [header, ...rows].join("\n");
 
@@ -117,7 +117,7 @@ export default function CreditProfileScreen({
           <td style="padding:8px;border:1px solid #eee;text-align:center">${
             t.type
           }</td>
-        </tr>`
+        </tr>`,
       ).join("");
 
       const html = `
@@ -549,9 +549,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
-  gridLabel: { color: "#9eb7a8", fontSize: 12 },
+  gridLabel: { color: "#c4a898", fontSize: 12 },
   gridValue: { color: "#fff", fontSize: 18, fontWeight: "800", marginTop: 6 },
-  gridSmall: { color: "#9eb7a8", fontSize: 12 },
+  gridSmall: { color: "#c4a898", fontSize: 12 },
   gridDelta: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   gridDeltaText: { color: PRIMARY, fontWeight: "700", marginLeft: 6 },
 
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   trendTitle: { color: "#fff", fontWeight: "800" },
-  trendSub: { color: "#9eb7a8", fontSize: 12 },
+  trendSub: { color: "#c4a898", fontSize: 12 },
   trendBars: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     shadowColor: PRIMARY,
     elevation: 6,
   },
-  trendLabel: { color: "#9eb7a8", fontSize: 10, marginTop: 6 },
+  trendLabel: { color: "#c4a898", fontSize: 10, marginTop: 6 },
   trendLabelActive: { color: "#fff", fontWeight: "800" },
 
   narrative: {
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   narrativeTitle: { color: "#fff", fontWeight: "800" },
-  narrativeText: { color: "#9eb7a8", marginTop: 4 },
+  narrativeText: { color: "#c4a898", marginTop: 4 },
 
   bottomBar: {
     position: "absolute",

@@ -28,7 +28,7 @@ import { productService } from "../../services/productService";
 import RNPickerSelect from "react-native-picker-select";
 
 const { width, height } = Dimensions.get("window");
-const MAIN_GREEN = "#19e680";
+const MAIN_GREEN = "#dd4f05";
 
 type CartItem = {
   id: string;
@@ -1107,8 +1107,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   highlightRow: {
-    backgroundColor: "#f0fdf4",
-    borderColor: "#bbf7d0",
+    backgroundColor: "#fff2ec",
+    borderColor: "#fbcbb5",
   },
   itemLeft: {
     flexDirection: "row",

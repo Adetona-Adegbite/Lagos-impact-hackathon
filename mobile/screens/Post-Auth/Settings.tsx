@@ -99,14 +99,14 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
       edges={["top"]}
       style={[
         styles.container,
-        { backgroundColor: isDarkMode ? "#112117" : "#f6f8f7" },
+        { backgroundColor: isDarkMode ? "#111111" : "#f6f8f7" },
       ]}
     >
       {/* Header */}
       <View
         style={[
           styles.header,
-          { backgroundColor: isDarkMode ? "#112117" : "#f6f8f7" },
+          { backgroundColor: isDarkMode ? "#111111" : "#f6f8f7" },
         ]}
       >
         <View style={styles.headerLeft}>
@@ -162,7 +162,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
               {t("standardPlan")}
             </Text>
             <TouchableOpacity>
-              <Text style={[styles.editProfile, { color: "#36e27b" }]}>
+              <Text style={[styles.editProfile, { color: "#dd4f05" }]}>
                 {t("editProfile")}
               </Text>
             </TouchableOpacity>
@@ -244,7 +244,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                   value={true}
                   onValueChange={() => {}}
                   thumbColor="#fff"
-                  trackColor={{ false: "#e5e7eb", true: "#36e27b" }}
+                  trackColor={{ false: "#e5e7eb", true: "#dd4f05" }}
                 />
               ),
             },
@@ -311,7 +311,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
           <View
             style={[
               styles.modalContent,
-              { backgroundColor: isDarkMode ? "#1c2e24" : "#fff" },
+              { backgroundColor: isDarkMode ? "#1c1c1c" : "#fff" },
             ]}
           >
             <View style={styles.modalHeader}>
@@ -348,7 +348,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                     {item.name}
                   </Text>
                   {currentLanguageCode === item.code && (
-                    <MaterialIcons name="check" size={24} color="#36e27b" />
+                    <MaterialIcons name="check" size={24} color="#dd4f05" />
                   )}
                 </TouchableOpacity>
               )}
@@ -356,7 +356,7 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
                 <View
                   style={[
                     styles.divider,
-                    { backgroundColor: isDarkMode ? "#253b30" : "#e5e7eb" },
+                    { backgroundColor: isDarkMode ? "#303030" : "#e5e7eb" },
                   ]}
                 />
               )}
@@ -399,7 +399,7 @@ function SettingsSection({
       <View
         style={[
           styles.sectionCard,
-          { backgroundColor: isDarkMode ? "#1c2e24" : "#fff" },
+          { backgroundColor: isDarkMode ? "#1c1c1c" : "#fff" },
         ]}
       >
         {items.map((item, index) => (
@@ -443,7 +443,7 @@ function SettingsSection({
               <View
                 style={[
                   styles.divider,
-                  { backgroundColor: isDarkMode ? "#253b30" : "#e5e7eb" },
+                  { backgroundColor: isDarkMode ? "#303030" : "#e5e7eb" },
                 ]}
               />
             )}

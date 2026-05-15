@@ -10,6 +10,7 @@ import inventoryRoutes from "./modules/inventory/inventory.routes.js";
 import salesRoutes from "./modules/sales/sales.routes.js";
 import insightRoutes from "./modules/insights/insight.routes.js";
 import syncRoutes from "./modules/sync/sync.routes.js";
+import paymentRoutes from "./modules/payments/payments.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { env } from "./config/env.js";
 
@@ -35,6 +36,7 @@ app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/sales", salesRoutes);
 app.use("/api/v1/insights", insightRoutes);
 app.use("/api/v1/sync", syncRoutes);
+app.use("/api/v1/payments", paymentRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {

@@ -19,7 +19,7 @@ import { authApi } from "../../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { t, localizationService } from "../../utils/localization";
 
-const MAIN_GREEN = "#36e27b";
+const MAIN_GREEN = "#dd4f05";
 
 const LANGUAGES = [
   { label: t("english"), code: "en" },
@@ -95,7 +95,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
           {/* Hero */}
           <View style={styles.hero}>
             <View style={styles.brandCircle}>
-              <MaterialIcons name="storefront" size={28} color="#122117" />
+              <MaterialIcons name="storefront" size={28} color="#121212" />
             </View>
             <Text style={styles.h1}>{t("welcomeOga")}</Text>
             <Text style={styles.h2}>{t("loginSubtitle")}</Text>
@@ -184,11 +184,15 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#062" />
+                <ActivityIndicator color="#dd4f05" />
               ) : (
                 <>
                   <Text style={styles.primaryBtnText}>{t("getCode")}</Text>
-                  <MaterialIcons name="arrow-forward" size={18} color="#072" />
+                  <MaterialIcons
+                    name="arrow-forward"
+                    size={18}
+                    color="#dd4f05"
+                  />
                 </>
               )}
             </TouchableOpacity>
@@ -224,7 +228,7 @@ export default function LoginScreen({ navigation }: { navigation?: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#122117" },
+  safe: { flex: 1, backgroundColor: "#121212" },
   ka: { flex: 1 },
   container: {
     paddingHorizontal: 20,
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 999,
-    backgroundColor: "#29372e",
+    backgroundColor: "#2e2e2e",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 999,
-    backgroundColor: "#26ca75",
+    backgroundColor: "#dd4f05",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
@@ -281,7 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: "#27312b",
+    backgroundColor: "#2b2b2b",
   },
   languageText: { fontSize: 14, color: "#fff" },
 
@@ -294,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   newShopTag: {
-    backgroundColor: "#29372e",
+    backgroundColor: "#2e2e2e",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -306,9 +310,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 56,
     borderRadius: 999,
-    backgroundColor: "#27312b",
+    backgroundColor: "#2b2b2b",
     borderWidth: 1,
-    borderColor: "#333c35",
+    borderColor: "#3d3d3d",
     overflow: "hidden",
   },
   country: {
@@ -316,9 +320,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingLeft: 14,
     paddingRight: 10,
-    backgroundColor: "#27312b",
+    backgroundColor: "#2b2b2b",
     borderRightWidth: 1,
-    borderRightColor: "#333c35",
+    borderRightColor: "#3d3d3d",
     height: "100%",
   },
   flag: { fontSize: 18, marginRight: 8 },
@@ -339,7 +343,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   primaryBtnText: {
-    color: "#062",
+    color: "#dd4f05",
     fontSize: 16,
     fontWeight: "800",
     paddingHorizontal: 6,

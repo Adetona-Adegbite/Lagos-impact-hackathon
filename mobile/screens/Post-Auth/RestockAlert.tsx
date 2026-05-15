@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 type Item = {
@@ -87,7 +94,9 @@ export default function SlowMovingProducts() {
       </View>
 
       {/* Item List */}
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+      >
         <Text style={styles.sectionTitle}>Critical Items</Text>
 
         {items.map((item) => (
@@ -97,7 +106,9 @@ export default function SlowMovingProducts() {
                 <View
                   style={[
                     styles.statusBadge,
-                    item.status === "Critical" ? styles.statusCritical : styles.statusWarning,
+                    item.status === "Critical"
+                      ? styles.statusCritical
+                      : styles.statusWarning,
                   ]}
                 >
                   <MaterialIcons
@@ -108,10 +119,13 @@ export default function SlowMovingProducts() {
                   <Text
                     style={[
                       styles.statusText,
-                      item.status === "Critical" ? styles.statusTextCritical : styles.statusTextWarning,
+                      item.status === "Critical"
+                        ? styles.statusTextCritical
+                        : styles.statusTextWarning,
                     ]}
                   >
-                    {item.status} • {item.status === "Critical" ? "Very Slow" : "Slow"}
+                    {item.status} •{" "}
+                    {item.status === "Critical" ? "Very Slow" : "Slow"}
                   </Text>
                 </View>
                 <Text style={styles.itemTitle} numberOfLines={1}>
@@ -135,7 +149,9 @@ export default function SlowMovingProducts() {
                 <Text
                   style={[
                     styles.statsValue,
-                    item.status === "Critical" ? styles.statsCritical : styles.statsWarning,
+                    item.status === "Critical"
+                      ? styles.statsCritical
+                      : styles.statsWarning,
                   ]}
                 >
                   {item.lastSale}
@@ -188,10 +204,26 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  summaryLabel: { fontSize: 12, color: "#6b7280", fontWeight: "500", textTransform: "uppercase", marginBottom: 4 },
-  summaryTitle: { fontSize: 24, fontWeight: "bold", color: "#111827", marginBottom: 12 },
+  summaryLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  summaryTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 12,
+  },
   chartRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  chartLabel: { width: 100, fontSize: 12, fontWeight: "bold", color: "#4b5563" },
+  chartLabel: {
+    width: 100,
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#4b5563",
+  },
   chartBarBackground: {
     flex: 1,
     height: 12,
@@ -199,10 +231,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: "hidden",
   },
-  chartBarPrimary: { height: "100%", backgroundColor: "#36e27b", borderRadius: 6 },
-  chartBarWarning: { height: "100%", backgroundColor: "#facc15", borderRadius: 6 },
-  chartBarPrimaryLight: { height: "100%", backgroundColor: "rgba(54, 226, 123, 0.6)", borderRadius: 6 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#111827", marginVertical: 12 },
+  chartBarPrimary: {
+    height: "100%",
+    backgroundColor: "#dd4f05",
+    borderRadius: 6,
+  },
+  chartBarWarning: {
+    height: "100%",
+    backgroundColor: "#facc15",
+    borderRadius: 6,
+  },
+  chartBarPrimaryLight: {
+    height: "100%",
+    backgroundColor: "rgba(54, 226, 123, 0.6)",
+    borderRadius: 6,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginVertical: 12,
+  },
   itemCard: {
     borderRadius: 24,
     backgroundColor: "#fff",
@@ -213,7 +262,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  itemHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -242,7 +295,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#36e27b",
+    backgroundColor: "#dd4f05",
     height: 56,
     borderRadius: 28,
     shadowColor: "#000",

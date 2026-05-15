@@ -5,6 +5,9 @@ export interface User {
   id: string;
   phoneNumber: string;
   shopName: string | null;
+  virtualAccountNumber?: string | null;
+  virtualAccountName?: string | null;
+  virtualBankName?: string | null;
 }
 
 export interface AuthData {

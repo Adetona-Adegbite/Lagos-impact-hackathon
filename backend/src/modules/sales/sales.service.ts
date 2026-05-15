@@ -308,7 +308,7 @@ export const generateBusinessInsights = async (language = "en") => {
     {
       "message": "Concise, actionable insight (max 20 words). E.g. 'Good sales today! Restock Indomie.'",
       "chips": [
-        { "title": "Tax Risk", "value": "Low/Medium/High", "color": "#10B981/#F59E0B/#EF4444" },
+        { "title": "Tax Risk", "value": "Low/Medium/High", "color": "#dd4f05/#F59E0B/#EF4444" },
         { "title": "Est. Revenue", "value": "₦X (Month Projection)" },
         { "title": "VAT (7.5%)", "value": "₦X (Collected)" },
         { "title": "Attention", "value": "Short alert e.g. 'Low Stock' or 'All Good'" }

@@ -20,7 +20,7 @@ import { productService } from "../../services/productService";
 import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#19e680";
+const PRIMARY = "#dd4f05";
 const BG = "#f6f8f7";
 
 // UI Product type mapping
@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   filterChipActive: {
-    backgroundColor: "#111814",
-    borderColor: "#111814",
+    backgroundColor: "#181818",
+    borderColor: "#181818",
   },
   filterText: { color: "#111", fontWeight: "700", fontSize: 13 },
   filterTextActive: { color: "#fff" },
@@ -469,11 +469,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
   },
-  qtyPillGood: { backgroundColor: "#ecfdf5" },
+  qtyPillGood: { backgroundColor: "#fff2ec" },
   qtyPillLow: { backgroundColor: "#fff1f2" },
-  dot: { width: 8, height: 8, borderRadius: 8, backgroundColor: "#059669" },
+  dot: { width: 8, height: 8, borderRadius: 8, backgroundColor: "#dd4f05" },
   qtyText: { fontSize: 11, fontWeight: "700" },
-  qtyTextGood: { color: "#065f46" },
+  qtyTextGood: { color: "#c43d00" },
   qtyTextLow: { color: "#7f1d1d" },
 
   fabWrap: {

@@ -8,13 +8,18 @@ datasource db {
 }
 
 model User {
-  id          String      @id @default(cuid())
-  phoneNumber String      @unique
-  shopName    String?
-  createdAt   DateTime    @default(now())
-  products    Product[]
-  sales       Sale[]
-  operations  Operation[]
+  id                   String      @id @default(cuid())
+  phoneNumber          String      @unique
+  shopName             String?
+  virtualAccountNumber String?     @unique
+  virtualAccountName   String?
+  virtualBankName      String?
+  customerIdentifier   String?     @unique
+  createdAt            DateTime    @default(now())
+  products             Product[]
+  sales                Sale[]
+  operations           Operation[]
+  payments             Payment[]
 }
 
 model Otp {
@@ -60,6 +65,7 @@ model Sale {
   userId      String
   user        User       @relation(fields: [userId], references: [id])
   items       SaleItem[]
+  payment     Payment?
 }
 
 model SaleItem {
@@ -70,6 +76,26 @@ model SaleItem {
   product     Product @relation(fields: [productId], references: [id])
   quantity    Int
   priceAtSale Float
+}
+
+model Payment {
+  id                   String   @id @default(cuid())
+  transactionReference String   @unique
+  amount               Float
+  settledAmount        Float?
+  feeCharged           Float?
+  senderName           String?
+  remarks              String?
+  currency             String   @default("NGN")
+  status               String   @default("PENDING")
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  saleId               String?  @unique
+  sale                 Sale?    @relation(fields: [saleId], references: [id])
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId, status])
 }
 
 enum OpType {

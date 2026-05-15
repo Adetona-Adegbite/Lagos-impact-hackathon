@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 type TopBar = {
@@ -65,7 +72,9 @@ const leaderboard: LeaderboardItem[] = [
 ];
 
 export default function TopSellers() {
-  const [selectedPeriod, setSelectedPeriod] = useState<"Today" | "This Week" | "This Month">("This Week");
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    "Today" | "This Week" | "This Month"
+  >("This Week");
 
   return (
     <View style={styles.container}>
@@ -106,7 +115,9 @@ export default function TopSellers() {
       {/* Bar Chart */}
       <View style={styles.barChartContainer}>
         <Text style={styles.sectionTitle}>Top 5 Items</Text>
-        <Text style={styles.sectionSubtitle}>Total volume this week: 450 units</Text>
+        <Text style={styles.sectionSubtitle}>
+          Total volume this week: 450 units
+        </Text>
         <View style={styles.barChart}>
           {topBars.map((bar, idx) => (
             <View key={idx} style={styles.barItem}>
@@ -126,15 +137,15 @@ export default function TopSellers() {
       </View>
 
       {/* Leaderboard */}
-      <ScrollView style={styles.leaderboard} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        style={styles.leaderboard}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <Text style={styles.sectionTitle}>Sales Leaderboard</Text>
         {leaderboard.map((item) => (
           <View
             key={item.rank}
-            style={[
-              styles.card,
-              item.rank === 1 && styles.cardHighlight,
-            ]}
+            style={[styles.card, item.rank === 1 && styles.cardHighlight]}
           >
             <Image source={{ uri: item.image }} style={styles.cardImage} />
             <View style={styles.cardContent}>
@@ -152,7 +163,7 @@ export default function TopSellers() {
                 <MaterialIcons
                   name={item.trend >= 0 ? "trending-up" : "trending-down"}
                   size={14}
-                  color={item.trend >= 0 ? "#2ab562" : "#ef4444"}
+                  color={item.trend >= 0 ? "#dd4f05" : "#ef4444"}
                 />
                 <Text
                   style={[
@@ -181,34 +192,90 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#d1d5db",
   },
-  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#1f2937", flex: 1, textAlign: "center" },
-  periodSelector: { flexDirection: "row", justifyContent: "center", padding: 16 },
-  periodButton: { flex: 1, marginHorizontal: 4, paddingVertical: 8, borderRadius: 999, backgroundColor: "#e5e7eb", alignItems: "center" },
-  periodButtonSelected: { backgroundColor: "#36e27b" },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1f2937",
+    flex: 1,
+    textAlign: "center",
+  },
+  periodSelector: {
+    flexDirection: "row",
+    justifyContent: "center",
+    padding: 16,
+  },
+  periodButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#e5e7eb",
+    alignItems: "center",
+  },
+  periodButtonSelected: { backgroundColor: "#dd4f05" },
   periodText: { fontSize: 14, color: "#4b5563", fontWeight: "500" },
-  periodTextSelected: { fontWeight: "bold", color: "#112117" },
+  periodTextSelected: { fontWeight: "bold", color: "#111111" },
   barChartContainer: { paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#1f2937", marginBottom: 4 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 4,
+  },
   sectionSubtitle: { fontSize: 12, color: "#6b7280", marginBottom: 8 },
-  barChart: { flexDirection: "row", justifyContent: "space-between", height: 200, alignItems: "flex-end" },
+  barChart: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    height: 200,
+    alignItems: "flex-end",
+  },
   barItem: { alignItems: "center" },
-  bar: { width: 24, backgroundColor: "#36e27b", borderTopLeftRadius: 8, borderTopRightRadius: 8 },
+  bar: {
+    width: 24,
+    backgroundColor: "#dd4f05",
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
   barHighlight: { backgroundColor: "#facc15" },
-  badge: { position: "absolute", top: -16, fontSize: 10, fontWeight: "bold", color: "#111827" },
+  badge: {
+    position: "absolute",
+    top: -16,
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#111827",
+  },
   barLabel: { fontSize: 10, marginTop: 4, color: "#6b7280" },
   leaderboard: { paddingHorizontal: 16, marginTop: 16 },
-  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", padding: 12, borderRadius: 16, marginBottom: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
-  cardHighlight: { borderWidth: 2, borderColor: "#36e27b" },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  cardHighlight: { borderWidth: 2, borderColor: "#dd4f05" },
   cardImage: { width: 48, height: 48, borderRadius: 999 },
   cardContent: { flex: 1, paddingHorizontal: 12 },
   cardName: { fontSize: 14, fontWeight: "bold", color: "#1f2937" },
   cardSubtitle: { fontSize: 10, color: "#6b7280" },
   cardValue: { alignItems: "flex-end" },
   cardNumber: { fontSize: 16, fontWeight: "bold", color: "#1f2937" },
-  trendContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingVertical: 2, borderRadius: 999, marginTop: 4 },
-  trendUp: { backgroundColor: "#d1fae5" },
+  trendContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 999,
+    marginTop: 4,
+  },
+  trendUp: { backgroundColor: "#ffe8dc" },
   trendDown: { backgroundColor: "#fee2e2" },
   trendText: { fontSize: 10, fontWeight: "bold", marginLeft: 2 },
-  trendTextUp: { color: "#2ab562" },
+  trendTextUp: { color: "#dd4f05" },
   trendTextDown: { color: "#ef4444" },
 });

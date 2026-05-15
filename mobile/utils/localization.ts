@@ -66,6 +66,35 @@ export interface Translation {
   quickTaxReports: string;
   sale: string;
   plusItems: string;
+  payments: string;
+  viewPayments: string;
+  yourAccountNumber: string;
+  paymentReceived: string;
+  paymentDetails: string;
+  linkToSale: string;
+  selectSale: string;
+  noMatchingSales: string;
+  transactionRef: string;
+  sender: string;
+  amountReceived: string;
+  autoLinked: string;
+  needsLinking: string;
+  receivePayment: string;
+  generatePaymentAccount: string;
+  awaitingPayment: string;
+  requestPayment: string;
+  tapToRequest: string;
+  amountToPay: string;
+  transferTo: string;
+  expiresIn: string;
+  sharePaymentDetails: string;
+  howToPay: string;
+  step1Transfer: string;
+  step2ExactAmount: string;
+  step3WaitConfirmation: string;
+  enterAmount: string;
+  generateAccount: string;
+  dvaInfo: string;
 
   // Inventory Screen
   searchPlaceholder: string;
@@ -190,6 +219,38 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: "Quick tax reports",
     sale: "Sale",
     plusItems: " + {count} items",
+    payments: "Payments",
+    viewPayments: "View payment history",
+    yourAccountNumber: "Your Account Number",
+    paymentReceived: "Payment Received",
+    paymentDetails: "Payment Details",
+    linkToSale: "Link to Sale",
+    selectSale: "Select which sale this payment is for",
+    noMatchingSales: "No matching sales found",
+    transactionRef: "Transaction Ref",
+    sender: "Sender",
+    amountReceived: "Amount Received",
+    autoLinked: "Auto-linked",
+    needsLinking: "Needs linking",
+    receivePayment: "Receive Payment",
+    generatePaymentAccount: "Generate payment account",
+    awaitingPayment: "Awaiting Payment",
+    requestPayment: "Request Payment",
+    tapToRequest: "Tap to request",
+    amountToPay: "Amount to Pay",
+    transferTo: "Transfer to",
+    expiresIn: "Expires in {mins} mins",
+    sharePaymentDetails: "Share Payment Details",
+    howToPay: "How to Pay",
+    step1Transfer: "Transfer to the account number shown above.",
+    step2ExactAmount:
+      "Use the exact amount shown — any mismatch will be flagged.",
+    step3WaitConfirmation:
+      "Wait for confirmation. You'll be notified instantly.",
+    enterAmount: "Enter Amount",
+    generateAccount: "Generate Account",
+    dvaInfo:
+      "A unique virtual account will be created for this amount. It expires automatically.",
     // Inventory Screen
     searchPlaceholder: "Search products (e.g., Indomie)...",
     noProductsFound: "No products found",
@@ -309,6 +370,38 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: "Sharp sharp tax report",
     sale: "Sale",
     plusItems: " + {count} items",
+    payments: "Payments",
+    viewPayments: "See payment history",
+    yourAccountNumber: "Your Account Number",
+    paymentReceived: "Money don land!",
+    paymentDetails: "Payment Details",
+    linkToSale: "Link to Sale",
+    selectSale: "Select which sale dem pay for",
+    noMatchingSales: "No matching sales dey",
+    transactionRef: "Transaction Ref",
+    sender: "Who send am",
+    amountReceived: "Amount wey dem send",
+    autoLinked: "Don link automatically",
+    needsLinking: "Need to link am",
+    receivePayment: "Receive Money",
+    generatePaymentAccount: "Generate account to collect money",
+    awaitingPayment: "Money Wey Dey Wait",
+    requestPayment: "Ask for Money",
+    tapToRequest: "Tap to ask",
+    amountToPay: "Money to Pay",
+    transferTo: "Send Money To",
+    expiresIn: "E go expire for {mins} mins",
+    sharePaymentDetails: "Share Payment Details",
+    howToPay: "How to Pay",
+    step1Transfer: "Send money to the account number wey show above.",
+    step2ExactAmount:
+      "Use the exact amount — if you send different amount, e go flag am.",
+    step3WaitConfirmation:
+      "Wait for confirmation. We go notify you sharp sharp.",
+    enterAmount: "Put Amount",
+    generateAccount: "Create Account",
+    dvaInfo:
+      "Unique account go create for this amount. E go expire automatically.",
     // Inventory Screen
     searchPlaceholder: "Find products (e.g., Indomie)...",
     noProductsFound: "We no see any product",
@@ -428,6 +521,37 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: "Rahotannin haraji na gaggawa",
     sale: "Talla",
     plusItems: " + {count} kayayyaki",
+    payments: "Biyan Kuɗi",
+    viewPayments: "Duba tarihin biyan kuɗi",
+    yourAccountNumber: "Lambar Asusunku",
+    paymentReceived: "An karɓi Biyan Kuɗi",
+    paymentDetails: "Cikakken Bayanin Biyan Kuɗi",
+    linkToSale: "Haɗa da Talla",
+    selectSale: "Zaɓi tallan da wannan biyan kuɗi yake da alaƙa",
+    noMatchingSales: "Babu tallace-tallace masu daidaitawa",
+    transactionRef: "Lambar Ma'amala",
+    sender: "Mai aikawa",
+    amountReceived: "Adadin da aka karɓa",
+    autoLinked: "An haɗa ta atomatik",
+    needsLinking: "Yana buƙatar haɗawa",
+    receivePayment: "Karɓi Biyan Kuɗi",
+    generatePaymentAccount: "Ƙirƙiri asusun biyan kuɗi",
+    awaitingPayment: "Ana Jira Biyan Kuɗi",
+    requestPayment: "Nemi Biyan Kuɗi",
+    tapToRequest: "Danna don nema",
+    amountToPay: "Adadin da za a biya",
+    transferTo: "Aika zuwa",
+    expiresIn: "Zai kare a cikin {mins} minti",
+    sharePaymentDetails: "Raba Cikakken Bayanin Biyan Kuɗi",
+    howToPay: "Yadda ake Biyan Kuɗi",
+    step1Transfer: "Aika kuɗi zuwa lambar asusun da aka nuna sama.",
+    step2ExactAmount:
+      "Yi amfani da adadin da aka nuna — kowane bambancin zai yi alama.",
+    step3WaitConfirmation: "Jira tabbacin. Za a sanar da kai nan da nan.",
+    enterAmount: "Shigar da Adadin",
+    generateAccount: "Ƙirƙiri Asusun",
+    dvaInfo:
+      "Za a ƙirƙiri asusun na musamman don wannan adadin. Zai kare kai tsaye.",
     // Inventory Screen
     searchPlaceholder: "Bincika kayayyaki (misali, Indomie)...",
     noProductsFound: "Ba a sami kayayyaki ba",
@@ -547,6 +671,35 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: "Awọn ijabọ owo-ori iyara",
     sale: "Tita",
     plusItems: " + {count} awọn ohun kan",
+    payments: "Awọn Isanwo",
+    viewPayments: "Wo itan-akọọlẹ isanwo",
+    yourAccountNumber: "Nọmba Akọọlẹ Rẹ",
+    paymentReceived: "Gba Isanwo",
+    paymentDetails: "Alaye Isanwo",
+    linkToSale: "So si Tita",
+    selectSale: "Yan tita ti isanwo yii jẹ fun",
+    noMatchingSales: "Ko si awọn tita ti o baramu",
+    transactionRef: "Itọkasi Iṣowo",
+    sender: "Olufiranṣẹ",
+    amountReceived: "Iye ti a Gba",
+    autoLinked: "So taara",
+    needsLinking: "Nilo fifisọ",
+    receivePayment: "Gba Isanwo",
+    generatePaymentAccount: "Ṣẹda àkọlé isanwo",
+    awaitingPayment: "Nreti Isanwo",
+    requestPayment: "Bẹrẹ Isanwo",
+    tapToRequest: "Tẹ lati bẹrẹ",
+    amountToPay: "Iye ti o ni lati san",
+    transferTo: "Gbe si",
+    expiresIn: "Yoo pari ni {mins} iṣẹju",
+    sharePaymentDetails: "Pin Alaye Isanwo",
+    howToPay: "Bawo ni a ṣe n sanwo",
+    step1Transfer: "Gbe si nọmba àkọlé ti a fi hàn loke.",
+    step2ExactAmount: "Lo iye ti a fi hàn — eyikeyi abujade yoo fa ami.",
+    step3WaitConfirmation: "Duro fun ijẹrisi. Wọn yoo ki o ni kiakia.",
+    enterAmount: "Tẹ Iye sii",
+    generateAccount: "Ṣẹda Àkọlé",
+    dvaInfo: "Àkọlé kan yoo da fun iye yii. Yoo pari laifọwọyi.",
     // Inventory Screen
     searchPlaceholder: "Wa awọn ọja (fun apẹẹrẹ, Indomie)...",
     noProductsFound: "Ko si awọn ọja ti a ri",
@@ -666,6 +819,35 @@ const translations: { [key: string]: Translation } = {
     quickTaxReports: "Akụkọ ụtụ isi ngwa ngwa",
     sale: "Ahịa",
     plusItems: " + {count} ihe",
+    payments: "Ịkwụ Ụgwọ",
+    viewPayments: "Lelee akụkọ ịkwụ ụgwọ",
+    yourAccountNumber: "Nọmba Akaụntụ Gị",
+    paymentReceived: "Anata Ịkwụ Ụgwọ",
+    paymentDetails: "Nkọwa Ịkwụ Ụgwọ",
+    linkToSale: "Jikọọ na Ahịa",
+    selectSale: "Họrọ ahịa nke ịkwụ ụgwọ a bụ maka ya",
+    noMatchingSales: "Enweghị ahịa dabara",
+    transactionRef: "Ntụle Azụmahịa",
+    sender: "Onye zigara",
+    amountReceived: "Ego Anata",
+    autoLinked: "Ejikọtara onwe ya",
+    needsLinking: "Chọrọ ijikọta",
+    receivePayment: "Anata Ịkwụ Ụgwọ",
+    generatePaymentAccount: "Mepụta akaụntụ ịkwụ ụgwọ",
+    awaitingPayment: "Na-echere Ịkwụ Ụgwọ",
+    requestPayment: "Rịọ Ịkwụ Ụgwọ",
+    tapToRequest: "Pịa ka ịrịọ",
+    amountToPay: "Ego ị kwụghị ụgwọ",
+    transferTo: "Nyefee na",
+    expiresIn: "Ọ ga-agwụ n'ime {mins} nkeji",
+    sharePaymentDetails: "Kekọrịta Nkọwa Ịkwụ Ụgwọ",
+    howToPay: "Ka E Si Akwụ Ụgwọ",
+    step1Transfer: "Nyefee ego na nọmba akaụntụ e gosiri n'elu.",
+    step2ExactAmount: "Jiri ego zuru ezu — mgbagha ọ bụla ga-egosi.",
+    step3WaitConfirmation: "Chere nkwenye. Ha ga-ekwu maka gị ngwa ngwa.",
+    enterAmount: "Tinye ego",
+    generateAccount: "Mepụta Akaụntụ",
+    dvaInfo: "Akaụntụ pụrụ iche ga-emepụta maka ego a. Ọ ga-agwụ onwe ya.",
     // Inventory Screen
     searchPlaceholder: "Chọọ ngwaahịa (dịka, Indomie)...",
     noProductsFound: "Enweghị ngwaahịa achọtara",

@@ -22,10 +22,10 @@ import {
 import { insightsApi } from "../../services/api";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#36e27b";
+const PRIMARY = "#dd4f05";
 const WARNING = "#eab308";
 const DANGER = "#ef4444";
-const CARD_DARK = "#1a2c24";
+const CARD_DARK = "#1a1a1a";
 
 type Range = "month" | "ytd";
 
@@ -108,7 +108,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
           style={styles.scanButton}
           onPress={() => console.log("scan tapped")}
         >
-          <MaterialIcons name="qr-code-scanner" size={18} color="#062" />
+          <MaterialIcons name="qr-code-scanner" size={18} color="#dd4f05" />
           <Text style={styles.scanText}>Scan</Text>
         </TouchableOpacity>
       </View>
@@ -165,10 +165,10 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
 
           {/* Search */}
           <View style={styles.searchRow}>
-            <MaterialIcons name="search" size={18} color="#9EB7A8" />
+            <MaterialIcons name="search" size={18} color="#c4a898" />
             <TextInput
               placeholder="Search insights or products..."
-              placeholderTextColor="#9EB7A8"
+              placeholderTextColor="#c4a898"
               value={query}
               onChangeText={setQuery}
               style={styles.searchInput}
@@ -304,9 +304,9 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
             <View style={styles.auditCard}>
               <View style={styles.auditTop}>
                 <View
-                  style={[styles.auditIcon, { backgroundColor: "#f0fdf4" }]}
+                  style={[styles.auditIcon, { backgroundColor: "#fff2ec" }]}
                 >
-                  <MaterialIcons name="task-alt" size={18} color="#10b981" />
+                  <MaterialIcons name="task-alt" size={18} color="#dd4f05" />
                 </View>
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={styles.auditTitle}>Recommended Actions</Text>
@@ -322,7 +322,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
                     alignItems: "flex-start",
                   }}
                 >
-                  <Text style={{ color: "#10b981", marginTop: 2 }}>✓</Text>
+                  <Text style={{ color: "#dd4f05", marginTop: 2 }}>✓</Text>
                   <Text style={styles.auditText}>{action}</Text>
                 </View>
               ))}
@@ -340,7 +340,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
         style={styles.fab}
         onPress={() => console.log("ask ai")}
       >
-        <MaterialCommunityIcons name="robot" size={22} color="#062" />
+        <MaterialCommunityIcons name="robot" size={22} color="#dd4f05" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -350,7 +350,7 @@ export default function AIInsightsScreen({ navigation }: { navigation: any }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#122117",
+    backgroundColor: "#121212",
     paddingTop: StatusBar.currentHeight,
   },
   header: {
@@ -371,17 +371,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  welcomeText: { fontSize: 12, color: "#9eb7a8" },
+  welcomeText: { fontSize: 12, color: "#c4a898" },
   userName: { fontSize: 16, fontWeight: "800", color: "#fff" },
   scanButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
   },
-  scanText: { color: "#064e3b", fontWeight: "800", marginLeft: 8 },
+  scanText: { color: "#dd4f05", fontWeight: "800", marginLeft: 8 },
   scroll: { flex: 1 },
 
   titleContainer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   rangeWrap: { paddingHorizontal: 16, marginBottom: 12 },
   rangePills: {
     flexDirection: "row",
-    backgroundColor: "#1a2c23",
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     padding: 4,
     width: "48%",
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rangePillActive: {
-    backgroundColor: "#122117",
+    backgroundColor: "#121212",
     shadowColor: "#fff",
     elevation: 2,
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     borderRadius: 999,
     height: 44,
     paddingHorizontal: 12,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   taxCard: {
     margin: 16,
     borderRadius: 14,
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     padding: 14,
     borderWidth: 1,
     borderColor: "#eef2f4",
@@ -443,18 +443,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     alignItems: "center",
     justifyContent: "center",
   },
   taxLabel: { fontWeight: "800", fontSize: 15, color: "#fff" },
   tagHealthy: {
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  tagHealthyText: { color: "#065f46", fontWeight: "800", fontSize: 12 },
+  tagHealthyText: { color: "#dd4f05", fontWeight: "800", fontSize: 12 },
 
   taxBody: { marginTop: 12 },
   taxScoreRow: { flexDirection: "row", alignItems: "baseline" },
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 12,
     borderRadius: 12,
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     padding: 12,
     borderWidth: 1,
     borderColor: "#eef2f4",
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 12,
     borderRadius: 12,
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     padding: 12,
     borderWidth: 1,
     borderColor: "#eef2f4",
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   cardTitleSmall: { fontWeight: "800", color: "#fff" },
   largeStat: { fontSize: 18, fontWeight: "900", color: "#fff" },
-  smallStat: { fontSize: 12, color: "#059669", fontWeight: "700" },
+  smallStat: { fontSize: 12, color: "#dd4f05", fontWeight: "700" },
 
   sparkBars: {
     flexDirection: "row",
@@ -593,13 +593,13 @@ const styles = StyleSheet.create({
   },
   smallNote: { marginTop: 8, color: "#6b7280", fontSize: 12 },
   deductionYes: {
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
-  deductionYesText: { color: "#065f46", fontWeight: "900", marginTop: 6 },
+  deductionYesText: { color: "#dd4f05", fontWeight: "900", marginTop: 6 },
 
   filteredNote: {
     paddingHorizontal: 16,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
