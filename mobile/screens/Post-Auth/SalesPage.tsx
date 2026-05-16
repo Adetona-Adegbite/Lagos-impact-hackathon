@@ -17,6 +17,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
@@ -27,6 +28,13 @@ import {
 import { productService } from "../../services/productService";
 import RNPickerSelect from "react-native-picker-select";
 
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+// Set your Anthropic API key here, or pull from your environment/config file.
+// e.g. import { ANTHROPIC_API_KEY } from "@env"; (via react-native-dotenv)
+const ANTHROPIC_API_KEY = "sk-ant-api03-your-key-here";
+const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+// ─────────────────────────────────────────────────────────────────────────────
+
 const { width, height } = Dimensions.get("window");
 const MAIN_GREEN = "#dd4f05";
 
@@ -36,16 +44,7 @@ type CartItem = {
   unitPrice: number;
   qty: number;
   image?: string | null;
-  productId: string; // link to DB product
-};
-
-type StockItem = {
-  id: string; // product id
-  title: string;
-  price: number;
-  qty: number;
-  img?: string | null;
-  lowStock?: boolean;
+  productId: string;
 };
 
 /* ----- Component ----- */
@@ -79,13 +78,16 @@ export default function ScanSellScreen({
   /* loading state */
   const [loading, setLoading] = useState(false);
 
+  /* AI scan loading state (separate so we can show a distinct message) */
+  const [aiLoading, setAiLoading] = useState(false);
+
   /* scan animation */
   const scanY = useRef(new Animated.Value(0)).current;
   const scanBoxSize = Math.min(width * 0.62, 320);
 
-  /* scan cooldown to avoid duplicates */
+  /* scan cooldown */
   const lastScanTs = useRef<number>(0);
-  const SCAN_COOLDOWN_MS = 1500; // Increased slightly for async ops
+  const SCAN_COOLDOWN_MS = 1500;
 
   /* enter-code modal */
   const [enterModalVisible, setEnterModalVisible] = useState(false);
@@ -94,7 +96,7 @@ export default function ScanSellScreen({
   /* product modal */
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<{
-    id?: string; // undefined if new
+    id?: string;
     barcode: string;
     title: string;
     price: number;
@@ -104,6 +106,7 @@ export default function ScanSellScreen({
   } | null>(null);
 
   const [isNewProduct, setIsNewProduct] = useState(false);
+  const [isAiIdentified, setIsAiIdentified] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState("");
@@ -114,14 +117,12 @@ export default function ScanSellScreen({
   const [categories, setCategories] = useState<string[]>([]);
   const [isRecommendingCategory, setIsRecommendingCategory] = useState(false);
 
-  /* bottom sheet height (keeps camera visible) */
+  /* bottom sheet height */
   const BOTTOM_SHEET_MAX_HEIGHT = Math.min(height * 0.3, 520);
 
   useEffect(() => {
     if (permission === null) return;
-    if (!permission.granted) {
-      requestPermission();
-    }
+    if (!permission.granted) requestPermission();
   }, [permission]);
 
   useEffect(() => {
@@ -145,8 +146,12 @@ export default function ScanSellScreen({
   useEffect(() => {
     if (productModalVisible && currentProduct) {
       setEditTitle(currentProduct.title);
-      setEditPrice(currentProduct.price.toString());
-      setEditCostPrice(currentProduct.costPrice.toString());
+      setEditPrice(
+        currentProduct.price > 0 ? currentProduct.price.toString() : "",
+      );
+      setEditCostPrice(
+        currentProduct.costPrice > 0 ? currentProduct.costPrice.toString() : "",
+      );
       setEditCategory(currentProduct.category);
       setEditQty(currentProduct.qty);
     }
@@ -160,15 +165,21 @@ export default function ScanSellScreen({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const fetchedCategories = await productService.getCategories();
-        setCategories(fetchedCategories);
-        if (fetchedCategories.length > 0 && editCategory === "General") {
-          setEditCategory(fetchedCategories[0]);
+        const fetched = await productService.getCategories();
+        setCategories(fetched);
+        if (fetched.length > 0 && editCategory === "General") {
+          setEditCategory(fetched[0]);
         }
-      } catch (error) {
-        console.error("Failed to fetch categories", error);
-        // Provide a fallback list
-        setCategories(["General", "Snacks", "Beverages"]);
+      } catch {
+        setCategories([
+          "General",
+          "Snacks",
+          "Beverages",
+          "Household",
+          "Personal Care",
+          "Dairy",
+          "Condiments",
+        ]);
       }
     };
     fetchCategories();
@@ -178,19 +189,18 @@ export default function ScanSellScreen({
     if (!editTitle.trim()) return;
     setIsRecommendingCategory(true);
     try {
-      const { category: recommendedCategory } =
-        await productService.recommendCategory(editTitle.trim());
-      if (recommendedCategory && categories.includes(recommendedCategory)) {
-        setEditCategory(recommendedCategory);
-      }
-    } catch (error) {
-      console.error("Failed to recommend category", error);
+      const { category: rec } = await productService.recommendCategory(
+        editTitle.trim(),
+      );
+      if (rec && categories.includes(rec)) setEditCategory(rec);
+    } catch {
+      // silent
     } finally {
       setIsRecommendingCategory(false);
     }
   };
 
-  /* ----- Actions ----- */
+  /* ----- Cart Actions ----- */
   const changeCartQty = (id: string, delta: number) =>
     setCart((prev) =>
       prev
@@ -208,7 +218,6 @@ export default function ScanSellScreen({
 
   const onCheckout = async () => {
     if (cart.length === 0) return;
-
     Alert.alert("Checkout", `Total: ₦${totalAmount.toLocaleString()}`, [
       { text: "Cancel", style: "cancel" },
       {
@@ -216,18 +225,16 @@ export default function ScanSellScreen({
         onPress: async () => {
           try {
             setLoading(true);
-            const itemsToProcess = cart.map((item) => ({
-              productId: item.productId,
-              quantity: item.qty,
-              price: item.unitPrice,
-            }));
-
-            await productService.processSale(itemsToProcess);
-
+            await productService.processSale(
+              cart.map((item) => ({
+                productId: item.productId,
+                quantity: item.qty,
+                price: item.unitPrice,
+              })),
+            );
             setCart([]);
             Alert.alert("Success", "Sale recorded successfully!");
-          } catch (error) {
-            console.error(error);
+          } catch {
             Alert.alert("Error", "Failed to process sale.");
           } finally {
             setLoading(false);
@@ -237,20 +244,150 @@ export default function ScanSellScreen({
     ]);
   };
 
-  const toggleTorch = () => setTorch((prev) => !prev);
-  const toggleCameraType = () =>
-    setFacing((t) => (t === "back" ? "front" : "back"));
+  /* ----- AI Scanner ----- */
+  const handleAIScan = async () => {
+    if (!cameraRef.current) return;
 
-  const handleEnterCodeConfirm = () => {
-    if (!enteredCode.trim()) {
-      Alert.alert("Enter code", "Please enter a code.");
+    if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === "YOUR_API_KEY_HERE") {
+      Alert.alert(
+        "API Key Missing",
+        "Please set your Anthropic API key in ScanSellScreen.tsx (ANTHROPIC_API_KEY constant).",
+      );
       return;
     }
-    handleScannedCode(enteredCode.trim());
-    setEnteredCode("");
-    setEnterModalVisible(false);
+
+    try {
+      setAiLoading(true);
+
+      // Capture photo
+      const photo = await cameraRef.current.takePictureAsync({
+        base64: true,
+        quality: 0.6,
+        skipProcessing: true,
+      });
+
+      if (!photo?.base64) {
+        Alert.alert("Error", "Failed to capture photo. Please try again.");
+        return;
+      }
+
+      // Send to Claude for identification
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 400,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: "image/jpeg",
+                    data: photo.base64,
+                  },
+                },
+                {
+                  type: "text",
+                  text: `You are a product identification assistant for a Nigerian retail store.
+Examine this product image and identify it.
+
+Respond with ONLY a valid JSON object — no markdown, no backticks, no explanation:
+{
+  "name": "full product name including brand and variant if visible",
+  "category": "one of: Beverages, Snacks, Household, Personal Care, Dairy, Condiments, General",
+  "estimatedSellingPrice": <estimated retail price in Nigerian Naira as a number>,
+  "estimatedCostPrice": <estimated wholesale/cost price in Nigerian Naira as a number>,
+  "confidence": "high" | "medium" | "low"
+}
+
+If you cannot identify the product at all, return:
+{"name":"","category":"General","estimatedSellingPrice":0,"estimatedCostPrice":0,"confidence":"low"}`,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Claude API error:", errText);
+        throw new Error(`API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText =
+        data.content?.find((b: any) => b.type === "text")?.text ?? "";
+
+      let parsed: {
+        name: string;
+        category: string;
+        estimatedSellingPrice: number;
+        estimatedCostPrice: number;
+        confidence: string;
+      };
+
+      try {
+        parsed = JSON.parse(rawText.replace(/```json|```/g, "").trim());
+      } catch {
+        throw new Error("Could not parse AI response");
+      }
+
+      const confidence = parsed.confidence ?? "low";
+      const identified = !!parsed.name;
+
+      // Open product modal pre-filled with AI data
+      setCurrentProduct({
+        barcode: `AI-${Date.now()}`,
+        title: parsed.name ?? "",
+        price: parsed.estimatedSellingPrice ?? 0,
+        qty: 1,
+        category: parsed.category ?? "General",
+        costPrice: parsed.estimatedCostPrice ?? 0,
+      });
+      setIsNewProduct(true);
+      setIsAiIdentified(true);
+      setProductModalVisible(true);
+
+      if (!identified || confidence === "low") {
+        Alert.alert(
+          "Low confidence",
+          "AI couldn't identify this product clearly. Please fill in the details manually.",
+          [{ text: "OK" }],
+        );
+      }
+    } catch (e: any) {
+      console.error("AI scan error:", e);
+      // Still open the modal so user can fill manually
+      setCurrentProduct({
+        barcode: `AI-${Date.now()}`,
+        title: "",
+        price: 0,
+        qty: 1,
+        category: "General",
+        costPrice: 0,
+      });
+      setIsNewProduct(true);
+      setIsAiIdentified(false);
+      setProductModalVisible(true);
+      Alert.alert(
+        "Identification failed",
+        "Could not identify the product automatically. Please enter the details manually.",
+      );
+    } finally {
+      setAiLoading(false);
+    }
   };
 
+  /* ----- Barcode Scanner ----- */
   const handleScannedCode = async (barcode: string) => {
     const now = Date.now();
     if (now - lastScanTs.current < SCAN_COOLDOWN_MS) return;
@@ -261,9 +398,7 @@ export default function ScanSellScreen({
       const product = await productService.getProductByBarcode(barcode);
 
       if (mode === "stock") {
-        // In stock mode, we always open modal to edit/view details
         if (product) {
-          // Existing product
           setCurrentProduct({
             id: product.id,
             barcode: product.barcode,
@@ -275,9 +410,8 @@ export default function ScanSellScreen({
           });
           setIsNewProduct(false);
         } else {
-          // New product
           setCurrentProduct({
-            barcode: barcode,
+            barcode,
             title: "",
             price: 0,
             qty: 1,
@@ -286,16 +420,10 @@ export default function ScanSellScreen({
           });
           setIsNewProduct(true);
         }
+        setIsAiIdentified(false);
         setProductModalVisible(true);
       } else {
-        // Sell mode
         if (product) {
-          // Check if in stock? (Optional, skipping hard check for now but could warn)
-          if ((product.quantity || 0) <= 0) {
-            // Alert.alert("Warning", "Item is out of stock!", [{text: "Add anyway"}]);
-            // Just adding for now
-          }
-
           setCart((prev) => {
             const found = prev.find((p) => p.productId === product.id);
             if (found) {
@@ -305,7 +433,7 @@ export default function ScanSellScreen({
             }
             return [
               {
-                id: Date.now().toString(), // temp id for cart item
+                id: Date.now().toString(),
                 productId: product.id,
                 title: product.name,
                 unitPrice: product.sellingPrice,
@@ -316,7 +444,6 @@ export default function ScanSellScreen({
             ];
           });
         } else {
-          // Product not found in sell mode -> prompt to create?
           Alert.alert(
             "Product not found",
             "Would you like to add this product to inventory?",
@@ -326,7 +453,7 @@ export default function ScanSellScreen({
                 text: "Yes",
                 onPress: () => {
                   setCurrentProduct({
-                    barcode: barcode,
+                    barcode,
                     title: "",
                     price: 0,
                     qty: 1,
@@ -334,6 +461,7 @@ export default function ScanSellScreen({
                     costPrice: 0,
                   });
                   setIsNewProduct(true);
+                  setIsAiIdentified(false);
                   setProductModalVisible(true);
                 },
               },
@@ -349,16 +477,31 @@ export default function ScanSellScreen({
     }
   };
 
+  const handleEnterCodeConfirm = () => {
+    if (!enteredCode.trim()) {
+      Alert.alert("Enter code", "Please enter a code.");
+      return;
+    }
+    handleScannedCode(enteredCode.trim());
+    setEnteredCode("");
+    setEnterModalVisible(false);
+  };
+
+  /* ----- Save Product ----- */
   const handleProductConfirm = async () => {
     if (!currentProduct) return;
 
     const title = editTitle.trim();
     const price = parseFloat(editPrice) || 0;
     const cost = parseFloat(editCostPrice) || 0;
-    const qty = editQty; // Can be 0
+    const qty = editQty;
 
-    if (!title || price < 0) {
-      Alert.alert("Invalid input", "Please check name and price.");
+    if (!title) {
+      Alert.alert("Missing name", "Please enter a product name.");
+      return;
+    }
+    if (price <= 0) {
+      Alert.alert("Invalid price", "Please enter a valid selling price.");
       return;
     }
 
@@ -366,7 +509,6 @@ export default function ScanSellScreen({
       setLoading(true);
 
       if (isNewProduct) {
-        // Create
         const newId = await productService.createProduct({
           name: title,
           barcode: currentProduct.barcode,
@@ -376,13 +518,12 @@ export default function ScanSellScreen({
           quantity: qty,
         });
 
-        // If in sell mode, add to cart immediately after creating
         if (mode === "sell") {
           setCart((prev) => [
             {
               id: Date.now().toString(),
               productId: newId,
-              title: title,
+              title,
               unitPrice: price,
               qty: 1,
               image: null,
@@ -393,7 +534,6 @@ export default function ScanSellScreen({
 
         Alert.alert("Success", "Product added to inventory");
       } else {
-        // Update
         if (currentProduct.id) {
           await productService.updateProduct(currentProduct.id, {
             name: title,
@@ -401,7 +541,6 @@ export default function ScanSellScreen({
             purchasePrice: cost,
             category: editCategory,
           });
-
           await productService.updateInventory(currentProduct.id, qty);
           Alert.alert("Success", "Product updated");
         }
@@ -409,6 +548,7 @@ export default function ScanSellScreen({
 
       setProductModalVisible(false);
       setCurrentProduct(null);
+      setIsAiIdentified(false);
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to save product");
@@ -422,9 +562,12 @@ export default function ScanSellScreen({
     handleScannedCode(data);
   };
 
-  if (permission === null) {
-    return <View style={styles.container} />;
-  }
+  const toggleTorch = () => setTorch((prev) => !prev);
+  const toggleCameraType = () =>
+    setFacing((t) => (t === "back" ? "front" : "back"));
+
+  /* ----- Permission States ----- */
+  if (permission === null) return <View style={styles.container} />;
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -444,7 +587,6 @@ export default function ScanSellScreen({
   }
 
   /* ----- Renders ----- */
-
   const renderCartRow = ({ item }: { item: CartItem }) => (
     <View style={styles.cartRow}>
       <View style={styles.itemLeft}>
@@ -458,7 +600,9 @@ export default function ScanSellScreen({
           )}
         </View>
         <View>
-          <Text style={styles.itemTitle}>{item.title}</Text>
+          <Text style={styles.itemTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
           <Text style={styles.itemPrice}>
             ₦{item.unitPrice.toLocaleString()}
           </Text>
@@ -487,7 +631,6 @@ export default function ScanSellScreen({
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      {/* Main Layout: Camera takes full screen, UI overlays it */}
       <View style={styles.container}>
         <View style={styles.cameraContainer}>
           <CameraView
@@ -501,7 +644,7 @@ export default function ScanSellScreen({
             ref={cameraRef}
           />
 
-          {/* Top Controls Overlay */}
+          {/* Top Controls */}
           <View style={styles.topControls}>
             <TouchableOpacity
               style={styles.circleBtn}
@@ -512,10 +655,7 @@ export default function ScanSellScreen({
 
             <View style={styles.modeToggle}>
               <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  mode === "sell" ? styles.modeActive : null,
-                ]}
+                style={[styles.modePill, mode === "sell" && styles.modeActive]}
                 onPress={() => setMode("sell")}
               >
                 <Text
@@ -527,10 +667,7 @@ export default function ScanSellScreen({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  mode === "stock" ? styles.modeActive : null,
-                ]}
+                style={[styles.modePill, mode === "stock" && styles.modeActive]}
                 onPress={() => setMode("stock")}
               >
                 <Text
@@ -544,6 +681,20 @@ export default function ScanSellScreen({
             </View>
 
             <View style={styles.rightTopActions}>
+              {/* AI Scan Button */}
+              <TouchableOpacity
+                style={[styles.circleBtn, styles.aiBtnCircle]}
+                onPress={handleAIScan}
+                disabled={aiLoading}
+              >
+                {aiLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <MaterialIcons name="auto-awesome" size={20} color="#fff" />
+                )}
+              </TouchableOpacity>
+
+              {/* Manual entry */}
               <TouchableOpacity
                 style={styles.circleBtn}
                 onPress={() => setEnterModalVisible(true)}
@@ -553,7 +704,7 @@ export default function ScanSellScreen({
             </View>
           </View>
 
-          {/* Camera Shortcuts (Flash, Flip) */}
+          {/* Flash / Flip shortcuts */}
           <View style={styles.cameraShortcuts}>
             <View style={styles.shortcut}>
               <TouchableOpacity
@@ -579,7 +730,7 @@ export default function ScanSellScreen({
             </View>
           </View>
 
-          {/* Center Scan Area Box */}
+          {/* Center Scan Box */}
           <View style={styles.centerArea} pointerEvents="none">
             <View
               style={[
@@ -594,10 +745,7 @@ export default function ScanSellScreen({
               <Animated.View
                 style={[
                   styles.scanLine,
-                  {
-                    width: scanBoxSize,
-                    transform: [{ translateY: scanY }],
-                  },
+                  { width: scanBoxSize, transform: [{ translateY: scanY }] },
                 ]}
               />
             </View>
@@ -605,16 +753,35 @@ export default function ScanSellScreen({
               <MaterialIcons name="qr-code-scanner" size={16} color="#fff" />
               <Text style={styles.alignText}>Align code within frame</Text>
             </View>
+            {/* AI hint below scan box */}
+            <View style={styles.aiHint}>
+              <MaterialIcons name="auto-awesome" size={13} color="#fff" />
+              <Text style={styles.aiHintText}>
+                No barcode? Tap ✨ to scan with AI
+              </Text>
+            </View>
           </View>
+
+          {/* AI Loading overlay on camera */}
+          {aiLoading && (
+            <View style={styles.aiLoadingOverlay}>
+              <View style={styles.aiLoadingCard}>
+                <ActivityIndicator size="large" color={MAIN_GREEN} />
+                <Text style={styles.aiLoadingText}>Identifying product…</Text>
+                <Text style={styles.aiLoadingSubtext}>
+                  Claude is analysing the image
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
-        {/* Bottom Sheet for Cart or Info */}
+        {/* Bottom Sheet */}
         <View
           style={[styles.bottomSheet, { maxHeight: BOTTOM_SHEET_MAX_HEIGHT }]}
         >
           <View style={styles.sheetHandle} />
 
-          {/* Header row */}
           <View style={styles.sheetHeader}>
             <View>
               <Text style={styles.sheetTitle}>
@@ -657,7 +824,6 @@ export default function ScanSellScreen({
             </View>
           )}
 
-          {/* Checkout Button (Sell mode only) */}
           {mode === "sell" && cart.length > 0 && (
             <View style={styles.checkoutWrap}>
               <TouchableOpacity
@@ -687,9 +853,9 @@ export default function ScanSellScreen({
         )}
       </View>
 
-      {/* --- Modals --- */}
+      {/* ─── MODALS ─── */}
 
-      {/* Enter Code Manual Modal */}
+      {/* Enter Code Modal */}
       <Modal
         visible={enterModalVisible}
         transparent
@@ -729,140 +895,206 @@ export default function ScanSellScreen({
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Product Edit/Add Modal */}
+      {/* Product Edit / Add Modal */}
       <Modal
         visible={productModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setProductModalVisible(false)}
+        onRequestClose={() => {
+          setProductModalVisible(false);
+          setIsAiIdentified(false);
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={productModalStyles.modalWrapper}
         >
           <View style={productModalStyles.modal}>
-            <Text style={productModalStyles.modalTitle}>
-              {isNewProduct ? "Add New Product" : "Edit Product"}
-            </Text>
-
-            {/* Title */}
-            <View style={productModalStyles.field}>
-              <Text style={productModalStyles.label}>Product Name</Text>
-              <View style={productModalStyles.inputWrap}>
-                <TextInput
-                  style={productModalStyles.input}
-                  value={editTitle}
-                  onChangeText={setEditTitle}
-                  onBlur={handleRecommendCategory}
-                  placeholder="e.g. Indomie Chicken"
-                  placeholderTextColor="#6b7280"
-                />
-              </View>
+            {/* Header */}
+            <View style={productModalStyles.modalHeader}>
+              <Text style={productModalStyles.modalTitle}>
+                {isNewProduct ? "Add New Product" : "Edit Product"}
+              </Text>
+              {isAiIdentified && (
+                <View style={productModalStyles.aiBadge}>
+                  <MaterialIcons
+                    name="auto-awesome"
+                    size={12}
+                    color={MAIN_GREEN}
+                  />
+                  <Text style={productModalStyles.aiBadgeText}>
+                    AI identified
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {/* Prices Row */}
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={[productModalStyles.field, { flex: 1 }]}>
-                <Text style={productModalStyles.label}>Selling Price</Text>
-                <View style={productModalStyles.inputWrap}>
-                  <Text style={productModalStyles.prefix}>₦</Text>
-                  <TextInput
-                    style={[
-                      productModalStyles.input,
-                      productModalStyles.inputWithPrefix,
-                    ]}
-                    value={editPrice}
-                    onChangeText={setEditPrice}
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#6b7280"
-                  />
-                </View>
-              </View>
-
-              <View style={[productModalStyles.field, { flex: 1 }]}>
-                <Text style={productModalStyles.label}>Cost Price</Text>
-                <View style={productModalStyles.inputWrap}>
-                  <Text style={productModalStyles.prefix}>₦</Text>
-                  <TextInput
-                    style={[
-                      productModalStyles.input,
-                      productModalStyles.inputWithPrefix,
-                    ]}
-                    value={editCostPrice}
-                    onChangeText={setEditCostPrice}
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#6b7280"
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Category */}
-            {isRecommendingCategory ? (
-              <View
-                style={[
-                  productModalStyles.input,
-                  { justifyContent: "center", alignItems: "center" },
-                ]}
-              >
-                <ActivityIndicator color={MAIN_GREEN} />
-              </View>
-            ) : (
-              <RNPickerSelect
-                onValueChange={(value) => value && setEditCategory(value)}
-                items={categories.map((cat) => ({
-                  label: cat,
-                  value: cat,
-                }))}
-                style={{
-                  inputIOS: productModalStyles.input,
-                  inputAndroid: productModalStyles.input,
-                  placeholder: {
-                    color: "#6b7280",
-                  },
-                }}
-                value={editCategory}
-                placeholder={{
-                  label: "Select a category...",
-                  value: null,
-                  color: "#6b7280",
-                }}
-              />
+            {isAiIdentified && (
+              <Text style={productModalStyles.aiNote}>
+                Review and adjust the details below before saving.
+              </Text>
             )}
 
-            {/* Quantity */}
-            <View style={productModalStyles.field}>
-              <Text style={productModalStyles.label}>Stock Quantity</Text>
-              <View style={productModalStyles.qtyWrap}>
-                <TouchableOpacity
-                  style={productModalStyles.qtyBtn}
-                  onPress={() => setEditQty((q) => Math.max(0, q - 1))}
-                >
-                  <MaterialIcons name="remove" size={24} color="#111" />
-                </TouchableOpacity>
-                <View style={productModalStyles.qtyDisplay}>
-                  <Text style={productModalStyles.qtyText}>{editQty}</Text>
-                  <Text style={productModalStyles.qtyUnit}>Units</Text>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Product Name */}
+              <View style={productModalStyles.field}>
+                <Text style={productModalStyles.label}>Product Name *</Text>
+                <View style={productModalStyles.inputWrap}>
+                  <TextInput
+                    style={productModalStyles.input}
+                    value={editTitle}
+                    onChangeText={setEditTitle}
+                    onBlur={handleRecommendCategory}
+                    placeholder="e.g. Indomie Chicken Flavour"
+                    placeholderTextColor="#6b7280"
+                  />
                 </View>
-                <TouchableOpacity
-                  style={[
-                    productModalStyles.qtyBtn,
-                    productModalStyles.qtyBtnAdd,
-                  ]}
-                  onPress={() => setEditQty((q) => q + 1)}
-                >
-                  <MaterialIcons name="add" size={24} color="#000" />
-                </TouchableOpacity>
               </View>
-            </View>
+
+              {/* Prices Row */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={[productModalStyles.field, { flex: 1 }]}>
+                  <Text style={productModalStyles.label}>Selling Price *</Text>
+                  <View style={productModalStyles.inputWrap}>
+                    <Text style={productModalStyles.prefix}>₦</Text>
+                    <TextInput
+                      style={[
+                        productModalStyles.input,
+                        productModalStyles.inputWithPrefix,
+                      ]}
+                      value={editPrice}
+                      onChangeText={setEditPrice}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                      placeholderTextColor="#6b7280"
+                    />
+                  </View>
+                  {isAiIdentified && parseFloat(editPrice) > 0 && (
+                    <Text style={productModalStyles.aiEstimate}>
+                      AI estimate
+                    </Text>
+                  )}
+                </View>
+
+                <View style={[productModalStyles.field, { flex: 1 }]}>
+                  <Text style={productModalStyles.label}>Cost Price</Text>
+                  <View style={productModalStyles.inputWrap}>
+                    <Text style={productModalStyles.prefix}>₦</Text>
+                    <TextInput
+                      style={[
+                        productModalStyles.input,
+                        productModalStyles.inputWithPrefix,
+                      ]}
+                      value={editCostPrice}
+                      onChangeText={setEditCostPrice}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                      placeholderTextColor="#6b7280"
+                    />
+                  </View>
+                  {isAiIdentified && parseFloat(editCostPrice) > 0 && (
+                    <Text style={productModalStyles.aiEstimate}>
+                      AI estimate
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Profit margin display */}
+              {parseFloat(editPrice) > 0 && parseFloat(editCostPrice) > 0 && (
+                <View style={productModalStyles.marginRow}>
+                  <MaterialIcons name="trending-up" size={14} color="#10b981" />
+                  <Text style={productModalStyles.marginText}>
+                    Margin: ₦
+                    {(
+                      parseFloat(editPrice) - parseFloat(editCostPrice)
+                    ).toLocaleString()}{" "}
+                    (
+                    {Math.round(
+                      ((parseFloat(editPrice) - parseFloat(editCostPrice)) /
+                        parseFloat(editPrice)) *
+                        100,
+                    )}
+                    %)
+                  </Text>
+                </View>
+              )}
+
+              {/* Category */}
+              <View style={productModalStyles.field}>
+                <Text style={productModalStyles.label}>Category</Text>
+                {isRecommendingCategory ? (
+                  <View
+                    style={[
+                      productModalStyles.input,
+                      productModalStyles.loadingInput,
+                    ]}
+                  >
+                    <ActivityIndicator color={MAIN_GREEN} size="small" />
+                    <Text style={{ color: "#6b7280", marginLeft: 8 }}>
+                      Suggesting…
+                    </Text>
+                  </View>
+                ) : (
+                  <RNPickerSelect
+                    onValueChange={(value) => value && setEditCategory(value)}
+                    items={categories.map((cat) => ({
+                      label: cat,
+                      value: cat,
+                    }))}
+                    style={{
+                      inputIOS: productModalStyles.input,
+                      inputAndroid: productModalStyles.input,
+                      placeholder: { color: "#6b7280" },
+                    }}
+                    value={editCategory}
+                    placeholder={{
+                      label: "Select a category...",
+                      value: null,
+                      color: "#6b7280",
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Quantity */}
+              <View style={productModalStyles.field}>
+                <Text style={productModalStyles.label}>Stock Quantity</Text>
+                <View style={productModalStyles.qtyWrap}>
+                  <TouchableOpacity
+                    style={productModalStyles.qtyBtn}
+                    onPress={() => setEditQty((q) => Math.max(0, q - 1))}
+                  >
+                    <MaterialIcons name="remove" size={24} color="#111" />
+                  </TouchableOpacity>
+                  <View style={productModalStyles.qtyDisplay}>
+                    <Text style={productModalStyles.qtyText}>{editQty}</Text>
+                    <Text style={productModalStyles.qtyUnit}>Units</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      productModalStyles.qtyBtn,
+                      productModalStyles.qtyBtnAdd,
+                    ]}
+                    onPress={() => setEditQty((q) => q + 1)}
+                  >
+                    <MaterialIcons name="add" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
 
             {/* Actions */}
             <View style={productModalStyles.modalRow}>
               <TouchableOpacity
                 style={productModalStyles.modalBtnAlt}
-                onPress={() => setProductModalVisible(false)}
+                onPress={() => {
+                  setProductModalVisible(false);
+                  setIsAiIdentified(false);
+                }}
               >
                 <Text style={productModalStyles.modalBtnTextAlt}>Cancel</Text>
               </TouchableOpacity>
@@ -882,21 +1114,14 @@ export default function ScanSellScreen({
   );
 }
 
+/* ─── STYLES ─── */
+
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  container: {
-    flex: 1,
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  camera: {
-    flex: 1,
-  },
+  safe: { flex: 1, backgroundColor: "#000" },
+  container: { flex: 1 },
+  cameraContainer: { flex: 1, backgroundColor: "#000" },
+  camera: { flex: 1 },
+
   topControls: {
     position: "absolute",
     top: Platform.OS === "android" ? 40 : 60,
@@ -915,6 +1140,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  aiBtnCircle: {
+    backgroundColor: MAIN_GREEN,
+  },
   modeToggle: {
     flexDirection: "row",
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -928,21 +1156,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 24,
   },
-  modeActive: {
-    backgroundColor: MAIN_GREEN,
-  },
-  modeText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  modeActiveText: {
-    color: "#000",
-    fontWeight: "700",
-  },
-  rightTopActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  modeActive: { backgroundColor: MAIN_GREEN },
+  modeText: { color: "#fff", fontWeight: "600" },
+  modeActiveText: { color: "#000", fontWeight: "700" },
+  rightTopActions: { flexDirection: "row", gap: 10 },
+
   cameraShortcuts: {
     position: "absolute",
     top: Platform.OS === "android" ? 110 : 130,
@@ -954,9 +1172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 40,
   },
-  shortcut: {
-    alignItems: "center",
-  },
+  shortcut: { alignItems: "center" },
   circleBtnSmall: {
     width: 36,
     height: 36,
@@ -978,7 +1194,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: height * 0.3, // approximate center above bottom sheet
+    bottom: height * 0.3,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 5,
@@ -1004,26 +1220,10 @@ const styles = StyleSheet.create({
     borderColor: MAIN_GREEN,
     borderRadius: 8,
   },
-  tl: {
-    left: 0,
-    top: 0,
-    transform: [{ rotate: "0deg" }],
-  },
-  tr: {
-    right: 0,
-    top: 0,
-    transform: [{ rotate: "90deg" }],
-  },
-  bl: {
-    left: 0,
-    bottom: 0,
-    transform: [{ rotate: "-90deg" }],
-  },
-  br: {
-    right: 0,
-    bottom: 0,
-    transform: [{ rotate: "180deg" }],
-  },
+  tl: { left: 0, top: 0 },
+  tr: { right: 0, top: 0, transform: [{ rotate: "90deg" }] },
+  bl: { left: 0, bottom: 0, transform: [{ rotate: "-90deg" }] },
+  br: { right: 0, bottom: 0, transform: [{ rotate: "180deg" }] },
   scanLine: {
     position: "absolute",
     height: 3,
@@ -1043,10 +1243,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  alignText: {
+  alignText: { color: "#fff", fontWeight: "600" },
+  aiHint: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    opacity: 0.75,
+  },
+  aiHintText: {
     color: "#fff",
-    marginLeft: 0,
-    fontWeight: "600",
+    fontSize: 12,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowRadius: 4,
+  },
+
+  aiLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 50,
+  },
+  aiLoadingCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 40,
+    alignItems: "center",
+    gap: 12,
+  },
+  aiLoadingText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+    marginTop: 8,
+  },
+  aiLoadingSubtext: {
+    fontSize: 13,
+    color: "#6b7280",
   },
 
   bottomSheet: {
@@ -1078,23 +1313,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 16,
   },
-  sheetTitle: {
-    color: "#111",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  sheetSub: {
-    color: "#6b7280",
-    fontSize: 13,
-  },
-  clearText: {
-    color: "#ef4444",
-    fontWeight: "600",
-  },
-  cartList: {
-    marginTop: 0,
-    maxHeight: 300,
-  },
+  sheetTitle: { color: "#111", fontSize: 18, fontWeight: "800" },
+  sheetSub: { color: "#6b7280", fontSize: 13 },
+  clearText: { color: "#ef4444", fontWeight: "600" },
+  cartList: { marginTop: 0, maxHeight: 300 },
+
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1106,16 +1329,7 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
     marginBottom: 10,
   },
-  highlightRow: {
-    backgroundColor: "#fff2ec",
-    borderColor: "#fbcbb5",
-  },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
+  itemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   itemThumb: {
     width: 48,
     height: 48,
@@ -1123,31 +1337,12 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#e5e7eb",
   },
-  itemImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  itemPlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemTitle: {
-    color: "#111",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  itemPrice: {
-    color: MAIN_GREEN,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  qtyWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  itemImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  itemPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center" },
+  itemTitle: { color: "#111", fontSize: 15, fontWeight: "700", maxWidth: 140 },
+  itemPrice: { color: MAIN_GREEN, fontWeight: "700", marginTop: 2 },
+
+  qtyWrap: { flexDirection: "row", alignItems: "center", gap: 10 },
   qtyBtn: {
     width: 28,
     height: 28,
@@ -1158,23 +1353,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
-  qtyBtnAdd: {
-    backgroundColor: MAIN_GREEN,
-    borderColor: MAIN_GREEN,
-  },
+  qtyBtnAdd: { backgroundColor: MAIN_GREEN, borderColor: MAIN_GREEN },
   qtyText: {
     color: "#111",
     minWidth: 16,
     textAlign: "center",
     fontWeight: "700",
   },
-  emptyRow: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#9ca3af",
-  },
+
+  emptyRow: { paddingVertical: 40, alignItems: "center" },
+  emptyText: { color: "#9ca3af" },
+
   checkoutWrap: {
     position: "absolute",
     left: 20,
@@ -1197,11 +1386,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
   },
-  totalValue: {
-    color: MAIN_GREEN,
-    fontSize: 18,
-    fontWeight: "800",
-  },
+  totalValue: { color: MAIN_GREEN, fontSize: 18, fontWeight: "800" },
   checkoutRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -1211,10 +1396,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
   },
-  checkoutText: {
-    fontWeight: "700",
-    color: "#000",
-  },
+  checkoutText: { fontWeight: "700", color: "#000" },
+
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1252,30 +1435,16 @@ const modalStyles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
   },
-  modalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-  },
+  modalRow: { flexDirection: "row", justifyContent: "flex-end", gap: 12 },
   modalBtn: {
     backgroundColor: "#000",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
   },
-  modalBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  modalBtnAlt: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  modalBtnTextAlt: {
-    color: "#6b7280",
-    fontWeight: "600",
-  },
+  modalBtnText: { color: "#fff", fontWeight: "700" },
+  modalBtnAlt: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  modalBtnTextAlt: { color: "#6b7280", fontWeight: "600" },
 });
 
 const productModalStyles = StyleSheet.create({
@@ -1286,20 +1455,57 @@ const productModalStyles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.7)",
   },
   modal: {
-    width: "90%",
+    width: "92%",
+    maxHeight: "90%",
     backgroundColor: "#fff",
     borderRadius: 24,
     padding: 24,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 20,
-    color: "#111",
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
   },
-  field: {
+  modalTitle: { fontSize: 20, fontWeight: "800", color: "#111" },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#fff2ec",
+    borderWidth: 1,
+    borderColor: "#fbd5c0",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  aiBadgeText: { fontSize: 11, fontWeight: "700", color: MAIN_GREEN },
+  aiNote: {
+    fontSize: 13,
+    color: "#6b7280",
+    marginBottom: 16,
+    fontStyle: "italic",
+  },
+  aiEstimate: {
+    fontSize: 10,
+    color: MAIN_GREEN,
+    fontWeight: "600",
+    marginTop: 3,
+    marginLeft: 4,
+  },
+  marginRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginBottom: 16,
   },
+  marginText: { fontSize: 13, color: "#10b981", fontWeight: "600" },
+
+  field: { marginBottom: 16 },
   label: {
     color: "#4b5563",
     fontSize: 12,
@@ -1308,9 +1514,7 @@ const productModalStyles = StyleSheet.create({
     marginBottom: 6,
     marginLeft: 4,
   },
-  inputWrap: {
-    position: "relative",
-  },
+  inputWrap: { position: "relative" },
   input: {
     height: 50,
     borderRadius: 12,
@@ -1321,6 +1525,11 @@ const productModalStyles = StyleSheet.create({
     color: "#111",
     fontSize: 16,
   },
+  loadingInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   prefix: {
     position: "absolute",
     left: 16,
@@ -1329,9 +1538,8 @@ const productModalStyles = StyleSheet.create({
     color: "#9ca3af",
     fontSize: 16,
   },
-  inputWithPrefix: {
-    paddingLeft: 32,
-  },
+  inputWithPrefix: { paddingLeft: 32 },
+
   qtyWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -1353,27 +1561,16 @@ const productModalStyles = StyleSheet.create({
     shadowOpacity: 0.05,
     elevation: 1,
   },
-  qtyBtnAdd: {
-    backgroundColor: MAIN_GREEN,
-  },
-  qtyDisplay: {
-    alignItems: "center",
-  },
-  qtyText: {
-    color: "#111",
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  qtyUnit: {
-    color: "#6b7280",
-    fontSize: 10,
-    marginTop: -2,
-  },
+  qtyBtnAdd: { backgroundColor: MAIN_GREEN },
+  qtyDisplay: { alignItems: "center" },
+  qtyText: { color: "#111", fontSize: 20, fontWeight: "800" },
+  qtyUnit: { color: "#6b7280", fontSize: 10, marginTop: -2 },
+
   modalRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 12,
-    marginTop: 8,
+    marginTop: 16,
   },
   modalBtn: {
     backgroundColor: "#000",
@@ -1381,17 +1578,7 @@ const productModalStyles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
   },
-  modalBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  modalBtnAlt: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  modalBtnTextAlt: {
-    color: "#6b7280",
-    fontWeight: "600",
-  },
+  modalBtnText: { color: "#fff", fontWeight: "700" },
+  modalBtnAlt: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 14 },
+  modalBtnTextAlt: { color: "#6b7280", fontWeight: "600" },
 });
