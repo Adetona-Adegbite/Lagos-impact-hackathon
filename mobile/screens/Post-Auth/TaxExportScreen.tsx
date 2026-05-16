@@ -18,7 +18,7 @@ import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#36e27b";
+const PRIMARY = "#dd4f05";
 const ORANGE = "#F97316";
 
 type Receipt = {
@@ -353,7 +353,7 @@ export default function TaxExportScreen({ navigation }: { navigation?: any }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#122117",
+    backgroundColor: "#121212",
     paddingTop: StatusBar.currentHeight,
   },
   header: {

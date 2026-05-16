@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import prisma from "../../config/db.js";
 import { env } from "../../config/env.js";
+import { setupUserVirtualAccount } from "../payments/payments.service.js";
 
 // Helper to generate a 6-digit OTP
 const generateOtp = (): string => {
@@ -58,8 +59,11 @@ export const verifyOtp = async (
     where: { phoneNumber },
   });
 
+  let isNewUser = false;
+
   if (!user) {
     // Register new user
+    isNewUser = true;
     user = await prisma.user.create({
       data: {
         phoneNumber,
@@ -84,11 +88,34 @@ export const verifyOtp = async (
     expiresIn: "7d",
   });
 
+  // Set up virtual account for new users (or users without one)
+  let virtualAccount = null;
+  if (isNewUser || !user.virtualAccountNumber) {
+    try {
+      virtualAccount = await setupUserVirtualAccount(
+        user.id,
+        user.phoneNumber,
+        user.shopName,
+      );
+    } catch (err) {
+      console.error("Failed to set up virtual account:", err);
+    }
+  } else {
+    virtualAccount = {
+      virtualAccountNumber: user.virtualAccountNumber,
+      virtualAccountName: user.virtualAccountName,
+      virtualBankName: user.virtualBankName,
+    };
+  }
+
   return {
     user: {
       id: user.id,
       phoneNumber: user.phoneNumber,
       shopName: user.shopName,
+      virtualAccountNumber: virtualAccount?.virtualAccountNumber || null,
+      virtualAccountName: virtualAccount?.virtualAccountName || null,
+      virtualBankName: virtualAccount?.virtualBankName || null,
     },
     token,
   };
@@ -101,6 +128,9 @@ export const getUserProfile = async (userId: string) => {
       id: true,
       phoneNumber: true,
       shopName: true,
+      virtualAccountNumber: true,
+      virtualAccountName: true,
+      virtualBankName: true,
       createdAt: true,
     },
   });

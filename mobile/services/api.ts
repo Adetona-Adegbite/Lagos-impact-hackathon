@@ -22,13 +22,14 @@ export const BASE_URL = DEV_API_URL;
 
 interface RequestConfig extends RequestInit {
   data?: any;
+  unwrap?: boolean;
 }
 
 async function request<T>(
   endpoint: string,
   config: RequestConfig = {},
 ): Promise<T> {
-  const { data, headers, ...customConfig } = config;
+  const { data, headers, unwrap = true, ...customConfig } = config;
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: config.method || "GET",
@@ -50,7 +51,16 @@ async function request<T>(
     throw error;
   }
 
-  return responseData.data || responseData;
+  return unwrap ? responseData.data || responseData : responseData;
+}
+
+export interface AuthUser {
+  id: string;
+  phoneNumber: string;
+  shopName: string | null;
+  virtualAccountNumber?: string | null;
+  virtualAccountName?: string | null;
+  virtualBankName?: string | null;
 }
 
 export const authApi = {
@@ -62,10 +72,13 @@ export const authApi = {
   },
 
   verifyOtp: (phoneNumber: string, code: string, shopName?: string) => {
-    return request<{ user: any; token: string }>("/api/v1/auth/verify-otp", {
-      method: "POST",
-      data: { phoneNumber, code, shopName },
-    });
+    return request<{ user: AuthUser; token: string }>(
+      "/api/v1/auth/verify-otp",
+      {
+        method: "POST",
+        data: { phoneNumber, code, shopName },
+      },
+    );
   },
 };
 
@@ -154,6 +167,7 @@ export const syncApi = {
       method: "POST",
       data,
       headers: { Authorization: `Bearer ${token}` },
+      unwrap: false,
     });
   },
 
@@ -162,6 +176,7 @@ export const syncApi = {
     return request<any>(`/api/v1/sync/pull${query}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+      unwrap: false,
     });
   },
 };
@@ -170,6 +185,38 @@ export const insightsApi = {
   generateMainInsights: (token: string, lang: string) => {
     return request<MainInsightsOutput>(`/api/v1/insights/main?lang=${lang}`, {
       method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const paymentsApi = {
+  getMyPayments: (token: string) => {
+    return request<any[]>("/api/v1/payments", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  getUnlinkedPayments: (token: string) => {
+    return request<any[]>("/api/v1/payments/unlinked", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  getSalesMatch: (amount: number, token: string) => {
+    return request<any[]>(`/api/v1/payments/sales-match?amount=${amount}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  linkPayment: (paymentId: string, saleId: string, token: string) => {
+    return request<any>(`/api/v1/payments/${paymentId}/link`, {
+      method: "POST",
+      data: { saleId },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  simulatePayment: (amount: number, token: string) => {
+    return request<any>("/api/v1/payments/simulate", {
+      method: "POST",
+      data: { amount },
       headers: { Authorization: `Bearer ${token}` },
     });
   },

@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { t } from "../../utils/localization";
 
 const { width } = Dimensions.get("window");
-const MAIN_GREEN = "#36e27b";
+const MAIN_GREEN = "#dd4f05";
 
 type Sale = {
   id: string;
@@ -95,6 +95,10 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
     sales.forEach((s, i) => {
       const saleDate = new Date(s.createdAt);
       const dateStr = saleDate.toISOString().split("T")[0];
+      const isPaid =
+        s.paymentStatus === "PAID" ||
+        s.paymentStatus === "AUTO_LINKED" ||
+        s.paymentStatus === "LINKED";
       const sale: Sale = {
         id: s.id,
         title: s.items?.[0]?.product?.name || "Quick Sale",
@@ -436,7 +440,7 @@ export default function SalesScreen({ navigation }: { navigation?: any }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#122117",
+    backgroundColor: "#121212",
     paddingTop: StatusBar.currentHeight,
   },
   container: { paddingBottom: 36 },
@@ -525,13 +529,13 @@ const styles = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 6 },
 
   revenueRow: { paddingVertical: 12 },
-  revenueLabel: { fontSize: 13, color: "#7f9587", marginBottom: 6 },
+  revenueLabel: { fontSize: 13, color: "#95877f", marginBottom: 6 },
   revenueValue: { fontSize: 36, fontWeight: "900", color: "#fff" },
 
   searchWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     borderRadius: 999,
     height: 48,
     marginBottom: 12,
@@ -569,7 +573,7 @@ const styles = StyleSheet.create({
   listSection: { paddingHorizontal: 16, paddingTop: 6 },
   saleCard: {
     borderRadius: 12,
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     padding: 12,
     borderWidth: 1,
     borderColor: "#000",
@@ -601,12 +605,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  paidPill: { backgroundColor: "#DCFCE7" },
+  paidPill: { backgroundColor: "#ffede5" },
   pendingPill: { backgroundColor: "#FEF3C7" },
   statusText: { fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
-  paidText: { color: "#059669" },
+  paidText: { color: "#c43d00" },
   pendingText: { color: "#92400E" },
-
   sectionHeader: {
     fontSize: 13,
     fontWeight: "800",
@@ -631,7 +634,7 @@ const styles = StyleSheet.create({
   salesOverview: {
     marginVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#1c2e24",
+    backgroundColor: "#1c1c1c",
     padding: 12,
     borderWidth: 1,
     borderColor: "#000",

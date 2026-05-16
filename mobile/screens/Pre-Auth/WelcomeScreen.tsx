@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { localizationService, t } from "../../utils/localization";
 
 const { width, height } = Dimensions.get("window");
-const MAIN_GREEN = "#36e27b"; // matches your tailwind primary
+const MAIN_GREEN = "#dd4f05"; // matches your tailwind primary
 const SAFE_TOP =
   Platform.OS === "android" ? (StatusBar.currentHeight ?? 24) : 44;
 const IMAGE_MAX = Math.min(width * 0.86, 420);
@@ -246,7 +246,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
                             <MaterialIcons
                               name="check"
                               size={18}
-                              color="#072"
+                              color="#dd4f05"
                             />
                           </View>
                           <View style={{ flex: 1 }}>
@@ -267,7 +267,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
                               <MaterialIcons
                                 name="check"
                                 size={18}
-                                color="#072"
+                                color="#dd4f05"
                               />
                             </View>
                             <View style={{ marginLeft: 10 }}>
@@ -296,7 +296,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
                         <MaterialIcons
                           name={item.badgeIcon as any}
                           size={28}
-                          color="#012"
+                          color="#dd4f05"
                         />
                       </View>
                     </View>
@@ -384,7 +384,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
               <MaterialIcons
                 name="arrow-forward"
                 size={18}
-                color="#022"
+                color="#dd4f05"
                 style={{ marginLeft: 8 }}
               />
             </TouchableOpacity>
@@ -424,7 +424,7 @@ export default function OnboardingScreen({ navigation }: { navigation?: any }) {
 
 /* Styles */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#122117", padding: 10 },
+  container: { flex: 1, backgroundColor: "#121212", padding: 10 },
   topBar: {
     paddingTop: SAFE_TOP,
     height: SAFE_TOP + 56,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#082",
+    color: "#dd4f05",
     letterSpacing: 0.4,
   },
   skipWrap: { width: 64, alignItems: "flex-end" },
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
   },
   bottomCardInner: {},
   bottomCardRow: { flexDirection: "row", alignItems: "center" },
-  bottomCardUpper: { fontSize: 10, color: "#9ee0b7", fontWeight: "700" },
+  bottomCardUpper: { fontSize: 10, color: "#fbbf9d", fontWeight: "700" },
   bottomCardTitle: { color: "#fff", fontSize: 14, fontWeight: "700" },
   bottomCardFooter: {
     flexDirection: "row",
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  fullBtnText: { color: "#012", fontSize: 16, fontWeight: "800" },
+  fullBtnText: { color: "#dd4f05", fontSize: 16, fontWeight: "800" },
   primaryFullBtn: {
     width: "100%",
     backgroundColor: MAIN_GREEN,

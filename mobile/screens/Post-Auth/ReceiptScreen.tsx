@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
-const PRIMARY = "#36e27b";
+const PRIMARY = "#dd4f05";
 
 type LineItem = {
   id: string;
@@ -183,7 +183,7 @@ export default function SalesReceiptScreen({
             // navigation?.goBack?.();
           }}
         >
-          <MaterialIcons name="credit-score" size={18} color="#064e3b" />
+          <MaterialIcons name="credit-score" size={18} color="#dd4f05" />
           <Text style={styles.footerBtnText}>Include in Credit History</Text>
         </TouchableOpacity>
       </View>
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 999,
-    backgroundColor: "#ecfdf5",
+    backgroundColor: "#fff2ec",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
@@ -376,11 +376,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e6f5ec",
+    borderColor: "#f5dace",
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 10,
   },
-  footerBtnText: { marginLeft: 8, color: "#064e3b", fontWeight: "900" },
+  footerBtnText: { marginLeft: 8, color: "#dd4f05", fontWeight: "900" },
 });

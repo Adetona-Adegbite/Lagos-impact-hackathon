@@ -143,6 +143,24 @@ export const initDatabase = async (): Promise<void> => {
             synced INTEGER DEFAULT 0
           );`,
       );
+
+      // Payments table
+      await tx.execAsync(
+        `CREATE TABLE IF NOT EXISTS payments (
+            id TEXT PRIMARY KEY NOT NULL,
+            transactionReference TEXT NOT NULL,
+            amount REAL NOT NULL,
+            settledAmount REAL,
+            feeCharged REAL,
+            senderName TEXT,
+            remarks TEXT,
+            currency TEXT DEFAULT 'NGN',
+            status TEXT DEFAULT 'PENDING',
+            saleId TEXT,
+            createdAt TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
+          );`,
+      );
     });
     console.log("Database initialized successfully");
   } catch (error) {
